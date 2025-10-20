@@ -23,6 +23,7 @@ export type Listing = {
     price: number;
     category: string;
     imageUrl?: string;
+    deliveryMethod: 'Pickup Only' | 'Local Delivery Available';
 }
 
 export type ForumPost = {

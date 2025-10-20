@@ -38,6 +38,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const listingFormSchema = z.object({
   listingName: z
@@ -50,6 +51,9 @@ const listingFormSchema = z.object({
     .min(10, 'Description must be at least 10 characters.')
     .max(500, 'Description cannot exceed 500 characters.'),
   image: z.any().optional(),
+  deliveryMethod: z.enum(['Pickup Only', 'Local Delivery Available'], {
+    required_error: 'You need to select a delivery method.',
+  }),
 });
 
 export default function VendorListingPage() {
@@ -65,6 +69,7 @@ export default function VendorListingPage() {
       category: '',
       price: 0,
       description: '',
+      deliveryMethod: 'Pickup Only',
     },
   });
 
@@ -210,6 +215,41 @@ export default function VendorListingPage() {
                           rows={5}
                           {...field}
                         />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="deliveryMethod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Delivery Method</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="Pickup Only" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              Pickup Only
+                            </FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="Local Delivery Available" />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              Local Delivery Available
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -69,6 +69,11 @@
         "imageUrl": {
             "type": "string",
             "description": "URL of an image for the listing."
+        },
+        "deliveryMethod": {
+            "type": "string",
+            "description": "The method of delivery for the listing.",
+            "enum": ["Pickup Only", "Local Delivery Available"]
         }
       },
       "required": [
@@ -76,7 +81,8 @@
         "listingName",
         "description",
         "price",
-        "category"
+        "category",
+        "deliveryMethod"
       ]
     },
     "Resident": {
