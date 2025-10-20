@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,10 +8,12 @@ import {
   ListPlus,
   DollarSign,
   FileImage,
-  BookText,
   CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { addDoc, collection } from "firebase/firestore";
+
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +43,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore } from "@/firebase";
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 const listingFormSchema = z.object({
   listingName: z
@@ -56,6 +61,8 @@ const listingFormSchema = z.object({
 
 export default function VendorListingPage() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof listingFormSchema>>({
     resolver: zodResolver(listingFormSchema),
@@ -67,13 +74,27 @@ export default function VendorListingPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof listingFormSchema>) {
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof listingFormSchema>) {
+    // In a real app, vendorId would come from the authenticated user
+    const vendorId = "temp-vendor-id";
+    const listingsCollectionRef = collection(firestore, `vendors/${vendorId}/listings`);
+    
+    const newListing = {
+      vendorId: vendorId,
+      ...values,
+      imageUrl: "" // Image uploads are not yet implemented
+    };
+    
+    // We use a non-blocking update to save the data
+    addDocumentNonBlocking(listingsCollectionRef, newListing);
+    
     toast({
       title: "Listing Created!",
       description: "Your new product or service has been added to the marketplace.",
     });
-    form.reset();
+    
+    // Optionally redirect after successful submission
+    router.push('/vendors');
   }
 
   return (
@@ -217,14 +238,8 @@ export default function VendorListingPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button type="submit" className="w-full sm:w-auto">
                     <ListPlus className="mr-2 h-4 w-4" />
-                    Create Listing
+                    Create & Finish
                   </Button>
-                   <Button variant="secondary" className="w-full sm:w-auto" asChild>
-                     <Link href="/vendors">
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Finish & View Marketplace
-                      </Link>
-                    </Button>
                 </div>
               </form>
             </Form>
