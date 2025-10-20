@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CreditCard, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +27,14 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   businessName: z.string().min(2, "Business name must be at least 2 characters."),
   abn: z.string().regex(/^\d{2} \d{3} \d{3} \d{3}$/, "Please enter a valid ABN format (e.g., 12 345 678 901)."),
+  consent: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the terms and conditions to continue.",
+  }),
 });
 
 export default function OnboardPage() {
@@ -40,6 +45,7 @@ export default function OnboardPage() {
     defaultValues: {
       businessName: "",
       abn: "",
+      consent: false,
     },
   });
 
@@ -114,6 +120,35 @@ export default function OnboardPage() {
                           legitimate businesses.
                         </FormDescription>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="consent"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Agree to Terms and Conditions</FormLabel>
+                          <FormDescription>
+                            By checking this box, you agree to our{" "}
+                            <Link href="/terms" className="underline hover:text-primary">
+                              Terms of Service
+                            </Link>{" "}
+                            and acknowledge our{" "}
+                            <Link href="/privacy" className="underline hover:text-primary">
+                              Privacy Policy
+                            </Link>
+                            , including purpose-specific data usage for vendor verification.
+                          </FormDescription>
+                           <FormMessage />
+                        </div>
                       </FormItem>
                     )}
                   />
