@@ -1,3 +1,94 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-community",
+      "description": "A diverse group of neighbors happily chatting at a sunny outdoor community gathering.",
+      "imageUrl": "https://images.unsplash.com/photo-1758610840977-8ee55513281c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjb21tdW5pdHklMjBnYXRoZXJpbmd8ZW58MHx8fHwxNzYwODk3NjIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "community gathering"
+    },
+    {
+      "id": "feature-vendors",
+      "description": "A friendly local baker smiling and presenting freshly baked bread in a cozy shop.",
+      "imageUrl": "https://images.unsplash.com/photo-1653552900145-5679d740bbb6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsb2NhbCUyMGJha2VyfGVufDB8fHx8MTc2MDk2ODYzOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "local baker"
+    },
+    {
+      "id": "feature-forums",
+      "description": "A close-up of a community notice board filled with colorful flyers and announcements.",
+      "imageUrl": "https://images.unsplash.com/photo-1503551723145-6c040742065b-v2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxub3RpY2UlMjBib2FyZHxlbnwwfHx8fDE3NjA5NDU3NzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "notice board"
+    },
+    {
+      "id": "vendor-map",
+      "description": "A stylized, clean map of a suburban area with several pins indicating local businesses.",
+      "imageUrl": "https://images.unsplash.com/photo-1476385822777-70eabacbd41f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjaXR5JTIwbWFwfGVufDB8fHx8MTc2MDk1ODM1MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city map"
+    },
+    {
+      "id": "vendor-plumber",
+      "description": "A professional plumber fixing a sink, smiling at the camera.",
+      "imageUrl": "https://images.unsplash.com/photo-1612006767176-225f7f9af5d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwbHVtYmVyJTIwd29ya2luZ3xlbnwwfHx8fDE3NjA4NzA0NDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "plumber working"
+    },
+    {
+      "id": "vendor-gardener",
+      "description": "A gardener tending to a vibrant flower bed in a suburban front yard.",
+      "imageUrl": "https://images.unsplash.com/photo-1758524052567-97886e9b8b58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxnYXJkZW5lciUyMHNtaWxpbmd8ZW58MHx8fHwxNzYwOTY4NjM5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gardener smiling"
+    },
+    {
+      "id": "vendor-cafe",
+      "description": "The cozy interior of a local cafe, with warm lighting and patrons enjoying coffee.",
+      "imageUrl": "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb3p5JTIwY2FmZXxlbnwwfHx8fDE3NjA4NzQ5OTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cozy cafe"
+    },
+    {
+      "id": "vendor-bookshop",
+      "description": "A charming local bookshop with shelves packed with books.",
+      "imageUrl": "https://images.unsplash.com/photo-1727342681676-b7b32b273add?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxib29rc2hvcCUyMGludGVyaW9yfGVufDB8fHx8MTc2MDk2ODYzOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "bookshop interior"
+    },
+    {
+      "id": "event-market",
+      "description": "A bustling farmers' market with stalls of fresh produce and handmade goods.",
+      "imageUrl": "https://images.unsplash.com/photo-1645976442233-bcf005876613?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxmYXJtZXJzJTIwbWFya2V0fGVufDB8fHx8MTc2MDk2ODY0MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "farmers market"
+    },
+    {
+      "id": "event-workshop",
+      "description": "People participating in a pottery workshop, focused on their craft.",
+      "imageUrl": "https://images.unsplash.com/photo-1590605095243-072811dbe64c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwb3R0ZXJ5JTIwd29ya3Nob3B8ZW58MHx8fHwxNzYwOTYxMjI5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pottery workshop"
+    },
+    {
+      "id": "event-cleanup",
+      "description": "Volunteers of all ages participating in a park cleanup day.",
+      "imageUrl": "https://images.unsplash.com/photo-1758599668924-02f56a9aacc2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjb21tdW5pdHklMjBjbGVhbnVwfGVufDB8fHx8MTc2MDk2ODYzOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "community cleanup"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "A friendly-looking woman in her 30s.",
+      "imageUrl": "https://images.unsplash.com/photo-1692736475357-7c18bfbb808b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d29tYW4lMjBzbWlsaW5nfGVufDB8fHx8MTc2MDkxNzQxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman smiling"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "A man in his 40s with glasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1612694790876-bec1383fbb40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc2MDg1MjA3MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man glasses"
+    },
+    {
+      "id": "user-avatar-3",
+      "description": "A person with short, colorful hair.",
+      "imageUrl": "https://images.unsplash.com/photo-1677126518924-49fea3e96154?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwY29sb3JmdWx8ZW58MHx8fHwxNzYwOTU3ODg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person colorful"
+    },
+    {
+      "id": "user-avatar-4",
+      "description": "An older gentleman with a warm smile.",
+      "imageUrl": "https://images.unsplash.com/photo-1535643302794-19c3804b874b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxvbGRlciUyMG1hbnxlbnwwfHx8fDE3NjA4NzE1NDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "older man"
+    }
+  ]
 }
