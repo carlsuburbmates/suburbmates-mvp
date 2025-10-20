@@ -7,7 +7,10 @@ import { z } from 'zod';
 import { CreditCard, CheckCircle2, Phone, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -32,10 +35,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const formSchema = z.object({
+const signUpSchema = z.object({
   businessName: z
     .string()
     .min(2, 'Business name must be at least 2 characters.'),
@@ -54,15 +58,21 @@ const formSchema = z.object({
   }),
 });
 
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address.'),
+  password: z.string().min(1, 'Password is required.'),
+});
+
 export default function OnboardPage() {
   const [step, setStep] = useState(1);
   const { toast } = useToast();
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
       businessName: '',
       abn: '',
@@ -74,9 +84,21 @@ export default function OnboardPage() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  if (user) {
+    router.push('/vendors/profile');
+    return null;
+  }
+
+  async function handleSignUp(values: z.infer<typeof signUpSchema>) {
     try {
-      // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         values.email,
@@ -84,7 +106,6 @@ export default function OnboardPage() {
       );
       const user = userCredential.user;
 
-      // 2. Create a vendor document in Firestore
       const vendorRef = doc(firestore, 'vendors', user.uid);
       const vendorData = {
         businessName: values.businessName,
@@ -94,7 +115,6 @@ export default function OnboardPage() {
         website: values.website || '',
       };
 
-      // Use non-blocking write to Firestore
       setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
 
       toast({
@@ -108,10 +128,31 @@ export default function OnboardPage() {
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
         description:
-          error.message || 'Could not create account. Please try again.',
+          error.code === 'auth/email-already-in-use'
+            ? 'This email is already in use. Please log in.'
+            : 'Could not create account. Please try again.',
       });
     }
   }
+
+  async function handleLogin(values: z.infer<typeof loginSchema>) {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back!',
+      });
+      router.push('/vendors/profile');
+    } catch (error: any) {
+      console.error('Login Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: 'Invalid email or password. Please try again.',
+      });
+    }
+  }
+
 
   function handleStripeConnect() {
     toast({
@@ -119,187 +160,231 @@ export default function OnboardPage() {
       description:
         'You are being securely redirected to Stripe to connect your account. This is a simulation.',
     });
-    // In a real app, you would redirect to Stripe. Here we'll just move to the next step.
     router.push('/vendors/onboard/listing');
   }
 
   return (
     <>
       <PageHeader
-        title="Become a Trusted Vendor"
-        description="Join our marketplace to connect with local customers."
+        title="Vendor Portal"
+        description="Join our marketplace or log in to manage your profile."
       />
       <div className="container mx-auto px-4 pb-16 flex justify-center">
         <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-lg shadow-2xl">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">
-              Vendor Onboarding
+              {step === 1 ? "Become a Trusted Vendor" : "Connect for Payments"}
             </CardTitle>
             <CardDescription>
-              Complete the steps below to get your business listed.
+              {step === 1 ? "Complete the steps below to get your business listed." : "Securely connect your Stripe account to receive payments."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {step === 1 && (
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-8"
-                >
-                  <div className="flex items-center text-sm text-muted-foreground mb-6">
-                    <CheckCircle2 className="w-5 h-5 mr-2 text-primary" />
-                    <span>Step 1: Business Details</span>
-                    <div className="flex-grow border-t border-dashed mx-4"></div>
-                    <CheckCircle2 className="w-5 h-5 mr-2 text-muted" />
-                    <span>Step 2: Connect Payments</span>
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="businessName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Business Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g., Green Thumb Gardening"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="abn"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Australian Business Number (ABN)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="12 345 678 901" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          We validate your ABN to ensure all vendors are
-                          legitimate businesses.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                    <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Account Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="you@company.com"
-                            {...field}
-                          />
-                        </FormControl>
-                         <FormDescription>
-                          This email will be used for your account login.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Must be at least 6 characters.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+               <Tabs defaultValue="signup" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                </TabsList>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <FormField
-                      control={form.control}
-                      name="phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone (Optional)</FormLabel>
-                           <FormControl>
-                             <div className="relative">
-                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="0412 345 678" {...field} className="pl-8"/>
-                             </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Website (Optional)</FormLabel>
-                           <FormControl>
-                             <div className="relative">
-                               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="https://your-business.com.au" {...field} className="pl-8"/>
-                             </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                 
-                  <FormField
-                    control={form.control}
-                    name="consent"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Agree to Terms and Conditions</FormLabel>
-                          <FormDescription>
-                            By checking this box, you agree to our{' '}
-                            <Link
-                              href="/terms"
-                              className="underline hover:text-primary"
-                            >
-                              Terms of Service
-                            </Link>{' '}
-                            and acknowledge our{' '}
-                            <Link
-                              href="/privacy"
-                              className="underline hover:text-primary"
-                            >
-                              Privacy Policy
-                            </Link>
-                            , including purpose-specific data usage for vendor
-                            verification.
-                          </FormDescription>
-                          <FormMessage />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full md:w-auto">
-                    Validate and Continue
-                  </Button>
-                </form>
-              </Form>
+                <TabsContent value="signup" className="pt-6">
+                  <Form {...signUpForm}>
+                    <form
+                      onSubmit={signUpForm.handleSubmit(handleSignUp)}
+                      className="space-y-8"
+                    >
+                      <FormField
+                        control={signUpForm.control}
+                        name="businessName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business Name</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="e.g., Green Thumb Gardening"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="abn"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Australian Business Number (ABN)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="12 345 678 901" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              We validate your ABN to ensure all vendors are
+                              legitimate businesses.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={signUpForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="you@company.com"
+                                {...field}
+                              />
+                            </FormControl>
+                             <FormDescription>
+                              This email will be used for your account login.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={signUpForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Must be at least 6 characters.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                         <FormField
+                          control={signUpForm.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Phone (Optional)</FormLabel>
+                               <FormControl>
+                                 <div className="relative">
+                                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                   <Input placeholder="0412 345 678" {...field} className="pl-8"/>
+                                 </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={signUpForm.control}
+                          name="website"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Website (Optional)</FormLabel>
+                               <FormControl>
+                                 <div className="relative">
+                                   <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                   <Input placeholder="https://your-business.com.au" {...field} className="pl-8"/>
+                                 </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                     
+                      <FormField
+                        control={signUpForm.control}
+                        name="consent"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Agree to Terms and Conditions</FormLabel>
+                              <FormDescription>
+                                By checking this box, you agree to our{' '}
+                                <Link
+                                  href="/terms"
+                                  className="underline hover:text-primary"
+                                >
+                                  Terms of Service
+                                </Link>{' '}
+                                and acknowledge our{' '}
+                                <Link
+                                  href="/privacy"
+                                  className="underline hover:text-primary"
+                                >
+                                  Privacy Policy
+                                </Link>
+                                , including purpose-specific data usage for vendor
+                                verification.
+                              </FormDescription>
+                              <FormMessage />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full md:w-auto">
+                        Validate and Continue
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+                
+                <TabsContent value="login" className="pt-6">
+                   <Form {...loginForm}>
+                    <form
+                      onSubmit={loginForm.handleSubmit(handleLogin)}
+                      className="space-y-8"
+                    >
+                       <FormField
+                        control={loginForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="you@company.com"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={loginForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                              <Input type="password" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <Button type="submit" className="w-full md:w-auto">
+                        Login
+                      </Button>
+                    </form>
+                  </Form>
+                </TabsContent>
+
+              </Tabs>
             )}
 
             {step === 2 && (

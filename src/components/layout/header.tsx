@@ -1,23 +1,47 @@
-"use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+'use client';
 
-import { cn } from "@/lib/utils";
-import type { NavItem } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Logo } from "@/components/icons";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Menu, LogOut } from 'lucide-react';
+import { signOut } from 'firebase/auth';
+
+import { cn } from '@/lib/utils';
+import type { NavItem } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Logo } from '@/components/icons';
+import { useAuth, useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems: NavItem[] = [
-  { title: "Home", href: "/" },
-  { title: "Civic Hub", href: "/forums" },
-  { title: "Vendor Marketplace", href: "/vendors" },
+  { title: 'Home', href: '/' },
+  { title: 'Civic Hub', href: '/forums' },
+  { title: 'Vendor Marketplace', href: '/vendors' },
 ];
 
 export function Header() {
   const pathname = usePathname();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      console.error('Logout Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'There was a problem logging you out. Please try again.',
+      });
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,21 +59,47 @@ export function Header() {
               key={item.href}
               href={item.href}
               className={cn(
-                "transition-colors hover:text-foreground/80",
+                'transition-colors hover:text-foreground/80',
                 pathname === item.href
-                  ? "text-foreground font-semibold"
-                  : "text-foreground/60"
+                  ? 'text-foreground font-semibold'
+                  : 'text-foreground/60'
               )}
             >
               {item.title}
             </Link>
           ))}
+          {user && (
+             <Link
+              href="/vendors/profile"
+              className={cn(
+                'transition-colors hover:text-foreground/80',
+                pathname === '/vendors/profile'
+                  ? 'text-foreground font-semibold'
+                  : 'text-foreground/60'
+              )}
+            >
+              Dashboard
+            </Link>
+          )}
         </nav>
 
-        <div className="flex flex-1 items-center justify-end gap-4">
-          <Button asChild className="hidden md:flex">
-            <Link href="/vendors/onboard">Become a Vendor</Link>
-          </Button>
+        <div className="flex flex-1 items-center justify-end gap-2">
+          {!isUserLoading &&
+            (user ? (
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            ) : (
+              <div className="hidden md:flex items-center gap-2">
+                <Button asChild variant="ghost">
+                  <Link href="/vendors/onboard">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/vendors/onboard">Sign Up</Link>
+                </Button>
+              </div>
+            ))}
 
           <Sheet>
             <SheetTrigger asChild>
@@ -75,19 +125,46 @@ export function Header() {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "text-lg",
+                        'text-lg',
                         pathname === item.href
-                          ? "text-primary font-bold"
-                          : "text-muted-foreground"
+                          ? 'text-primary font-bold'
+                          : 'text-muted-foreground'
                       )}
                     >
                       {item.title}
                     </Link>
                   ))}
+                   {user && (
+                    <Link
+                      href="/vendors/profile"
+                      className={cn(
+                        'text-lg',
+                        pathname === '/vendors/profile'
+                          ? 'text-primary font-bold'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                      Dashboard
+                    </Link>
+                  )}
                 </nav>
-                 <Button asChild className="mt-8">
-                    <Link href="/vendors/onboard">Become a Vendor</Link>
-                </Button>
+                <div className="mt-8 flex flex-col gap-4">
+                  {user ? (
+                     <Button onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </Button>
+                  ) : (
+                    <>
+                      <Button asChild variant="secondary">
+                        <Link href="/vendors/onboard">Login</Link>
+                      </Button>
+                      <Button asChild>
+                        <Link href="/vendors/onboard">Sign Up</Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
