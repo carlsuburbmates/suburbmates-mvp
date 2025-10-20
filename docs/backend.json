@@ -1,0 +1,402 @@
+{
+  "entities": {
+    "Vendor": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vendor",
+      "type": "object",
+      "description": "Represents a verified vendor in the marketplace.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vendor."
+        },
+        "abn": {
+          "type": "string",
+          "description": "Australian Business Number of the vendor."
+        },
+        "companyName": {
+          "type": "string",
+          "description": "Name of the vendor's company."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Contact email address for the vendor.",
+          "format": "email"
+        },
+        "stripeAccountId": {
+          "type": "string",
+          "description": "Stripe account ID associated with the vendor."
+        },
+        "location": {
+          "type": "string",
+          "description": "The suburb where the vendor operates"
+        }
+      },
+      "required": [
+        "id",
+        "abn",
+        "companyName",
+        "contactEmail",
+        "stripeAccountId",
+        "location"
+      ]
+    },
+    "Listing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Listing",
+      "type": "object",
+      "description": "Represents a marketplace listing offered by a vendor.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the listing."
+        },
+        "vendorId": {
+          "type": "string",
+          "description": "Reference to Vendor. (Relationship: Vendor 1:N Listing)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the listing."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the listing."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the listing."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category that this listing belongs to."
+        },
+        "location": {
+          "type": "string",
+          "description": "The suburb this listing belongs to."
+        }
+      },
+      "required": [
+        "id",
+        "vendorId",
+        "title",
+        "description",
+        "price",
+        "category",
+        "location"
+      ]
+    },
+    "Forum": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Forum",
+      "type": "object",
+      "description": "Represents a discussion forum within the Civic Hub.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the forum."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the forum."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the forum's purpose."
+        },
+        "councilPartner": {
+          "type": "string",
+          "description": "Reference to Council Partner if applicable."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "Post": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Post",
+      "type": "object",
+      "description": "Represents a post within a forum.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the post."
+        },
+        "forumId": {
+          "type": "string",
+          "description": "Reference to Forum. (Relationship: Forum 1:N Post)"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Post)"
+        },
+        "content": {
+          "type": "string",
+          "description": "Content of the post."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the post was created.",
+          "format": "date-time"
+        },
+        "topicTags": {
+          "type": "array",
+          "description": "The topic tags associated with this post.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "forumId",
+        "authorId",
+        "content",
+        "timestamp"
+      ]
+    },
+    "Activity": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Activity",
+      "type": "object",
+      "description": "Represents a local activity or workshop.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the activity."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the activity."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the activity."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the activity.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the activity.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the activity."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "startTime",
+        "endTime",
+        "location"
+      ]
+    },
+    "AiSummary": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AiSummary",
+      "type": "object",
+      "description": "Represents a summary generated by the AI tool.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the summary."
+        },
+        "sourceId": {
+          "type": "string",
+          "description": "Reference to the source (e.g., Post, Activity) being summarized."
+        },
+        "sourceType": {
+          "type": "string",
+          "description": "Type of the source being summarized (e.g., 'Post', 'Activity')."
+        },
+        "content": {
+          "type": "string",
+          "description": "The summarized content."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the summary was generated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "sourceId",
+        "sourceType",
+        "content",
+        "timestamp"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "userName": {
+          "type": "string",
+          "description": "The users username."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "location": {
+          "type": "string",
+          "description": "The suburb that this user belongs to."
+        }
+      },
+      "required": [
+        "id",
+        "userName",
+        "email",
+        "location"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/vendors/{vendorId}",
+        "definition": {
+          "entityName": "Vendor",
+          "schema": {
+            "$ref": "#/backend/entities/Vendor"
+          },
+          "description": "Represents a verified vendor. The 'vendorId' parameter is the unique identifier for the vendor.",
+          "params": [
+            {
+              "name": "vendorId",
+              "description": "The unique identifier for the vendor."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/vendors/{vendorId}/listings/{listingId}",
+        "definition": {
+          "entityName": "Listing",
+          "schema": {
+            "$ref": "#/backend/entities/Listing"
+          },
+          "description": "Represents a marketplace listing offered by a vendor. Includes denormalized 'vendorId' from the parent vendor document for authorization independence. The 'vendorId' parameter is the ID of the vendor that owns the listing. The 'listingId' parameter is the unique identifier for the listing.",
+          "params": [
+            {
+              "name": "vendorId",
+              "description": "The ID of the vendor that owns the listing."
+            },
+            {
+              "name": "listingId",
+              "description": "The unique identifier for the listing."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/forums/{forumId}",
+        "definition": {
+          "entityName": "Forum",
+          "schema": {
+            "$ref": "#/backend/entities/Forum"
+          },
+          "description": "Represents a discussion forum within the Civic Hub. The 'forumId' parameter is the unique identifier for the forum.",
+          "params": [
+            {
+              "name": "forumId",
+              "description": "The unique identifier for the forum."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/forums/{forumId}/posts/{postId}",
+        "definition": {
+          "entityName": "Post",
+          "schema": {
+            "$ref": "#/backend/entities/Post"
+          },
+          "description": "Represents a post within a forum. Includes the denormalized 'forumId' from the parent forum document for authorization independence. The 'forumId' parameter is the ID of the forum that the post belongs to. The 'postId' parameter is the unique identifier for the post.",
+          "params": [
+            {
+              "name": "forumId",
+              "description": "The ID of the forum that the post belongs to."
+            },
+            {
+              "name": "postId",
+              "description": "The unique identifier for the post."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/activities/{activityId}",
+        "definition": {
+          "entityName": "Activity",
+          "schema": {
+            "$ref": "#/backend/entities/Activity"
+          },
+          "description": "Represents a local activity or workshop. The 'activityId' parameter is the unique identifier for the activity.",
+          "params": [
+            {
+              "name": "activityId",
+              "description": "The unique identifier for the activity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ai_summaries/{aiSummaryId}",
+        "definition": {
+          "entityName": "AiSummary",
+          "schema": {
+            "$ref": "#/backend/entities/AiSummary"
+          },
+          "description": "Represents a summary generated by the AI tool. The 'aiSummaryId' parameter is the unique identifier for the summary.",
+          "params": [
+            {
+              "name": "aiSummaryId",
+              "description": "The unique identifier for the summary."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Represents a user of the application. The 'userId' parameter is the unique identifier for the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Suburbmates application, emphasizing security, scalability, and ease of debugging. It incorporates denormalization strategies to ensure authorization independence, aligning with best practices for Firestore security rules. The structure is segregated to maintain homogeneous security postures within collections and uses consistent access modeling patterns for clarity.\n\nVendors and Listings:\n- Vendors are stored in the `/vendors` collection. Listings, which are associated with vendors in a 1:N relationship, are stored in `/vendors/{vendorId}/listings`. This structure benefits from path-based ownership, simplifying security rules and enhancing performance. Vendor data (like location) can be denormalized into the Listing to support QAPs (query across listings by location without requiring a collection group query that spans all listings).\n\nForums and Posts:\n- Forums are stored in the `/forums` collection.  Posts are nested under each forum in `/forums/{forumId}/posts`, reflecting the 1:N relationship. This structural hierarchy provides clear ownership and simplifies security rules related to forum posts. The `authorId` field within the Post document links back to the user who created the post. Topic Tags are included in each Post. This allows filtering posts by category. AI Summaries are stored in the `/ai_summaries` collection and include `sourceId` and `sourceType` fields to reference the original content (e.g., a Post or Activity).\n\nActivities:\n- Activities are stored in the `/activities` collection. AI Summaries are stored in the `/ai_summaries` collection and include `sourceId` and `sourceType` fields to reference the original content (e.g., a Post or Activity).\n\nUsers:\n- User data is stored in `/users/{userId}` using path-based ownership, simplifying security rules.\n\nAuthorization Independence (Denormalization):\n- The design achieves authorization independence primarily through path-based ownership for user-owned data. Specifically, the relationship between vendors and their listings is managed through a nested structure: `/vendors/{vendorId}/listings/{listingId}`. This eliminates the need for `get()` calls in security rules to validate vendor ownership of a listing, ensuring atomic operations and enhanced security.\n\nQAPs (Rules are Not Filters):\n- Segregation: Different types of data are stored in separate collections (e.g., vendors, listings, forums, posts, activities, users, ai_summaries), which allows security rules to be tailored to each type of data. This simplifies list operations, as the rules only need to apply to a homogeneous data set.\n"
+  }
+}
