@@ -14,12 +14,15 @@ export function Footer() {
               Suburbmates &copy; {currentYear}
             </p>
           </div>
-          <nav className="flex gap-4 text-sm text-muted-foreground">
+          <nav className="flex gap-4 text-sm text-muted-foreground flex-wrap justify-center">
             <Link href="/privacy" className="hover:text-primary transition-colors">
               Privacy Policy
             </Link>
             <Link href="/terms" className="hover:text-primary transition-colors">
               Terms of Service
+            </Link>
+            <Link href="/accessibility" className="hover:text-primary transition-colors">
+              Accessibility
             </Link>
           </nav>
         </div>
