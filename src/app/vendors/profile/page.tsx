@@ -22,16 +22,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function VendorProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [listingToDelete, setListingToDelete] = useState<string | null>(null);
+  const [listingToDelete, setListingToDelete] = useState<Listing | null>(null);
 
   // Redirect if not logged in
   if (!isUserLoading && !user) {
@@ -59,24 +59,14 @@ export default function VendorProfilePage() {
 
   const handleDeleteListing = async () => {
     if (!listingToDelete || !user || !firestore) return;
-
-    try {
-      const listingRef = doc(firestore, `vendors/${user.uid}/listings`, listingToDelete);
-      await deleteDoc(listingRef);
-      toast({
-        title: 'Listing Deleted',
-        description: 'The listing has been successfully removed.',
-      });
-    } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not delete the listing. Please try again.',
-      });
-      console.error("Error deleting listing: ", error);
-    } finally {
-        setListingToDelete(null);
-    }
+    const listingRef = doc(firestore, `vendors/${user.uid}/listings`, listingToDelete.id);
+    deleteDocumentNonBlocking(listingRef);
+    
+    toast({
+      title: 'Listing Deleted',
+      description: `"${listingToDelete.listingName}" has been removed.`,
+    });
+    setListingToDelete(null);
   };
 
 
@@ -175,32 +165,19 @@ export default function VendorProfilePage() {
                                 </div>
                             </CardContent>
                             <CardFooter className="flex gap-2">
-                                 <Button variant="outline" size="sm" disabled>
-                                    <Edit className="mr-2 h-4 w-4"/>
-                                    Edit
+                                 <Button variant="outline" size="sm" asChild>
+                                    <Link href={`/vendors/profile/edit-listing/${listing.id}`}>
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        Edit
+                                    </Link>
                                 </Button>
                                  <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="sm">
+                                    <Button variant="destructive" size="sm" onClick={() => setListingToDelete(listing)}>
                                       <Trash2 className="mr-2 h-4 w-4" />
                                       Delete
                                     </Button>
                                   </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete your
-                                        listing from our servers.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteListing(listing.id)}>
-                                        Continue
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
                                 </AlertDialog>
                             </CardFooter>
                         </Card>
@@ -222,6 +199,23 @@ export default function VendorProfilePage() {
             </Card>
         </div>
       </div>
+      
+       <AlertDialog open={!!listingToDelete} onOpenChange={(open) => !open && setListingToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the listing for "{listingToDelete?.listingName}" from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteListing}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }
