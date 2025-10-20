@@ -7,16 +7,31 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Vendor, Listing } from '@/lib/types';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, deleteDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ListPlus, Tag, Truck, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
 
 export default function VendorProfilePage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [listingToDelete, setListingToDelete] = useState<string | null>(null);
 
   // Redirect if not logged in
   if (!isUserLoading && !user) {
@@ -41,6 +56,28 @@ export default function VendorProfilePage() {
   );
   const { data: listings, isLoading: areListingsLoading } =
     useCollection<Listing>(listingsQuery);
+
+  const handleDeleteListing = async () => {
+    if (!listingToDelete || !user || !firestore) return;
+
+    try {
+      const listingRef = doc(firestore, `vendors/${user.uid}/listings`, listingToDelete);
+      await deleteDoc(listingRef);
+      toast({
+        title: 'Listing Deleted',
+        description: 'The listing has been successfully removed.',
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not delete the listing. Please try again.',
+      });
+      console.error("Error deleting listing: ", error);
+    } finally {
+        setListingToDelete(null);
+    }
+  };
 
 
   if (isUserLoading || isVendorLoading) {
@@ -142,10 +179,29 @@ export default function VendorProfilePage() {
                                     <Edit className="mr-2 h-4 w-4"/>
                                     Edit
                                 </Button>
-                                 <Button variant="destructive" size="sm" disabled>
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    Delete
-                                </Button>
+                                 <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your
+                                        listing from our servers.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteListing(listing.id)}>
+                                        Continue
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                             </CardFooter>
                         </Card>
                         ))}
