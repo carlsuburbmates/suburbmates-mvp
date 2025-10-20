@@ -141,7 +141,7 @@ export default function VendorsPage() {
                             <span className="text-muted-foreground">(No reviews)</span>
                         </div>
                          <Button variant="secondary" size="sm" asChild>
-                            <Link href="#">View Profile</Link>
+                            <Link href={`/vendors/${vendor.id}`}>View Profile</Link>
                         </Button>
                     </div>
                 </CardContent>
