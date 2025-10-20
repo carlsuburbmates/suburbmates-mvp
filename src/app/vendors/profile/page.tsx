@@ -117,12 +117,20 @@ export default function VendorProfilePage() {
       <div className="container mx-auto px-4 pb-16">
         <div className="grid gap-8">
             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">{vendor.businessName}</CardTitle>
-                    <CardDescription>{vendor.email}</CardDescription>
+                <CardHeader className="flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="font-headline">{vendor.businessName}</CardTitle>
+                        <CardDescription>{vendor.email}</CardDescription>
+                    </div>
+                     <Button asChild variant="outline">
+                        <Link href="/vendors/profile/edit">
+                           <Edit className="mr-2 h-4 w-4"/>
+                           Edit Profile
+                        </Link>
+                    </Button>
                 </CardHeader>
                  <CardContent>
-                   <Button asChild variant="outline">
+                   <Button asChild variant="secondary">
                         <Link href={`/vendors/${user?.uid}`}>View Public Profile</Link>
                     </Button>
                 </CardContent>
