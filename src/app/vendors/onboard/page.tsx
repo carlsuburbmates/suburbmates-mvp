@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CreditCard, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -39,6 +40,8 @@ const formSchema = z.object({
 
 export default function OnboardPage() {
     const [step, setStep] = useState(1);
+    const { toast } = useToast();
+    const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,8 +64,10 @@ export default function OnboardPage() {
   function handleStripeConnect() {
      toast({
       title: "Redirecting to Stripe...",
-      description: "You are being securely redirected to Stripe to connect your account.",
+      description: "You are being securely redirected to Stripe to connect your account. This is a simulation.",
     });
+    // In a real app, you would redirect to Stripe. Here we'll just move to the next step.
+    router.push("/vendors/onboard/listing");
   }
 
   return (
@@ -176,7 +181,7 @@ export default function OnboardPage() {
                         </p>
                         <Button className="mt-6" size="lg" onClick={handleStripeConnect}>
                             <CreditCard className="mr-2 h-5 w-5"/>
-                            Connect with Stripe
+                            Connect with Stripe & Create Listing
                         </Button>
                     </div>
                      <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
