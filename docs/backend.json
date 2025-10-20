@@ -19,6 +19,15 @@
           "description": "Contact email address for the vendor.",
           "format": "email"
         },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number for the vendor."
+        },
+        "website": {
+          "type": "string",
+          "description": "The vendor's business website URL.",
+          "format": "uri"
+        },
         "stripeAccountId": {
           "type": "string",
           "description": "Stripe account ID associated with the vendor, populated after successful hand-off."

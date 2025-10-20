@@ -3,11 +3,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { CreditCard, CheckCircle2 } from 'lucide-react';
+import { CreditCard, CheckCircle2, Phone, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -46,6 +46,8 @@ const formSchema = z.object({
     ),
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
+  phone: z.string().optional(),
+  website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   consent: z.boolean().refine(val => val === true, {
     message: 'You must agree to the terms and conditions to continue.',
   }),
@@ -65,6 +67,8 @@ export default function OnboardPage() {
       abn: '',
       email: '',
       password: '',
+      phone: '',
+      website: '',
       consent: false,
     },
   });
@@ -85,6 +89,8 @@ export default function OnboardPage() {
         businessName: values.businessName,
         abn: values.abn,
         email: values.email,
+        phone: values.phone || '',
+        website: values.website || '',
       };
 
       // Use non-blocking write to Firestore
@@ -146,7 +152,7 @@ export default function OnboardPage() {
                     <CheckCircle2 className="w-5 h-5 mr-2 text-muted" />
                     <span>Step 2: Connect Payments</span>
                   </div>
-
+                  
                   <FormField
                     control={form.control}
                     name="businessName"
@@ -180,7 +186,7 @@ export default function OnboardPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
+                    <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
@@ -193,11 +199,14 @@ export default function OnboardPage() {
                             {...field}
                           />
                         </FormControl>
+                         <FormDescription>
+                          This email will be used for your account login.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
+                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
@@ -213,6 +222,42 @@ export default function OnboardPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Phone (Optional)</FormLabel>
+                           <FormControl>
+                             <div className="relative">
+                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="0412 345 678" {...field} className="pl-8"/>
+                             </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website (Optional)</FormLabel>
+                           <FormControl>
+                             <div className="relative">
+                               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="https://your-business.com.au" {...field} className="pl-8"/>
+                             </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                 
                   <FormField
                     control={form.control}
                     name="consent"
