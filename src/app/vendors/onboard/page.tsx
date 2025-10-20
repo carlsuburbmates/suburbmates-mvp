@@ -93,7 +93,7 @@ export default function OnboardPage() {
   });
 
   if (user) {
-    router.push('/vendors/profile');
+    router.push('/dashboard/vendor');
     return null;
   }
 
@@ -142,7 +142,7 @@ export default function OnboardPage() {
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-      router.push('/vendors/profile');
+      router.push('/dashboard/vendor');
     } catch (error: any) {
       console.error('Login Error:', error);
       toast({

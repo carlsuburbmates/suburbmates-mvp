@@ -70,10 +70,10 @@ export function Header() {
           ))}
           {user && (
              <Link
-              href="/vendors/profile"
+              href="/dashboard/vendor"
               className={cn(
                 'transition-colors hover:text-foreground/80',
-                pathname === '/vendors/profile'
+                pathname?.startsWith('/dashboard')
                   ? 'text-foreground font-semibold'
                   : 'text-foreground/60'
               )}
@@ -136,10 +136,10 @@ export function Header() {
                   ))}
                    {user && (
                     <Link
-                      href="/vendors/profile"
+                      href="/dashboard/vendor"
                       className={cn(
                         'text-lg',
-                        pathname === '/vendors/profile'
+                        pathname?.startsWith('/dashboard')
                           ? 'text-primary font-bold'
                           : 'text-muted-foreground'
                       )}

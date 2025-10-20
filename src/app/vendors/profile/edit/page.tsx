@@ -90,7 +90,7 @@ export default function EditProfilePage() {
       description: 'Your business details have been saved.',
     });
     
-    router.push('/vendors/profile');
+    router.push('/dashboard/vendor');
   }
 
   if (isLoading) {
@@ -126,7 +126,7 @@ export default function EditProfilePage() {
                 description="We couldn't find your profile."
             />
              <div className="container mx-auto px-4 pb-16 text-center">
-                <Button onClick={() => router.push('/vendors/profile')}>Return to Dashboard</Button>
+                <Button onClick={() => router.push('/dashboard/vendor')}>Return to Dashboard</Button>
             </div>
         </>
     );
@@ -215,7 +215,7 @@ export default function EditProfilePage() {
                     type="button"
                     variant="secondary"
                     className="w-full sm:w-auto"
-                    onClick={() => router.push('/vendors/profile')}
+                    onClick={() => router.push('/dashboard/vendor')}
                   >
                     Cancel
                   </Button>
