@@ -1,9 +1,12 @@
+
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
 import { Star, MapPin } from "lucide-react";
+import { collection } from "firebase/firestore";
 
 import { PageHeader } from "@/components/page-header";
-import { vendors } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import {
   Card,
@@ -22,10 +25,18 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Vendor } from "@/lib/types";
+
 
 const mapImage = PlaceHolderImages.find((p) => p.id === "vendor-map");
 
 export default function VendorsPage() {
+  const firestore = useFirestore();
+  const vendorsQuery = useMemoFirebase(() => collection(firestore, 'vendors'), [firestore]);
+  const { data: vendors, isLoading } = useCollection<Vendor>(vendorsQuery);
+
   return (
     <div>
       <PageHeader
@@ -55,6 +66,8 @@ export default function VendorsPage() {
                       <SelectItem value="cafe">Cafe</SelectItem>
                       <SelectItem value="plumbing">Plumbing</SelectItem>
                       <SelectItem value="retail">Retail</SelectItem>
+                       <SelectItem value="bakery">Bakery</SelectItem>
+                       <SelectItem value="services">Professional Services</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -75,14 +88,29 @@ export default function VendorsPage() {
                     </div>
                   </div>
                 </div>
-                <Button className="w-full">Apply Filters</Button>
+                <Button className="w-full" disabled>Apply Filters</Button>
               </CardContent>
             </Card>
           </aside>
 
           <main className="lg:col-span-3 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {vendors.map((vendor) => {
-              const vendorImage = PlaceHolderImages.find(p => p.id === vendor.imageId);
+             {isLoading &&
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}>
+                  <CardHeader className="p-0">
+                    <Skeleton className="h-48 w-full rounded-t-lg" />
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <Skeleton className="h-10 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+
+            {vendors?.map((vendor) => {
+              // Note: imageId, rating, reviews are not in the Vendor schema yet
+              const vendorImage = PlaceHolderImages.find(p => p.id === 'vendor-cafe'); 
               return (
               <Card key={vendor.id} className="flex flex-col">
                 <CardHeader className="p-0">
@@ -90,7 +118,7 @@ export default function VendorsPage() {
                     {vendorImage && (
                        <Image
                         src={vendorImage.imageUrl}
-                        alt={vendor.name}
+                        alt={vendor.businessName}
                         fill
                         className="object-cover rounded-t-lg"
                         data-ai-hint={vendorImage.imageHint}
@@ -100,14 +128,17 @@ export default function VendorsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 flex-grow flex flex-col">
-                    <h3 className="font-bold font-headline text-lg">{vendor.name}</h3>
-                    <p className="text-sm text-muted-foreground">{vendor.category}</p>
-                    <p className="text-sm text-muted-foreground mt-2 flex-grow">{vendor.description}</p>
+                    <h3 className="font-bold font-headline text-lg">{vendor.businessName}</h3>
+                    <p className="text-sm text-muted-foreground">{vendor.abn}</p>
+                    <div className="text-sm text-muted-foreground mt-2 flex-grow">
+                        {vendor.website && <p><Link href={vendor.website} target="_blank" className="hover:text-primary underline">Website</Link></p>}
+                        {vendor.phone && <p>{vendor.phone}</p>}
+                    </div>
                     <div className="flex items-center justify-between mt-4 text-sm">
                         <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                            <span className="font-bold">{vendor.rating}</span>
-                            <span className="text-muted-foreground">({vendor.reviews} reviews)</span>
+                            <span className="font-bold">N/A</span>
+                            <span className="text-muted-foreground">(No reviews)</span>
                         </div>
                          <Button variant="secondary" size="sm" asChild>
                             <Link href="#">View Profile</Link>
@@ -116,6 +147,19 @@ export default function VendorsPage() {
                 </CardContent>
               </Card>
             )})}
+            
+             {!isLoading && vendors?.length === 0 && (
+                <Card className="md:col-span-2 xl:col-span-3 text-center p-8">
+                  <CardTitle>No Vendors Yet</CardTitle>
+                  <CardDescription>
+                    Be the first to join the marketplace!
+                  </CardDescription>
+                  <Button asChild className="mt-4">
+                    <Link href="/vendors/onboard">Become a Vendor</Link>
+                  </Button>
+                </Card>
+              )}
+
              <Card className="md:col-span-2 xl:col-span-3 flex flex-col md:flex-row items-center gap-6 p-6 bg-accent/30">
                 <div className="relative w-full md:w-1/3 h-48 md:h-full rounded-lg overflow-hidden">
                     {mapImage && <Image src={mapImage.imageUrl} alt={mapImage.description} fill className="object-cover" data-ai-hint={mapImage.imageHint} />}

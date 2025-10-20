@@ -1,3 +1,4 @@
+
 export type NavItem = {
   title: string;
   href: string;
@@ -6,13 +7,23 @@ export type NavItem = {
 
 export type Vendor = {
   id: string;
-  name: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  description: string;
-  imageId: string;
+  businessName: string;
+  abn: string;
+  email: string;
+  phone?: string;
+  website?: string;
+  stripeAccountId?: string;
 };
+
+export type Listing = {
+    id: string;
+    vendorId: string;
+    listingName: string;
+    description: string;
+    price: number;
+    category: string;
+    imageUrl?: string;
+}
 
 export type ForumPost = {
   id: string;
