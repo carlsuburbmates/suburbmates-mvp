@@ -1,21 +1,14 @@
 
-"use client";
+'use client';
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import {
-  ListPlus,
-  DollarSign,
-  FileImage,
-  CheckCircle2,
-} from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { addDoc, collection } from "firebase/firestore";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { ListPlus, DollarSign, FileImage } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { collection, addDoc } from 'firebase/firestore';
 
-
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -24,77 +17,88 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/page-header";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { PageHeader } from '@/components/page-header';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser } from '@/firebase';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const listingFormSchema = z.object({
   listingName: z
     .string()
-    .min(3, "Listing name must be at least 3 characters."),
-  category: z.string().min(1, "Please select a category."),
-  price: z.coerce.number().positive("Price must be a positive number."),
+    .min(3, 'Listing name must be at least 3 characters.'),
+  category: z.string().min(1, 'Please select a category.'),
+  price: z.coerce.number().positive('Price must be a positive number.'),
   description: z
     .string()
-    .min(10, "Description must be at least 10 characters.")
-    .max(500, "Description cannot exceed 500 characters."),
+    .min(10, 'Description must be at least 10 characters.')
+    .max(500, 'Description cannot exceed 500 characters.'),
   image: z.any().optional(),
 });
 
 export default function VendorListingPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof listingFormSchema>>({
     resolver: zodResolver(listingFormSchema),
     defaultValues: {
-      listingName: "",
-      category: "",
+      listingName: '',
+      category: '',
       price: 0,
-      description: "",
+      description: '',
     },
   });
 
   async function onSubmit(values: z.infer<typeof listingFormSchema>) {
-    // In a real app, vendorId would come from the authenticated user
-    const vendorId = "temp-vendor-id";
-    const listingsCollectionRef = collection(firestore, `vendors/${vendorId}/listings`);
-    
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Not Authenticated',
+        description: 'You must be logged in to create a listing.',
+      });
+      return;
+    }
+
+    const listingsCollectionRef = collection(
+      firestore,
+      `vendors/${user.uid}/listings`
+    );
+
     const newListing = {
-      vendorId: vendorId,
+      vendorId: user.uid,
       ...values,
-      imageUrl: "" // Image uploads are not yet implemented
+      imageUrl: '', // Image uploads are not yet implemented
     };
-    
-    // We use a non-blocking update to save the data
+
     addDocumentNonBlocking(listingsCollectionRef, newListing);
-    
+
     toast({
-      title: "Listing Created!",
-      description: "Your new product or service has been added to the marketplace.",
+      title: 'Listing Created!',
+      description:
+        'Your new product or service has been added to the marketplace.',
     });
     
-    // Optionally redirect after successful submission
-    router.push('/vendors');
+    // Reset the form for another entry
+    form.reset();
   }
 
   return (
@@ -111,7 +115,7 @@ export default function VendorListingPage() {
             </CardTitle>
             <CardDescription>
               Describe the product or service you want to offer to the
-              community.
+              community. You can add more listings later from your profile.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -221,10 +225,10 @@ export default function VendorListingPage() {
                       <FormControl>
                         <div className="flex items-center gap-4">
                           <Input type="file" className="flex-1" disabled />
-                           <Button type="button" variant="outline" disabled>
-                               <FileImage className="mr-2 h-4 w-4"/>
-                                Choose File
-                            </Button>
+                          <Button type="button" variant="outline" disabled>
+                            <FileImage className="mr-2 h-4 w-4" />
+                            Choose File
+                          </Button>
                         </div>
                       </FormControl>
                       <FormDescription>
@@ -238,7 +242,15 @@ export default function VendorListingPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button type="submit" className="w-full sm:w-auto">
                     <ListPlus className="mr-2 h-4 w-4" />
-                    Create & Finish
+                    Create Listing
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                    onClick={() => router.push('/vendors')}
+                  >
+                    Finish & View Marketplace
                   </Button>
                 </div>
               </form>
