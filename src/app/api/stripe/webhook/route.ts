@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -22,7 +21,6 @@ if (!getApps().length) {
 }
 
 const db = getFirestore(app);
-const authAdmin = getAuth(app);
 
 
 export async function POST(request: Request) {
@@ -70,30 +68,20 @@ export async function POST(request: Request) {
     case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
-        const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+        const paymentIntent = session.payment_intent;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntentId) {
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntent) {
             console.log('Checkout session completed, creating order...');
             try {
-                let customerName = 'Local Shopper';
-                if(metadata.customerId) {
-                    try {
-                        const userRecord = await authAdmin.getUser(metadata.customerId);
-                        customerName = userRecord.displayName || customerName;
-                    } catch (e) {
-                        console.warn(`Could not fetch user ${metadata.customerId} to get display name.`, e)
-                    }
-                }
-
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
                 const newOrder = {
                     listingName: metadata.listingName,
-                    customerName: customerName,
+                    customerName: 'Local Shopper', // Placeholder
                     customerId: metadata.customerId,
                     date: new Date().toISOString(),
                     amount: (session.amount_total || 0) / 100, // Convert cents to dollars
                     status: 'Completed' as const,
-                    paymentIntentId: paymentIntentId,
+                    paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id,
                 };
                 await addDoc(ordersCollectionRef, newOrder);
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
@@ -158,3 +146,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+    
