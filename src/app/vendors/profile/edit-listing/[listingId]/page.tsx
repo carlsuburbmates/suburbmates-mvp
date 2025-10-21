@@ -4,10 +4,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { FileImage, DollarSign, Save } from 'lucide-react';
+import { FileImage, DollarSign, Save, Loader2 } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -42,6 +42,7 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { Listing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { uploadImage } from '@/ai/flows/upload-image';
 
 const listingFormSchema = z.object({
   listingName: z
@@ -59,6 +60,16 @@ const listingFormSchema = z.object({
   }),
 });
 
+// Helper function to convert file to data URI
+const fileToDataUri = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+
 export default function EditListingPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -66,6 +77,7 @@ export default function EditListingPage() {
   const router = useRouter();
   const params = useParams();
   const { listingId } = params;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const listingRef = useMemoFirebase(
     () =>
@@ -87,10 +99,18 @@ export default function EditListingPage() {
       deliveryMethod: 'Pickup Only',
     },
   });
+  
+  const imageRef = form.register('image');
 
   useEffect(() => {
     if (listing) {
-      form.reset(listing);
+      form.reset({
+        listingName: listing.listingName,
+        category: listing.category,
+        price: listing.price,
+        description: listing.description,
+        deliveryMethod: listing.deliveryMethod
+      });
     }
   }, [listing, form]);
 
@@ -103,20 +123,46 @@ export default function EditListingPage() {
       });
       return;
     }
+    
+    setIsSubmitting(true);
+    let imageUrl = listing?.imageUrl; // Keep old image by default
 
-    const updatedListing = {
-        ...values,
-        imageUrl: listing?.imageUrl || 'https://picsum.photos/seed/1/400/300'
+    try {
+        if (values.image && values.image.length > 0) {
+            const file = values.image[0];
+            const fileDataUri = await fileToDataUri(file);
+
+            const uploadResult = await uploadImage({
+                fileDataUri,
+                filePath: `listings/${user.uid}/${Date.now()}_${file.name}`,
+            });
+            imageUrl = uploadResult.publicUrl;
+        }
+
+        const updatedListing = {
+            ...values,
+            imageUrl,
+        }
+        
+        updateDocumentNonBlocking(listingRef, updatedListing);
+
+        toast({
+          title: 'Listing Updated!',
+          description: 'Your changes have been saved successfully.',
+        });
+        
+        router.push('/dashboard/vendor');
+
+    } catch (error) {
+        console.error("Error updating listing:", error);
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Could not upload image or update listing. Please try again.",
+        });
+    } finally {
+        setIsSubmitting(false);
     }
-    
-    updateDocumentNonBlocking(listingRef, updatedListing);
-
-    toast({
-      title: 'Listing Updated!',
-      description: 'Your changes have been saved successfully.',
-    });
-    
-    router.push('/dashboard/vendor');
   }
 
   if (isLoading) {
@@ -244,6 +290,7 @@ export default function EditListingPage() {
                               type="number"
                               placeholder="0.00"
                               className="pl-8"
+                              step="0.01"
                               {...field}
                             />
                           </div>
@@ -312,18 +359,12 @@ export default function EditListingPage() {
                   name="image"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Upload Image</FormLabel>
+                      <FormLabel>Upload New Image (Optional)</FormLabel>
                       <FormControl>
-                        <div className="flex items-center gap-4">
-                          <Input type="file" className="flex-1" />
-                          <Button type="button" variant="outline">
-                            <FileImage className="mr-2 h-4 w-4" />
-                            Choose File
-                          </Button>
-                        </div>
+                         <Input type="file" {...imageRef} />
                       </FormControl>
                       <FormDescription>
-                        Image uploads are coming soon. For now, a placeholder will be used.
+                        Upload a new image to replace the existing one. Max 5MB.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -332,15 +373,20 @@ export default function EditListingPage() {
 
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button type="submit" className="w-full sm:w-auto">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                     {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
                   </Button>
                   <Button
                     type="button"
                     variant="secondary"
                     className="w-full sm:w-auto"
                     onClick={() => router.push('/dashboard/vendor')}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>

@@ -4,9 +4,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ListPlus, DollarSign, FileImage } from 'lucide-react';
+import { ListPlus, DollarSign, FileImage, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
+import React, { useState } from 'react';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { uploadImage } from '@/ai/flows/upload-image';
 
 const listingFormSchema = z.object({
   listingName: z
@@ -50,17 +53,35 @@ const listingFormSchema = z.object({
     .string()
     .min(10, 'Description must be at least 10 characters.')
     .max(500, 'Description cannot exceed 500 characters.'),
-  image: z.any().optional(),
+  image: z
+    .any()
+    .refine((files) => files?.length > 0, 'Image is required.')
+    .refine((files) => files?.[0]?.size <= 5000000, `Max file size is 5MB.`)
+    .refine(
+      (files) => ['image/jpeg', 'image/png', 'image/webp'].includes(files?.[0]?.type),
+      'Only .jpg, .png, and .webp formats are supported.'
+    ),
   deliveryMethod: z.enum(['Pickup Only', 'Local Delivery Available'], {
     required_error: 'You need to select a delivery method.',
   }),
 });
+
+// Helper function to convert file to data URI
+const fileToDataUri = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 
 export default function VendorListingPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof listingFormSchema>>({
     resolver: zodResolver(listingFormSchema),
@@ -73,6 +94,8 @@ export default function VendorListingPage() {
     },
   });
 
+  const imageRef = form.register('image');
+
   async function onSubmit(values: z.infer<typeof listingFormSchema>) {
     if (!user) {
       toast({
@@ -82,30 +105,57 @@ export default function VendorListingPage() {
       });
       return;
     }
-
-    const listingsCollectionRef = collection(
-      firestore,
-      `vendors/${user.uid}/listings`
-    );
-
-    const newListing = {
-      vendorId: user.uid,
-      ...values,
-      // For now, we'll use a placeholder image.
-      // In a real app, you would upload the image and get the URL.
-      imageUrl: 'https://picsum.photos/seed/1/400/300',
-    };
-
-    addDocumentNonBlocking(listingsCollectionRef, newListing);
-
-    toast({
-      title: 'Listing Created!',
-      description:
-        'Your new product or service has been added to the marketplace.',
-    });
     
-    // Reset the form for another entry
-    form.reset();
+    setIsSubmitting(true);
+    
+    let imageUrl = 'https://picsum.photos/seed/1/400/300'; // Default placeholder
+
+    try {
+        const file = values.image[0];
+        const fileDataUri = await fileToDataUri(file);
+
+        const uploadResult = await uploadImage({
+            fileDataUri,
+            filePath: `listings/${user.uid}/${Date.now()}_${file.name}`,
+        });
+
+        imageUrl = uploadResult.publicUrl;
+
+        const listingsCollectionRef = collection(
+          firestore,
+          `vendors/${user.uid}/listings`
+        );
+
+        const newListing = {
+          vendorId: user.uid,
+          listingName: values.listingName,
+          category: values.category,
+          price: values.price,
+          description: values.description,
+          deliveryMethod: values.deliveryMethod,
+          imageUrl,
+        };
+
+        addDocumentNonBlocking(listingsCollectionRef, newListing);
+
+        toast({
+          title: 'Listing Created!',
+          description:
+            'Your new product or service has been added to the marketplace.',
+        });
+        
+        form.reset();
+
+    } catch (error) {
+        console.error("Error creating listing:", error);
+        toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not upload image or create listing. Please try again.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
@@ -195,6 +245,7 @@ export default function VendorListingPage() {
                               type="number"
                               placeholder="0.00"
                               className="pl-8"
+                              step="0.01"
                               {...field}
                             />
                           </div>
@@ -265,16 +316,10 @@ export default function VendorListingPage() {
                     <FormItem>
                       <FormLabel>Upload Image</FormLabel>
                       <FormControl>
-                        <div className="flex items-center gap-4">
-                          <Input type="file" className="flex-1" />
-                          <Button type="button" variant="outline">
-                            <FileImage className="mr-2 h-4 w-4" />
-                            Choose File
-                          </Button>
-                        </div>
+                         <Input type="file" {...imageRef} />
                       </FormControl>
                       <FormDescription>
-                        Image uploads are coming soon. For now, a placeholder will be used.
+                        Upload a clear image of your product or service. Max 5MB.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -282,17 +327,22 @@ export default function VendorListingPage() {
                 />
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button type="submit" className="w-full sm:w-auto">
-                    <ListPlus className="mr-2 h-4 w-4" />
-                    Create Listing
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ListPlus className="mr-2 h-4 w-4" />
+                    )}
+                    {isSubmitting ? 'Creating...' : 'Create Listing'}
                   </Button>
                   <Button
                     type="button"
                     variant="secondary"
                     className="w-full sm:w-auto"
-                    onClick={() => router.push('/vendors')}
+                    onClick={() => router.push('/dashboard/vendor')}
+                    disabled={isSubmitting}
                   >
-                    Finish & View Marketplace
+                    Finish & View Dashboard
                   </Button>
                 </div>
               </form>
