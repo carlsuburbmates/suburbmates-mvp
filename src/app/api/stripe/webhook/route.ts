@@ -45,21 +45,22 @@ export async function POST(request: Request) {
   switch (event.type) {
     case 'account.updated':
       const account = event.data.object as Stripe.Account;
-      
-      if (account.charges_enabled && account.details_submitted) {
-        const firebaseUid = account.metadata?.firebase_uid;
-        if (firebaseUid) {
-          console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} is now enabled.`);
-          try {
-            const vendorRef = doc(db, 'vendors', firebaseUid);
-            await updateDoc(vendorRef, {
-              stripeAccountId: account.id,
-              paymentsEnabled: true,
-            });
-            console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID.`);
-          } catch (error) {
-             console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
-          }
+      const firebaseUid = account.metadata?.firebase_uid;
+
+      if (firebaseUid) {
+        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
+        // This is where an admin approval flow would begin.
+        // We save the Stripe Account ID, but we DO NOT automatically enable payments.
+        // An admin must manually set `paymentsEnabled` to true in the vendor document.
+        try {
+          const vendorRef = doc(db, 'vendors', firebaseUid);
+          await updateDoc(vendorRef, {
+            stripeAccountId: account.id,
+            // REMOVED: paymentsEnabled: account.charges_enabled && account.details_submitted
+          });
+          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID. Awaiting admin approval.`);
+        } catch (error) {
+            console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
         }
       }
       break;
@@ -67,18 +68,19 @@ export async function POST(request: Request) {
     case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
+        const paymentIntent = session.payment_intent;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && session.payment_intent) {
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntent) {
             console.log('Checkout session completed, creating order...');
             try {
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
                 const newOrder = {
                     listingName: metadata.listingName,
                     customerName: 'Local Shopper', // Placeholder
-                    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                    date: new Date().toISOString(),
                     amount: (session.amount_total || 0) / 100, // Convert cents to dollars
                     status: 'Completed' as const,
-                    paymentIntentId: session.payment_intent,
+                    paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id,
                 };
                 await addDoc(ordersCollectionRef, newOrder);
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
@@ -91,15 +93,15 @@ export async function POST(request: Request) {
 
     case 'charge.refunded':
         const charge = event.data.object as Stripe.Charge;
-        const paymentIntentId = charge.payment_intent;
+        const chargePaymentIntentId = charge.payment_intent;
 
-        if (typeof paymentIntentId !== 'string') {
+        if (typeof chargePaymentIntentId !== 'string') {
             console.log('Charge refunded but no payment_intent ID found.');
             break;
         }
 
         try {
-            console.log(`Processing refund for payment intent: ${paymentIntentId}`);
+            console.log(`Processing refund for payment intent: ${chargePaymentIntentId}`);
             const q = query(
               collection(db, 'vendors'), 
             );
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
 
             for (const vendorDoc of vendorsSnapshot.docs) {
                 const ordersRef = collection(db, `vendors/${vendorDoc.id}/orders`);
-                const orderQuery = query(ordersRef, where('paymentIntentId', '==', paymentIntentId));
+                const orderQuery = query(ordersRef, where('paymentIntentId', '==', chargePaymentIntentId));
                 const orderSnapshot = await getDocs(orderQuery);
 
                 if (!orderSnapshot.empty) {
@@ -120,7 +122,7 @@ export async function POST(request: Request) {
                         orderFound = true;
                     });
                     // Break the outer loop once we found the order(s)
-                    break; 
+                    if(orderFound) break; 
                 }
             }
             
@@ -128,11 +130,11 @@ export async function POST(request: Request) {
                 await batch.commit();
                 console.log(`Successfully updated order status to Refunded.`);
             } else {
-                console.warn(`Could not find an order with paymentIntentId: ${paymentIntentId}`);
+                console.warn(`Could not find an order with paymentIntentId: ${chargePaymentIntentId}`);
             }
 
         } catch (error) {
-            console.error(`Failed to process refund for payment intent ${paymentIntentId}:`, error);
+            console.error(`Failed to process refund for payment intent ${chargePaymentIntentId}:`, error);
             return NextResponse.json({ error: 'Failed to update order for refund.' }, { status: 500 });
         }
         break;
