@@ -13,6 +13,7 @@ export type Vendor = {
   phone?: string;
   website?: string;
   stripeAccountId?: string;
+  paymentsEnabled?: boolean;
 };
 
 export type Listing = {

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { notFound, useRouter } from 'next/navigation';
+import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import type { Vendor, Listing } from '@/lib/types';
@@ -20,7 +20,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function VendorProfilePage({
   params,
@@ -29,8 +29,27 @@ export default function VendorProfilePage({
 }) {
   const firestore = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
+
+  // Display toast based on checkout status
+  useEffect(() => {
+    if (searchParams.get('checkout') === 'success') {
+      toast({
+        title: 'Purchase Successful!',
+        description: "Thank you for supporting a local business.",
+      });
+    }
+    if (searchParams.get('checkout') === 'cancel') {
+        toast({
+            variant: 'destructive',
+            title: 'Purchase Canceled',
+            description: 'Your order was not completed. You have not been charged.',
+        });
+    }
+  }, [searchParams, toast]);
+
 
   // Fetch Vendor Details
   const vendorRef = useMemoFirebase(
@@ -51,7 +70,7 @@ export default function VendorProfilePage({
     useCollection<Listing>(listingsQuery);
 
   const handlePurchase = async (listing: Listing) => {
-    if (!vendor || !vendor.stripeAccountId) {
+    if (!vendor || !vendor.stripeAccountId || !vendor.paymentsEnabled) {
       toast({
         variant: 'destructive',
         title: 'Vendor Not Ready for Payments',
@@ -188,7 +207,7 @@ export default function VendorProfilePage({
 
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.stripeAccountId || isRedirectingToListing}>
+                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
                        {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                        {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
                     </Button>
