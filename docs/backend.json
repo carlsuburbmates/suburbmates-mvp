@@ -86,7 +86,8 @@
         "description",
         "price",
         "category",
-        "deliveryMethod"
+        "deliveryMethod",
+        "imageUrl"
       ]
     },
     "Resident": {
@@ -149,12 +150,13 @@
       "type": "object",
       "description": "Represents a single post within a forum thread.",
       "properties": {
+        "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatarId": { "type": "string" },
         "timestamp": { "type": "string" },
         "content": { "type": "string" }
       },
-      "required": ["authorName", "timestamp", "content"]
+      "required": ["authorId", "authorName", "timestamp", "content"]
     },
     "CommunityEvent": {
       "$schema": "http://json-schema.org/draft-07/schema#",

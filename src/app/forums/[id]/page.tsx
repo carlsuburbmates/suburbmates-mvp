@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { MessageSquare, ArrowLeft, Building2 } from "lucide-react";
 import { collection, doc } from "firebase/firestore";
 
@@ -18,12 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DiscussionSummary } from "./discussion-summary";
 import { Separator } from "@/components/ui/separator";
-import { useDoc, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import type { ForumThread, ForumPost } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ForumReplyForm } from "./forum-reply-form";
 
 export default function ForumThreadPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const threadRef = useMemoFirebase(
     () => (firestore ? doc(firestore, "forumThreads", params.id) : null),
@@ -134,10 +135,18 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
         })}
       </div>
        <Separator className="my-8" />
-       <div className="text-center">
-        <Button disabled>Post a Reply</Button>
-        <p className="text-sm text-muted-foreground mt-2">Replying is coming soon.</p>
-       </div>
+       
+       {user ? (
+          <ForumReplyForm threadId={params.id} />
+       ) : (
+        <Card className="text-center p-6">
+          <CardTitle>Join the conversation</CardTitle>
+          <CardDescription className="mt-2">You must be logged in to post a reply.</CardDescription>
+          <Button asChild className="mt-4">
+            <Link href="/vendors/onboard">Login or Sign Up</Link>
+          </Button>
+        </Card>
+       )}
     </div>
   );
 }
