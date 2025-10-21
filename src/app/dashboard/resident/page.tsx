@@ -106,10 +106,10 @@ export default function ResidentDashboardPage() {
                       <CardTitle className="font-headline">{resident.displayName}</CardTitle>
                       <CardDescription>{resident.email}</CardDescription>
                   </div>
-                   <Button asChild variant="outline" disabled>
-                      <Link href="#">
+                   <Button asChild variant="outline">
+                      <Link href="/dashboard/resident/edit">
                          <Edit className="mr-2 h-4 w-4"/>
-                         Edit Profile (Soon)
+                         Edit Profile
                       </Link>
                   </Button>
               </CardHeader>
@@ -204,5 +204,3 @@ export default function ResidentDashboardPage() {
     </>
   );
 }
-
-    
