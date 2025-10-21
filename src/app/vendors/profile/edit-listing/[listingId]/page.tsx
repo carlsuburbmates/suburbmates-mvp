@@ -4,9 +4,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { ListPlus, DollarSign, FileImage, Save } from 'lucide-react';
+import { FileImage, DollarSign, Save } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import React, { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,7 @@ const listingFormSchema = z.object({
     .string()
     .min(10, 'Description must be at least 10 characters.')
     .max(500, 'Description cannot exceed 500 characters.'),
+   image: z.any().optional(),
   deliveryMethod: z.enum(['Pickup Only', 'Local Delivery Available'], {
     required_error: 'You need to select a delivery method.',
   }),
@@ -102,8 +103,13 @@ export default function EditListingPage() {
       });
       return;
     }
+
+    const updatedListing = {
+        ...values,
+        imageUrl: listing?.imageUrl || 'https://picsum.photos/seed/1/400/300'
+    }
     
-    updateDocumentNonBlocking(listingRef, values);
+    updateDocumentNonBlocking(listingRef, updatedListing);
 
     toast({
       title: 'Listing Updated!',
@@ -300,6 +306,30 @@ export default function EditListingPage() {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Upload Image</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-4">
+                          <Input type="file" className="flex-1" />
+                          <Button type="button" variant="outline">
+                            <FileImage className="mr-2 h-4 w-4" />
+                            Choose File
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Image uploads are coming soon. For now, a placeholder will be used.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
 
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button type="submit" className="w-full sm:w-auto">

@@ -91,7 +91,9 @@ export default function VendorListingPage() {
     const newListing = {
       vendorId: user.uid,
       ...values,
-      imageUrl: '', // Image uploads are not yet implemented
+      // For now, we'll use a placeholder image.
+      // In a real app, you would upload the image and get the URL.
+      imageUrl: 'https://picsum.photos/seed/1/400/300',
     };
 
     addDocumentNonBlocking(listingsCollectionRef, newListing);
@@ -264,15 +266,15 @@ export default function VendorListingPage() {
                       <FormLabel>Upload Image</FormLabel>
                       <FormControl>
                         <div className="flex items-center gap-4">
-                          <Input type="file" className="flex-1" disabled />
-                          <Button type="button" variant="outline" disabled>
+                          <Input type="file" className="flex-1" />
+                          <Button type="button" variant="outline">
                             <FileImage className="mr-2 h-4 w-4" />
                             Choose File
                           </Button>
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Image uploads are coming soon.
+                        Image uploads are coming soon. For now, a placeholder will be used.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

@@ -175,18 +175,17 @@ export default function VendorProfilePage({
         <h2 className="text-2xl font-bold font-headline mb-6">Our Offerings</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {areListingsLoading && Array.from({ length: 3 }).map((_, i) => (
-             <Card key={i}><CardHeader><Skeleton className="h-40 w-full" /></CardHeader><CardContent className="pt-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
+             <Card key={i}><CardHeader className="p-0"><Skeleton className="h-48 w-full rounded-t-lg" /></CardHeader><CardContent className="pt-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
           ))}
 
           {listings?.map((listing) => {
-            const listingImage = PlaceHolderImages.find(p => p.id === 'vendor-bookshop');
             const isRedirectingToListing = isRedirecting === listing.id;
             return (
               <Card key={listing.id}>
-                {listingImage &&
+                {listing.imageUrl &&
                     <CardHeader className="p-0">
                         <div className="relative h-48 w-full">
-                            <Image src={listingImage.imageUrl} alt={listing.listingName} fill className="object-cover rounded-t-lg" data-ai-hint={listingImage.imageHint} />
+                            <Image src={listing.imageUrl} alt={listing.listingName} fill className="object-cover rounded-t-lg" />
                         </div>
                     </CardHeader>
                 }
