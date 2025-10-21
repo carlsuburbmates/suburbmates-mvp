@@ -56,7 +56,7 @@ export async function POST(request: Request) {
           const vendorRef = doc(db, 'vendors', firebaseUid);
           await updateDoc(vendorRef, {
             stripeAccountId: account.id,
-            // REMOVED: paymentsEnabled: account.charges_enabled && account.details_submitted
+            // REMOVED: paymentsEnabled is now handled by an admin approval process.
           });
           console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID. Awaiting admin approval.`);
         } catch (error) {
