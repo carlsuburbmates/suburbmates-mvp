@@ -63,7 +63,7 @@
     "Listing": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Listing",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a marketplace listing offered by a vendor.",
       "properties": {
         "vendorId": {
@@ -109,7 +109,7 @@
     "Resident": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Resident",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a resident user of the application.",
       "properties": {
         "uid": {
@@ -142,7 +142,7 @@
     "ForumThread": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Forum Thread",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a single discussion thread in the Civic Hub.",
       "properties": {
         "title": { "type": "string" },
@@ -167,7 +167,7 @@
     "ForumPost": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Forum Post",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a single post within a forum thread.",
       "properties": {
         "authorId": { "type": "string" },
@@ -181,7 +181,7 @@
     "CommunityEvent": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Community Event",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a local community event.",
       "properties": {
         "title": { "type": "string" },
@@ -196,11 +196,12 @@
     "Order": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Order",
-      "type": "object",
+      "type": "object-v2",
       "description": "Represents a customer order for a vendor's listing.",
       "properties": {
         "listingName": { "type": "string" },
         "customerName": { "type": "string" },
+        "customerId": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
         "amount": { "type": "number" },
         "status": {
@@ -306,3 +307,5 @@
     }
   }
 }
+
+    

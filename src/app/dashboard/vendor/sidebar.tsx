@@ -3,16 +3,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, List, CreditCard, ShoppingCart } from 'lucide-react';
+import { User, List, CreditCard, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-const navItems = [
+const vendorNavItems = [
   {
     title: 'Profile & Listings',
     href: '/dashboard/vendor',
-    icon: <User className="mr-2 h-4 w-4" />,
+    icon: <LayoutGrid className="mr-2 h-4 w-4" />,
   },
   {
     title: 'Orders',
@@ -26,8 +26,17 @@ const navItems = [
   },
 ];
 
-export function DashboardSidebar() {
+const residentNavItems = [
+    {
+        title: 'Dashboard',
+        href: '/dashboard/resident',
+        icon: <LayoutGrid className="mr-2 h-4 w-4" />,
+    }
+]
+
+export function DashboardSidebar({ isVendor }: { isVendor: boolean }) {
   const pathname = usePathname();
+  const navItems = isVendor ? vendorNavItems : residentNavItems;
 
   return (
     <Card className="sticky top-[140px]">
@@ -54,3 +63,5 @@ export function DashboardSidebar() {
     </Card>
   );
 }
+
+    

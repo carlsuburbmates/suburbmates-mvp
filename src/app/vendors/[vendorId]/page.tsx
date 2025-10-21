@@ -106,6 +106,10 @@ export default function VendorProfilePage({
 
 
   const handlePurchase = async (listing: Listing) => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Please log in to purchase an item.' });
+        return;
+    }
     if (!vendor || !vendor.stripeAccountId || !vendor.paymentsEnabled) {
       toast({
         variant: 'destructive',
@@ -129,7 +133,8 @@ export default function VendorProfilePage({
           },
           vendorStripeAccountId: vendor.stripeAccountId,
           vendorId: vendor.id,
-          listingId: listing.id
+          listingId: listing.id,
+          userId: user.uid,
         }),
       });
 
@@ -425,3 +430,5 @@ export default function VendorProfilePage({
     </div>
   );
 }
+
+    

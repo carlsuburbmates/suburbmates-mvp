@@ -77,6 +77,7 @@ export async function POST(request: Request) {
                 const newOrder = {
                     listingName: metadata.listingName,
                     customerName: 'Local Shopper', // Placeholder
+                    customerId: metadata.customerId,
                     date: new Date().toISOString(),
                     amount: (session.amount_total || 0) / 100, // Convert cents to dollars
                     status: 'Completed' as const,
@@ -145,3 +146,5 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+
+    

@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { auth } from 'firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -11,9 +12,9 @@ const PLATFORM_FEE_PERCENT = 0.10;
 
 export async function POST(request: Request) {
   try {
-    const { listing, vendorStripeAccountId, vendorId, listingId } = await request.json();
+    const { listing, vendorStripeAccountId, vendorId, listingId, userId } = await request.json();
 
-    if (!listing || !vendorStripeAccountId || !vendorId || !listingId) {
+    if (!listing || !vendorStripeAccountId || !vendorId || !listingId || !userId) {
       return NextResponse.json({ error: 'Missing required checkout information.' }, { status: 400 });
     }
 
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
             vendorId: vendorId,
             listingId: listingId,
             listingName: listing.listingName,
+            customerId: userId
         }
       },
        payment_method_options: {
@@ -67,3 +69,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+    

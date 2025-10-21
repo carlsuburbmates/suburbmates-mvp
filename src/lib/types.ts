@@ -68,6 +68,8 @@ export type Order = {
   id: string;
   listingName: string;
   customerName: string;
+  customerId?: string;
+  vendorId?: string;
   date: string;
   amount: number;
   status: 'Pending' | 'Completed' | 'Refunded';
@@ -82,3 +84,13 @@ export type Review = {
   comment: string;
   timestamp: string;
 };
+
+export type Resident = {
+    id: string;
+    uid: string;
+    email: string;
+    displayName: string;
+    suburb: string;
+}
+
+    
