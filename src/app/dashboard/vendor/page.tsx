@@ -6,12 +6,12 @@ import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Vendor, Listing } from '@/lib/types';
-import { doc, collection, deleteDoc } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ListPlus, Tag, Truck, Edit, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -33,11 +32,12 @@ export default function VendorDashboardPage() {
   const { toast } = useToast();
   const [listingToDelete, setListingToDelete] = useState<Listing | null>(null);
 
-  // Redirect if not logged in
-  if (!isUserLoading && !user) {
-    router.replace('/vendors/onboard');
-    return null;
-  }
+  useEffect(() => {
+    // Only redirect if loading is complete and there is definitively no user.
+    if (!isUserLoading && !user) {
+      router.replace('/vendors/onboard');
+    }
+  }, [user, isUserLoading, router]);
   
   // Fetch Vendor Details
   const vendorRef = useMemoFirebase(
@@ -89,6 +89,12 @@ export default function VendorDashboardPage() {
           </Card>
       </div>
     );
+  }
+  
+  // Do not render the main content if there's no user. 
+  // The useEffect above will handle the redirection.
+  if (!user) {
+    return null;
   }
 
   if (!vendor) {
@@ -166,9 +172,9 @@ export default function VendorDashboardPage() {
                                       Edit
                                   </Link>
                               </Button>
-                               <AlertDialog>
+                               <AlertDialog onOpenChange={() => setListingToDelete(listing)}>
                                 <AlertDialogTrigger asChild>
-                                   <Button variant="destructive" size="sm" onClick={() => setListingToDelete(listing)}>
+                                   <Button variant="destructive" size="sm">
                                      <Trash2 className="mr-2 h-4 w-4" />
                                      Delete
                                    </Button>
