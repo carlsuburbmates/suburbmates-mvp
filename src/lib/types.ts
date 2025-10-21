@@ -90,7 +90,6 @@ export type Resident = {
     uid: string;
     email: string;
     displayName: string;
-    suburb: string;
 }
 
     

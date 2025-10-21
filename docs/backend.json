@@ -128,10 +128,6 @@
         "displayName": {
           "type": "string",
           "description": "The user's display name."
-        },
-        "suburb": {
-          "type": "string",
-          "description": "The suburb the resident lives in (e.g., Northcote)."
         }
       },
       "required": [
@@ -307,5 +303,4 @@
     }
   }
 }
-
     

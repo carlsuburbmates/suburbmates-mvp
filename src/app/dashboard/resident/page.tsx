@@ -9,7 +9,7 @@ import type { Resident, Order } from '@/lib/types';
 import { doc, collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Edit, ShoppingBag } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import {
@@ -106,12 +106,6 @@ export default function ResidentDashboardPage() {
                       <CardTitle className="font-headline">{resident.displayName}</CardTitle>
                       <CardDescription>{resident.email}</CardDescription>
                   </div>
-                   <Button asChild variant="outline">
-                      <Link href="/dashboard/resident/edit">
-                         <Edit className="mr-2 h-4 w-4"/>
-                         Edit Profile
-                      </Link>
-                  </Button>
               </CardHeader>
           </Card>
 
