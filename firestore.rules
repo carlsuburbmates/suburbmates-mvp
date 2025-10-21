@@ -1,127 +1,131 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
+ * @file Firebase Security Rules for the application.
  *
- * Core Philosophy:
- * This ruleset enforces a user-ownership model for vendors and residents, 
- * allowing users to manage their own data. Forum threads, posts, and community events
- * are publicly readable but not writable directly by end users, likely managed
- * by admins or backend functions. Vendor's listings and orders are secured and
- * owned by specific vendors.
+ * @core_philosophy This ruleset prioritizes security by enforcing strict access control based on user roles and ownership.
+ *   It is configured to allow rapid prototyping by skipping data validation except for fields that are required for authorization.
+ *   The design denormalizes data where appropriate to avoid expensive `get()` operations in security rules.
  *
- * Data Structure:
- * - /vendors/{vendorId}: Vendor profiles.
- * - /vendors/{vendorId}/listings/{listingId}: Listings owned by a vendor.
- * - /vendors/{vendorId}/orders/{orderId}: Orders placed for a vendor's listings.
- * - /residents/{residentId}: Resident user profiles.
- * - /forumThreads/{threadId}: Forum discussion threads.
- * - /forumThreads/{threadId}/posts/{postId}: Posts within a forum thread.
- * - /communityEvents/{eventId}: Community events.
+ * @data_structure
+ *   /vendors/{vendorId}: Stores vendor profiles.
+ *   /vendors/{vendorId}/listings/{listingId}: Stores listings associated with a specific vendor.
+ *   /vendors/{vendorId}/orders/{orderId}: Stores orders associated with a specific vendor.
+ *   /residents/{residentId}: Stores resident user profiles.
+ *   /forumThreads/{threadId}: Stores forum discussion threads.
+ *   /forumThreads/{threadId}/posts/{postId}: Stores individual posts within a forum thread.
+ *   /communityEvents/{eventId}: Stores community event information.
  *
- * Key Security Decisions:
- * - Residents and Vendors can only manage their own profiles and listings.
- * - Listing creation/modification/deletion is restricted to the vendor who owns the listing.
- * - Forum threads, posts and community events are publicly readable.
- * - Orders are secured and only accessible to vendors.
- *
- * Denormalization for Authorization:
- * - The listings documents contain the vendorId field, which will be used to authorize vendor-specific access to listings.
- * - The order documents are associated to a particular vendor.
+ * @key_security_decisions
+ *   - Vendors and residents can only read and write their own profiles and associated data.
+ *   - Public read access is enabled for community events.
+ *   - Forum threads and posts are publicly readable, but write access is not defined in the provided schema and is thus denied.
+ *   - Data validation is skipped except for auth checks.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows vendors to manage their own profile data.
+     * @description Secure vendor profiles. Vendors can only read and write their own profiles.
      * @path /vendors/{vendorId}
-     * @allow (create) - Vendor with ID 'vendor123' creates their profile if authenticated as 'vendor123'.
-     * @allow (update) - Vendor with ID 'vendor123' updates their profile if authenticated as 'vendor123'.
-     * @allow (delete) - Vendor with ID 'vendor123' deletes their profile if authenticated as 'vendor123'.
-     * @deny (create) - Vendor with ID 'vendor123' attempts to create a profile for 'vendor456'.
-     * @deny (update) - Vendor with ID 'vendor123' attempts to update the profile of 'vendor456'.
-     * @deny (delete) - Vendor with ID 'vendor123' attempts to delete the profile of 'vendor456'.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, update, delete) - Authenticated vendor can access their own profile.
+     *   request.auth.uid == vendorId
+     * @allow (create) - Authenticated vendor can create their profile where ID matches their UID.
+     *   request.auth.uid == vendorId
+     * @allow (list) - Listing vendors is not allowed
+     *   false
+     * @deny (get, update, delete) - Non-authenticated user.
+     *   request.auth == null
+     * @deny (create) - Non-authenticated user.
+     *   request.auth == null
+     * @principle Enforces document ownership for vendors.
      */
     match /vendors/{vendorId} {
-      // Vendor can only manage their own profile.
-      allow get: if true;
+      function isOwner(vendorId) {
+        return request.auth != null && request.auth.uid == vendorId;
+      }
+      allow get: if isOwner(vendorId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(vendorId);
-      allow update: if isSignedIn() && isExistingOwner(vendorId);
-      allow delete: if isSignedIn() && isExistingOwner(vendorId);
+      allow create: if isOwner(vendorId);
+      allow update: if isOwner(vendorId) && resource != null;
+      allow delete: if isOwner(vendorId) && resource != null;
     }
 
     /**
-     * @description Allows vendors to manage their own listings.
+     * @description Secure listings for vendors. Vendors can only manage their own listings.
      * @path /vendors/{vendorId}/listings/{listingId}
-     * @allow (create) - Vendor with ID 'vendor123' creates a listing under their profile.
-     * @allow (update) - Vendor with ID 'vendor123' updates a listing under their profile.
-     * @allow (delete) - Vendor with ID 'vendor123' deletes a listing under their profile.
-     * @deny (create) - Vendor with ID 'vendor123' attempts to create a listing under the profile of 'vendor456'.
-     * @deny (update) - Vendor with ID 'vendor123' attempts to update a listing under the profile of 'vendor456'.
-     * @deny (delete) - Vendor with ID 'vendor123' attempts to delete a listing under the profile of 'vendor456'.
-     * @principle Enforces document ownership for writes and validates relational integrity.
+     * @allow (get, list, create, update, delete) - Authenticated vendor can manage listings under their profile.
+     *   request.auth.uid == vendorId
+     * @deny (get, list, create, update, delete) - Non-authenticated user.
+     *   request.auth == null
+     * @principle Enforces document ownership for vendor listings.
      */
     match /vendors/{vendorId}/listings/{listingId} {
-      // Vendor can only manage their own listings.
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isVendorOwner(vendorId) && request.resource.data.vendorId == vendorId;
-      allow update: if isSignedIn() && isExistingVendorOwner(vendorId) && resource.data.vendorId == vendorId;
-      allow delete: if isSignedIn() && isExistingVendorOwner(vendorId);
+      function isOwner(vendorId) {
+        return request.auth != null && request.auth.uid == vendorId;
+      }
+      allow get: if isOwner(vendorId);
+      allow list: if isOwner(vendorId);
+      allow create: if isOwner(vendorId);
+      allow update: if isOwner(vendorId) && resource != null;
+      allow delete: if isOwner(vendorId) && resource != null;
     }
 
-    /**
-     * @description Allows vendors to manage their own orders.
-     * @path /vendors/{vendorId}/orders/{orderId}
-     * @allow (create) - Vendor with ID 'vendor123' creates an order under their profile.
-     * @allow (update) - Vendor with ID 'vendor123' updates an order under their profile.
-     * @allow (delete) - Vendor with ID 'vendor123' deletes an order under their profile.
-     * @deny (create) - Vendor with ID 'vendor123' attempts to create an order under the profile of 'vendor456'.
-     * @deny (update) - Vendor with ID 'vendor123' attempts to update an order under the profile of 'vendor456'.
-     * @deny (delete) - Vendor with ID 'vendor123' attempts to delete an order under the profile of 'vendor456'.
-     * @principle Enforces document ownership for writes and validates relational integrity.
-     */
+        /**
+         * @description Secure orders for vendors. Vendors can only manage their own orders.
+         * @path /vendors/{vendorId}/orders/{orderId}
+         * @allow (get, list, create, update, delete) - Authenticated vendor can manage orders under their profile.
+         *   request.auth.uid == vendorId
+         * @deny (get, list, create, update, delete) - Non-authenticated user.
+         *   request.auth == null
+         * @principle Enforces document ownership for vendor orders.
+         */
     match /vendors/{vendorId}/orders/{orderId} {
-        allow get: if isSignedIn() && isVendorOwner(vendorId);
-        allow list: if isSignedIn() && isVendorOwner(vendorId);
-        allow create: if isSignedIn() && isVendorOwner(vendorId);
-        allow update: if isSignedIn() && isExistingVendorOwner(vendorId);
-        allow delete: if isSignedIn() && isExistingVendorOwner(vendorId);
+        function isOwner(vendorId) {
+            return request.auth != null && request.auth.uid == vendorId;
+        }
+        allow get: if isOwner(vendorId);
+        allow list: if isOwner(vendorId);
+        allow create: if isOwner(vendorId);
+        allow update: if isOwner(vendorId) && resource != null;
+        allow delete: if isOwner(vendorId) && resource != null;
     }
 
     /**
-     * @description Allows residents to manage their own profile data.
+     * @description Secure resident profiles. Residents can only read and write their own profiles.
      * @path /residents/{residentId}
-     * @allow (create) - Resident with ID 'resident123' creates their profile if authenticated as 'resident123'.
-     * @allow (update) - Resident with ID 'resident123' updates their profile if authenticated as 'resident123'.
-     * @allow (delete) - Resident with ID 'resident123' deletes their profile if authenticated as 'resident123'.
-     * @deny (create) - Resident with ID 'resident123' attempts to create a profile for 'resident456'.
-     * @deny (update) - Resident with ID 'resident123' attempts to update the profile of 'resident456'.
-     * @deny (delete) - Resident with ID 'resident123' attempts to delete the profile of 'resident456'.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, update, delete) - Authenticated resident can access their own profile.
+     *   request.auth.uid == residentId
+     * @allow (create) - Authenticated resident can create their profile where ID matches their UID.
+     *   request.auth.uid == residentId
+     * @allow (list) - Listing residents is not allowed.
+     *   false
+     * @deny (get, update, delete) - Non-authenticated user.
+     *   request.auth == null
+     * @deny (create) - Non-authenticated user.
+     *   request.auth == null
+     * @principle Enforces document ownership for residents.
      */
     match /residents/{residentId} {
-      // Resident can only manage their own profile.
-      allow get: if true;
+      function isOwner(residentId) {
+        return request.auth != null && request.auth.uid == residentId;
+      }
+      allow get: if isOwner(residentId);
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(residentId);
-      allow update: if isSignedIn() && isExistingOwner(residentId);
-      allow delete: if isSignedIn() && isExistingOwner(residentId);
+      allow create: if isOwner(residentId);
+      allow update: if isOwner(residentId) && resource != null;
+      allow delete: if isOwner(residentId) && resource != null;
     }
 
     /**
-     * @description Allows public read access to forum threads. Writes are likely handled by a backend or admin.
+     * @description Secure forum threads. Forum threads are publicly readable.
      * @path /forumThreads/{threadId}
-     * @allow (get) - Any user can read a forum thread.
-     * @allow (list) - Any user can list forum threads.
-     * @deny (create) - No user can create a forum thread directly.
-     * @deny (update) - No user can update a forum thread directly.
-     * @deny (delete) - No user can delete a forum thread directly.
-     * @principle Allows public reads and restricts writes.
+     * @allow (get, list) - Anyone can read forum threads.
+     *   true
+     * @deny (create, update, delete) - No write permissions are defined.
+     *   true
+     * @principle Allows public read access to forum threads.
      */
     match /forumThreads/{threadId} {
-      // Public read, admin/backend write.
       allow get: if true;
       allow list: if true;
       allow create: if false;
@@ -130,17 +134,15 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows public read access to forum posts within a thread. Writes are likely handled by a backend or admin.
+     * @description Secure forum posts. Forum posts are publicly readable.
      * @path /forumThreads/{threadId}/posts/{postId}
-     * @allow (get) - Any user can read a forum post.
-     * @allow (list) - Any user can list forum posts.
-     * @deny (create) - No user can create a forum post directly.
-     * @deny (update) - No user can update a forum post directly.
-     * @deny (delete) - No user can delete a forum post directly.
-     * @principle Allows public reads and restricts writes.
+     * @allow (get, list) - Anyone can read forum posts.
+     *   true
+     * @deny (create, update, delete) - No write permissions are defined.
+     *   true
+     * @principle Allows public read access to forum posts.
      */
     match /forumThreads/{threadId}/posts/{postId} {
-      // Public read, admin/backend write.
       allow get: if true;
       allow list: if true;
       allow create: if false;
@@ -148,43 +150,21 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    /**
-     * @description Allows public read access to community events. Writes are likely handled by a backend or admin.
-     * @path /communityEvents/{eventId}
-     * @allow (get) - Any user can read a community event.
-     * @allow (list) - Any user can list community events.
-     * @deny (create) - No user can create a community event directly.
-     * @deny (update) - No user can update a community event directly.
-     * @deny (delete) - No user can delete a community event directly.
-     * @principle Allows public reads and restricts writes.
-     */
+      /**
+       * @description Secure community events. Community events are publicly readable.
+       * @path /communityEvents/{eventId}
+       * @allow (get, list) - Anyone can read community events.
+       *   true
+       * @deny (create, update, delete) - Writes are not allowed. // TODO: Add owner validation once the schema is updated with an ownership field.
+       *   true
+       * @principle Allows public read access to community events, write access is not defined
+       */
     match /communityEvents/{eventId} {
-        allow get: if true;
-        allow list: if true;
-        allow create: if false;
-        allow update: if false;
-        allow delete: if false;
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
-  }
-
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-    return isOwner(userId) && resource != null;
-  }
-
-  function isVendorOwner(vendorId) {
-      return request.auth.uid == vendorId;
-  }
-
-  function isExistingVendorOwner(vendorId) {
-      return isVendorOwner(vendorId) && resource != null;
   }
 }
