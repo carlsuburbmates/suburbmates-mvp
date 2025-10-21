@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const ValidateAbnInputSchema = z.object({
   abn: z.string().describe('The ABN to validate.'),
@@ -22,7 +22,7 @@ const ValidateAbnOutputSchema = z.object({
 });
 export type ValidateAbnOutput = z.infer<typeof ValidateAbnOutputSchema>;
 
-// Mock ABN Lookup Tool
+// Live ABN Lookup Tool
 const abnLookupTool = ai.defineTool(
   {
     name: 'abnLookup',
@@ -36,22 +36,41 @@ const abnLookupTool = ai.defineTool(
     }),
   },
   async (input) => {
-    // This is a mock implementation. In a real-world scenario, this would
-    // make an API call to the official Australian Business Register (ABR) service.
-    console.log(`[ABN MOCK] Looking up ABN: ${input.abn}`);
-    const mockDatabase: { [key: string]: string } = {
-      '12 345 678 901': 'Green Thumb Gardening',
-      '98 765 432 109': 'The Daily Grind Cafe',
-      '11 223 344 556': 'Reliable Plumbing Co.',
-      '55 667 788 990': 'The Book Nook',
-    };
-
-    const registeredName = mockDatabase[input.abn];
-
-    if (registeredName) {
-      return { isValid: true, businessName: registeredName };
+    console.log(`[ABN LIVE] Looking up ABN: ${input.abn}`);
+    const guid = process.env.ABR_GUID;
+    if (!guid || guid === 'YOUR_GUID_HERE') {
+      console.error("ABR GUID not configured in .env file.");
+      return { isValid: false };
     }
-    return { isValid: false };
+
+    // ABN needs to be stripped of spaces for the API call
+    const abn = input.abn.replace(/\s/g, '');
+    const url = `https://abr.business.gov.au/json/AbnDetails.aspx?abn=${abn}&guid=${guid}`;
+    
+    try {
+      const response = await fetch(url, { method: 'GET' });
+      // The ABR API wraps its JSON in parentheses, which need to be removed.
+      const rawText = await response.text();
+      const jsonText = rawText.replace(/^callback\(|\)$/g, '');
+      const data = JSON.parse(jsonText);
+
+      if (data.ErrorMessage) {
+        console.warn(`[ABN LIVE] ABR API Error: ${data.ErrorMessage}`);
+        return { isValid: false };
+      }
+      
+      // We look for the main business name. Other names might exist.
+      const mainName = data.BusinessName?.find((n: any) => n.IsCurrent);
+
+      if (mainName && mainName.Name) {
+        return { isValid: true, businessName: mainName.Name };
+      }
+
+      return { isValid: false };
+    } catch (error) {
+      console.error('[ABN LIVE] Fetch or Parse Error:', error);
+      return { isValid: false };
+    }
   }
 );
 
