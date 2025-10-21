@@ -28,10 +28,8 @@ export type Listing = {
 
 export type ForumPost = {
   id: string;
-  author: {
-    name: string;
-    avatarId: string;
-  };
+  authorName: string;
+  authorAvatarId: string;
   timestamp: string;
   content: string;
 };
@@ -39,17 +37,15 @@ export type ForumPost = {
 export type ForumThread = {
   id: string;
   title: string;
-  author: {
-    name: string;
-    avatarId: string;
-  };
+  authorName: string;
+  authorAvatarId: string;
   timestamp: string;
   tags: {
     name: string;
     variant: "default" | "secondary" | "destructive" | "outline";
     isCouncil?: boolean;
   }[];
-  posts: ForumPost[];
+  postCount?: number;
 };
 
 export type CommunityEvent = {

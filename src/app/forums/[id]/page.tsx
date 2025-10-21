@@ -1,32 +1,66 @@
+
+'use client';
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { MessageSquare, ArrowLeft, Building2 } from "lucide-react";
+import { collection, doc } from "firebase/firestore";
 
-import { forumThreads } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DiscussionSummary } from "./discussion-summary";
 import { Separator } from "@/components/ui/separator";
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import type { ForumThread, ForumPost } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ForumThreadPage({ params }: { params: { id: string } }) {
-  const thread = forumThreads.find((t) => t.id === params.id);
+  const firestore = useFirestore();
+
+  const threadRef = useMemoFirebase(
+    () => (firestore ? doc(firestore, "forumThreads", params.id) : null),
+    [firestore, params.id]
+  );
+  const { data: thread, isLoading: isThreadLoading } = useDoc<ForumThread>(threadRef);
+
+  const postsQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, "forumThreads", params.id, "posts") : null),
+    [firestore, params.id]
+  );
+  const { data: posts, isLoading: arePostsLoading } = useCollection<ForumPost>(postsQuery);
+
+  if (isThreadLoading) {
+    return (
+       <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
+          <Skeleton className="h-10 w-48 mb-8" />
+          <header className="mb-8 space-y-4">
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-5 w-1/3" />
+          </header>
+          <Skeleton className="h-24 w-full mb-8" />
+           <div className="space-y-6">
+              <Card><CardHeader><Skeleton className="h-24 w-full" /></CardHeader></Card>
+              <Card><CardHeader><Skeleton className="h-24 w-full" /></CardHeader></Card>
+           </div>
+       </div>
+    );
+  }
 
   if (!thread) {
     notFound();
   }
 
-  const fullDiscussionText = thread.posts
-    .map((p) => `${p.author.name}: ${p.content}`)
+  const fullDiscussionText = posts
+    ?.map((p) => `${p.authorName}: ${p.content}`)
     .join("\n\n");
 
   return (
@@ -55,19 +89,22 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
         <div className="flex items-center gap-2 text-muted-foreground">
           <MessageSquare className="h-5 w-5" />
           <span>
-            {thread.posts.length} posts in this discussion
+            {arePostsLoading ? '...' : (posts?.length || 0)} posts in this discussion
           </span>
         </div>
       </header>
 
       <div className="mb-8">
-        <DiscussionSummary discussionText={fullDiscussionText} />
+        <DiscussionSummary discussionText={fullDiscussionText || ""} />
       </div>
 
       <div className="space-y-6">
-        {thread.posts.map((post, index) => {
+        {arePostsLoading && Array.from({length:2}).map((_, i) => (
+           <Card key={i}><CardHeader><Skeleton className="h-24 w-full" /></CardHeader></Card>
+        ))}
+        {posts?.map((post, index) => {
           const authorAvatar = PlaceHolderImages.find(
-            (p) => p.id === post.author.avatarId
+            (p) => p.id === post.authorAvatarId
           );
           const isFirstPost = index === 0;
 
@@ -78,11 +115,11 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
             >
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                 <Avatar className="h-10 w-10">
-                  {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt={post.author.name} data-ai-hint={authorAvatar.imageHint}/>}
-                  <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                  {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt={post.authorName} data-ai-hint={authorAvatar.imageHint}/>}
+                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-semibold">{post.author.name}</p>
+                  <p className="font-semibold">{post.authorName}</p>
                   <p className="text-xs text-muted-foreground">
                     {post.timestamp}
                   </p>

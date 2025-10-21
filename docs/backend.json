@@ -113,6 +113,59 @@
         "uid",
         "email"
       ]
+    },
+    "ForumThread": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Forum Thread",
+      "type": "object",
+      "description": "Represents a single discussion thread in the Civic Hub.",
+      "properties": {
+        "title": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "variant": { "type": "string", "enum": ["default", "secondary", "destructive", "outline"] },
+              "isCouncil": { "type": "boolean" }
+            },
+            "required": ["name", "variant"]
+          }
+        }
+      },
+      "required": ["title", "authorName", "timestamp"]
+    },
+    "ForumPost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Forum Post",
+      "type": "object",
+      "description": "Represents a single post within a forum thread.",
+      "properties": {
+        "authorName": { "type": "string" },
+        "authorAvatarId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "content": { "type": "string" }
+      },
+      "required": ["authorName", "timestamp", "content"]
+    },
+    "CommunityEvent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Community Event",
+      "type": "object",
+      "description": "Represents a local community event.",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "details": { "type": "string" },
+        "imageId": { "type": "string" }
+      },
+      "required": ["title", "date", "location", "description", "details", "imageId"]
     }
   },
   "auth": {
@@ -138,6 +191,24 @@
         "$ref": "#/entities/Resident"
       },
       "description": "Stores public profiles for resident users."
+    },
+    "/forumThreads/{threadId}": {
+      "schema": {
+        "$ref": "#/entities/ForumThread"
+      },
+      "description": "Stores all discussion threads for the Civic Hub."
+    },
+    "/forumThreads/{threadId}/posts/{postId}": {
+      "schema": {
+        "$ref": "#/entities/ForumPost"
+      },
+      "description": "Stores all posts for a specific forum thread."
+    },
+    "/communityEvents/{eventId}": {
+        "schema": {
+            "$ref": "#/entities/CommunityEvent"
+        },
+        "description": "Stores all events for the Civic Hub."
     }
   }
 }
