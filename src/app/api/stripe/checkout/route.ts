@@ -50,6 +50,11 @@ export async function POST(request: Request) {
             listingName: listing.listingName,
         }
       },
+       payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
     });
 
     if (!session.url) {
