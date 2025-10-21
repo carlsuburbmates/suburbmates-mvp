@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, List, CreditCard, ShoppingCart, LayoutGrid } from 'lucide-react';
+import { User, List, CreditCard, ShoppingCart, LayoutGrid, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -58,8 +58,25 @@ export function DashboardSidebar({ isVendor }: { isVendor: boolean }) {
               {item.title}
             </Link>
           ))}
+          {!isVendor && (
+             <Link
+              href="/dashboard/vendor/register"
+              className={cn(
+                buttonVariants({
+                  variant: pathname === '/dashboard/vendor/register' ? 'default' : 'ghost',
+                  size: 'default',
+                }),
+                'justify-start mt-4 bg-accent/50 text-accent-foreground'
+              )}
+            >
+              <Building className="mr-2 h-4 w-4" />
+              Become a Vendor
+            </Link>
+          )}
         </nav>
       </CardContent>
     </Card>
   );
 }
+
+    

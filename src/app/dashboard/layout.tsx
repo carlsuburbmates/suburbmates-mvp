@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { DashboardSidebar } from "./vendor/sidebar";
 import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import type { Vendor } from "@/lib/types";
+import type { Vendor, Resident } from "@/lib/types";
 
 export default function DashboardLayout({
   children,
@@ -20,9 +20,16 @@ export default function DashboardLayout({
     [firestore, user]
   );
   const { data: vendor, isLoading: isVendorLoading } = useDoc<Vendor>(vendorRef);
+  
+  const residentRef = useMemoFirebase(
+    () => (firestore && user ? doc(firestore, "residents", user.uid) : null),
+    [firestore, user]
+  );
+  const { data: resident, isLoading: isResidentLoading } = useDoc<Resident>(residentRef);
+
 
   const isVendor = !!vendor;
-  const isLoading = isUserLoading || isVendorLoading;
+  const isLoading = isUserLoading || isVendorLoading || isResidentLoading;
 
   const getTitle = () => {
     if (isLoading) return "Loading Dashboard...";
