@@ -31,11 +31,10 @@ export async function POST(request: Request) {
 
   try {
     if (!sig || !webhookSecret) {
-        console.warn('Stripe webhook signature or secret is missing. Skipping verification (NOT SAFE FOR PRODUCTION).');
-        event = JSON.parse(body) as Stripe.Event;
-    } else {
-       event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+        console.error('Stripe webhook signature or secret is missing. Cannot verify event.');
+        return NextResponse.json({ error: 'Webhook secret not configured.' }, { status: 400 });
     }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
   } catch (err: any) {
     console.error(`Webhook Error: ${err.message}`);
