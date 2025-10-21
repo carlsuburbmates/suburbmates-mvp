@@ -7,7 +7,6 @@ import { Star, MapPin } from "lucide-react";
 import { collection } from "firebase/firestore";
 
 import { PageHeader } from "@/components/page-header";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import {
   Card,
   CardContent,
@@ -28,13 +27,14 @@ import { Button } from "@/components/ui/button";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Vendor } from "@/lib/types";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 
 const mapImage = PlaceHolderImages.find((p) => p.id === "vendor-map");
 
 export default function VendorsPage() {
   const firestore = useFirestore();
-  const vendorsQuery = useMemoFirebase(() => collection(firestore, 'vendors'), [firestore]);
+  const vendorsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'vendors'): null, [firestore]);
   const { data: vendors, isLoading } = useCollection<Vendor>(vendorsQuery);
 
   return (

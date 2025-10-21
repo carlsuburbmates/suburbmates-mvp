@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Button } from '@/components/ui/button';
 
 export default function VendorProfilePage({
   params,
@@ -47,6 +48,7 @@ export default function VendorProfilePage({
   if (isVendorLoading) {
     return (
       <div className="container mx-auto px-4 pb-16">
+        <PageHeader title="" description="" />
         <Skeleton className="h-12 w-1/2 mt-12" />
         <Skeleton className="h-8 w-2/3 mt-4" />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
