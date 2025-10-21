@@ -4,10 +4,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Save, Phone, Link2 } from 'lucide-react';
+import { Save, Phone, Link2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,11 +27,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useFirestore, useUser, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import type { Vendor } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { signOut } from 'firebase/auth';
 
 const profileFormSchema = z.object({
   businessName: z
@@ -45,6 +57,7 @@ export default function EditProfilePage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
 
   const vendorRef = useMemoFirebase(
@@ -92,6 +105,30 @@ export default function EditProfilePage() {
     
     router.push('/dashboard/vendor');
   }
+
+  const handleDeleteProfile = async () => {
+    if (!user || !vendorRef) {
+      toast({ variant: "destructive", title: "Error deleting profile." });
+      return;
+    }
+    
+    deleteDocumentNonBlocking(vendorRef);
+
+    // Also delete user authentication account
+    if (auth.currentUser) {
+        await auth.currentUser.delete();
+    }
+
+    await signOut(auth);
+
+    toast({
+      title: "Profile Deleted",
+      description: "Your vendor profile and account have been permanently removed.",
+    });
+
+    router.push("/");
+  };
+
 
   if (isLoading) {
     return (
@@ -206,19 +243,45 @@ export default function EditProfilePage() {
                     />
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button type="submit" className="w-full sm:w-auto">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full sm:w-auto"
-                    onClick={() => router.push('/dashboard/vendor')}
-                  >
-                    Cancel
-                  </Button>
+                <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <Button type="submit" className="w-full sm:w-auto">
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Changes
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="w-full sm:w-auto"
+                            onClick={() => router.push('/dashboard/vendor')}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">
+                                <Trash2 className="mr-2 h-4 w-4"/>
+                                Delete Profile
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete your
+                                vendor profile, all of your listings, and your account from our servers.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteProfile}>
+                            Yes, delete my profile
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
               </form>
             </Form>
