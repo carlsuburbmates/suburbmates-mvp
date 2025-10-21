@@ -36,6 +36,14 @@
         "paymentsEnabled": {
             "type": "boolean",
             "description": "Flag indicating if the vendor's Stripe account is fully set up to receive payments."
+        },
+        "reviewCount": {
+            "type": "number",
+            "description": "The total number of reviews for this vendor."
+        },
+        "averageRating": {
+            "type": "number",
+            "description": "The average rating for this vendor, from 1 to 5."
         }
       },
       "required": [
@@ -198,6 +206,20 @@
       },
       "required": ["listingName", "customerName", "date", "amount", "status", "paymentIntentId"]
     },
+    "Review": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Review",
+        "type": "object",
+        "description": "Represents a customer review for a vendor.",
+        "properties": {
+          "residentId": { "type": "string" },
+          "residentName": { "type": "string" },
+          "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["residentId", "residentName", "rating", "comment", "timestamp"]
+    },
     "CheckoutSession": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Checkout Session",
@@ -244,6 +266,12 @@
         },
         "description": "Stores all orders for a specific vendor."
     },
+     "/vendors/{vendorId}/reviews/{reviewId}": {
+        "schema": {
+            "$ref": "#/entities/Review"
+        },
+        "description": "Stores all reviews for a specific vendor."
+    },
     "/residents/{residentId}": {
       "schema": {
         "$ref": "#/entities/Resident"
@@ -270,3 +298,4 @@
     }
   }
 }
+

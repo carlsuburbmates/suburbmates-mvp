@@ -1,4 +1,5 @@
 
+
 export type NavItem = {
   title: string;
   href: string;
@@ -14,6 +15,8 @@ export type Vendor = {
   website?: string;
   stripeAccountId?: string;
   paymentsEnabled?: boolean;
+  reviewCount?: number;
+  averageRating?: number;
 };
 
 export type Listing = {
@@ -67,4 +70,13 @@ export type Order = {
   amount: number;
   status: 'Pending' | 'Completed' | 'Refunded';
   paymentIntentId?: string;
+};
+
+export type Review = {
+  id: string;
+  residentId: string;
+  residentName: string;
+  rating: number;
+  comment: string;
+  timestamp: string;
 };

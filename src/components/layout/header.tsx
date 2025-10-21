@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LogOut } from 'lucide-react';
+import { Menu, LogOut, Shield } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/icons';
 import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 const navItems: NavItem[] = [
   { title: 'Home', href: '/' },
@@ -25,6 +26,17 @@ export function Header() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      user.getIdTokenResult().then(idTokenResult => {
+        setIsAdmin(!!idTokenResult.claims.admin);
+      });
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -79,6 +91,20 @@ export function Header() {
               )}
             >
               Dashboard
+            </Link>
+          )}
+           {isAdmin && (
+             <Link
+              href="/admin"
+              className={cn(
+                'transition-colors hover:text-foreground/80 flex items-center gap-1',
+                pathname?.startsWith('/admin')
+                  ? 'text-foreground font-semibold'
+                  : 'text-foreground/60'
+              )}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
             </Link>
           )}
         </nav>
@@ -145,6 +171,20 @@ export function Header() {
                       )}
                     >
                       Dashboard
+                    </Link>
+                  )}
+                   {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className={cn(
+                        'text-lg flex items-center gap-2',
+                        pathname?.startsWith('/admin')
+                          ? 'text-primary font-bold'
+                          : 'text-muted-foreground'
+                      )}
+                    >
+                       <Shield className="h-5 w-5" />
+                      Admin
                     </Link>
                   )}
                 </nav>

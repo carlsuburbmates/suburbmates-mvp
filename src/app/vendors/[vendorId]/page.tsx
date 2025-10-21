@@ -2,12 +2,12 @@
 'use client';
 
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
-import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import type { Vendor, Listing } from '@/lib/types';
+import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { doc, collection, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck, Loader2 } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -21,6 +21,19 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const reviewSchema = z.object({
+  rating: z.coerce.number().min(1, "Rating is required.").max(5),
+  comment: z.string().min(10, "Comment must be at least 10 characters.").max(1000, "Comment cannot exceed 1000 characters."),
+});
+
 
 export default function VendorProfilePage({
   params,
@@ -31,7 +44,18 @@ export default function VendorProfilePage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { user } = useUser();
   const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
+  const [currentRating, setCurrentRating] = useState(0);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const reviewForm = useForm<z.infer<typeof reviewSchema>>({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: 0,
+      comment: '',
+    },
+  });
 
   // Display toast based on checkout status
   useEffect(() => {
@@ -69,12 +93,24 @@ export default function VendorProfilePage({
   const { data: listings, isLoading: areListingsLoading } =
     useCollection<Listing>(listingsQuery);
 
+  // Fetch Vendor Reviews
+  const reviewsQuery = useMemoFirebase(
+    () =>
+      firestore
+        ? collection(firestore, 'vendors', params.vendorId, 'reviews')
+        : null,
+    [firestore, params.vendorId]
+  );
+  const { data: reviews, isLoading: areReviewsLoading } =
+    useCollection<Review>(reviewsQuery);
+
+
   const handlePurchase = async (listing: Listing) => {
     if (!vendor || !vendor.stripeAccountId || !vendor.paymentsEnabled) {
       toast({
         variant: 'destructive',
         title: 'Vendor Not Ready for Payments',
-        description: 'This vendor has not connected their payment account yet.',
+        description: 'This vendor has not connected their payment account or is awaiting approval.',
       });
       return;
     }
@@ -113,6 +149,62 @@ export default function VendorProfilePage({
     }
   };
 
+  const handleReviewSubmit = async (values: z.infer<typeof reviewSchema>) => {
+    if (!user || !vendorRef || !firestore) {
+      toast({ variant: "destructive", title: "You must be logged in to leave a review." });
+      return;
+    }
+    setIsSubmittingReview(true);
+    
+    const reviewsRef = collection(vendorRef, 'reviews');
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const vendorDoc = await transaction.get(vendorRef);
+        if (!vendorDoc.exists()) {
+          throw "Vendor document does not exist!";
+        }
+
+        const newReviewRef = doc(reviewsRef);
+        transaction.set(newReviewRef, {
+          residentId: user.uid,
+          residentName: user.displayName || 'Anonymous Resident',
+          rating: values.rating,
+          comment: values.comment,
+          timestamp: new Date().toISOString(),
+        });
+        
+        const currentReviewCount = vendorDoc.data().reviewCount || 0;
+        const currentAverageRating = vendorDoc.data().averageRating || 0;
+
+        const newReviewCount = currentReviewCount + 1;
+        const newAverageRating = ((currentAverageRating * currentReviewCount) + values.rating) / newReviewCount;
+
+        transaction.update(vendorRef, { 
+          reviewCount: newReviewCount,
+          averageRating: newAverageRating
+        });
+      });
+
+      toast({
+        title: "Review Submitted!",
+        description: "Thank you for your feedback.",
+      });
+      reviewForm.reset();
+      setCurrentRating(0);
+
+    } catch (e) {
+      console.error("Review submission error: ", e);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "There was a problem submitting your review.",
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
 
   if (isVendorLoading) {
     return (
@@ -134,6 +226,7 @@ export default function VendorProfilePage({
   }
 
   const vendorImage = PlaceHolderImages.find((p) => p.id === 'feature-vendors');
+  const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
 
   return (
     <div>
@@ -165,7 +258,10 @@ export default function VendorProfilePage({
                     )}
                     <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                        <span>N/A (No reviews yet)</span>
+                         <span>
+                          {vendor.averageRating ? `${vendor.averageRating.toFixed(1)} stars` : 'No reviews yet'}
+                          {vendor.reviewCount ? ` (${vendor.reviewCount} reviews)` : ''}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -220,6 +316,111 @@ export default function VendorProfilePage({
             <p className="text-muted-foreground md:col-span-3">This vendor has not added any listings yet.</p>
           )}
         </div>
+
+        <Separator className="my-12" />
+
+        <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-1">
+                 <h2 className="text-2xl font-bold font-headline mb-2">Customer Reviews</h2>
+                 <p className="text-muted-foreground">See what others are saying about {vendor.businessName}.</p>
+            </div>
+            <div className="md:col-span-2 space-y-8">
+                {user && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-headline">Leave a Review</CardTitle>
+                      <CardDescription>Share your experience to help others in the community.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <Form {...reviewForm}>
+                        <form onSubmit={reviewForm.handleSubmit(handleReviewSubmit)} className="space-y-4">
+                          <FormField
+                            control={reviewForm.control}
+                            name="rating"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Your Rating</FormLabel>
+                                 <FormControl>
+                                  <div className="flex items-center gap-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <Star
+                                        key={star}
+                                        className={`cursor-pointer h-6 w-6 ${currentRating >= star ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground/50'}`}
+                                        onClick={() => {
+                                          setCurrentRating(star);
+                                          field.onChange(star);
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                           <FormField
+                            control={reviewForm.control}
+                            name="comment"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Your Comment</FormLabel>
+                                <FormControl>
+                                  <Textarea rows={4} placeholder="Tell us about your experience..." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button type="submit" disabled={isSubmittingReview}>
+                             {isSubmittingReview && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Submit Review
+                          </Button>
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
+                )}
+                {areReviewsLoading && <Skeleton className="h-32 w-full" />}
+                {reviews?.map(review => {
+                  const avatar = PlaceHolderImages.find(p => p.id === 'user-avatar-2');
+                  return (
+                    <Card key={review.id} className="bg-card/80">
+                        <CardHeader className="flex-row items-start gap-4 space-y-0">
+                           <Avatar>
+                              {avatar && <AvatarImage src={avatar.imageUrl} alt={review.residentName} data-ai-hint={avatar.imageHint}/>}
+                              <AvatarFallback>{review.residentName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                  <p className="font-semibold">{review.residentName}</p>
+                                   <div className="flex items-center gap-0.5">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'text-amber-500 fill-amber-500' : 'text-muted-foreground/30'}`} />
+                                      ))}
+                                    </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{new Date(review.timestamp).toLocaleDateString()}</p>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">{review.comment}</p>
+                        </CardContent>
+                    </Card>
+                  )
+                })}
+
+                 {!areReviewsLoading && reviews?.length === 0 && (
+                  <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                      <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                      <h3 className="mt-4 font-semibold">No reviews yet</h3>
+                      <p className="text-muted-foreground text-sm mt-1">
+                      Be the first to share your experience.
+                      </p>
+                  </div>
+                 )}
+            </div>
+        </div>
+
       </div>
     </div>
   );
