@@ -2,11 +2,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Resident, Order } from '@/lib/types';
-import { doc, collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
+import { doc, collectionGroup, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ShoppingBag } from 'lucide-react';
@@ -30,40 +30,43 @@ export default function ResidentDashboardPage() {
   const [areOrdersLoading, setAreOrdersLoading] = useState(true);
 
   useEffect(() => {
-    // Only redirect if loading is complete and there is definitively no user.
     if (!isUserLoading && !user) {
       router.replace('/vendors/onboard');
     }
   }, [user, isUserLoading, router]);
 
-  // Fetch Resident Details
-  const residentRef = useMemoFirebase(
-    () => (firestore && user ? doc(firestore, 'residents', user.uid) : null),
-    [firestore, user]
-  );
-  const { data: resident, isLoading: isResidentLoading } = useDoc<Resident>(residentRef);
-
   useEffect(() => {
     const fetchOrders = async () => {
-        if (!firestore || !user) return;
-        setAreOrdersLoading(true);
-        const ordersQuery = query(collectionGroup(firestore, 'orders'), where('customerId', '==', user.uid));
+      if (!firestore || !user) return;
+      setAreOrdersLoading(true);
+      try {
+        const ordersQuery = query(
+          collectionGroup(firestore, 'orders'),
+          where('customerId', '==', user.uid),
+          orderBy('date', 'desc')
+        );
         const querySnapshot = await getDocs(ordersQuery);
         const fetchedOrders: Order[] = [];
         querySnapshot.forEach((doc) => {
-            const orderData = doc.data() as Order;
-            const vendorId = doc.ref.parent.parent?.id;
-            fetchedOrders.push({ ...orderData, id: doc.id, vendorId });
+          const orderData = doc.data() as Order;
+          const vendorId = doc.ref.parent.parent?.id; // Assumes orders collection is a subcollection of vendors
+          fetchedOrders.push({ ...orderData, id: doc.id, vendorId });
         });
         setOrders(fetchedOrders);
+      } catch (error) {
+        console.error("Error fetching resident's orders:", error);
+      } finally {
         setAreOrdersLoading(false);
+      }
     };
 
-    fetchOrders();
+    if (user) {
+      fetchOrders();
+    }
   }, [firestore, user]);
 
 
-  if (isUserLoading || isResidentLoading) {
+  if (isUserLoading) {
     return (
        <div className="space-y-8">
           <Card>
@@ -88,23 +91,14 @@ export default function ResidentDashboardPage() {
     return null;
   }
 
-  if (!resident) {
-    return (
-       <div className="text-center">
-         <h2 className="text-xl font-semibold">Profile Not Found</h2>
-         <p className="text-muted-foreground">We could not find your resident profile. Please contact support.</p>
-       </div>
-    )
-  }
-
   return (
     <>
       <div className="grid gap-8">
           <Card>
               <CardHeader className="flex-row items-center justify-between">
                    <div>
-                      <CardTitle className="font-headline">{resident.displayName}</CardTitle>
-                      <CardDescription>{resident.email}</CardDescription>
+                      <CardTitle className="font-headline">{user.displayName}</CardTitle>
+                      <CardDescription>{user.email}</CardDescription>
                   </div>
               </CardHeader>
           </Card>
@@ -139,7 +133,7 @@ export default function ResidentDashboardPage() {
                     </TableBody>
                 </Table>
                 )}
-                {!areOrdersLoading && orders && orders.length > 0 ? (
+                {!areOrdersLoading && orders.length > 0 ? (
                 <Table>
                     <TableHeader>
                     <TableRow>

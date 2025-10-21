@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -21,6 +22,7 @@ if (!getApps().length) {
 }
 
 const db = getFirestore(app);
+const authAdmin = getAuth(app);
 
 
 export async function POST(request: Request) {
@@ -48,15 +50,17 @@ export async function POST(request: Request) {
       const firebaseUid = account.metadata?.firebase_uid;
 
       if (firebaseUid) {
-        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated. Charges enabled: ${account.charges_enabled}`);
-        
+        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
+        // This is where an admin approval flow would begin.
+        // We save the Stripe Account ID, but we DO NOT automatically enable payments.
+        // An admin must manually set `paymentsEnabled` to true in the vendor document.
         try {
           const vendorRef = doc(db, 'vendors', firebaseUid);
           await updateDoc(vendorRef, {
             stripeAccountId: account.id,
-            paymentsEnabled: account.charges_enabled,
+            // REMOVED: paymentsEnabled is now handled by an admin approval process.
           });
-          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID and payment status.`);
+          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID. Awaiting admin approval.`);
         } catch (error) {
             console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
         }
@@ -66,20 +70,30 @@ export async function POST(request: Request) {
     case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
-        const paymentIntent = session.payment_intent;
+        const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntent) {
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntentId) {
             console.log('Checkout session completed, creating order...');
             try {
+                let customerName = 'Local Shopper';
+                if(metadata.customerId) {
+                    try {
+                        const userRecord = await authAdmin.getUser(metadata.customerId);
+                        customerName = userRecord.displayName || customerName;
+                    } catch (e) {
+                        console.warn(`Could not fetch user ${metadata.customerId} to get display name.`, e)
+                    }
+                }
+
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
                 const newOrder = {
                     listingName: metadata.listingName,
-                    customerName: 'Local Shopper', // Placeholder
+                    customerName: customerName,
                     customerId: metadata.customerId,
                     date: new Date().toISOString(),
                     amount: (session.amount_total || 0) / 100, // Convert cents to dollars
                     status: 'Completed' as const,
-                    paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id,
+                    paymentIntentId: paymentIntentId,
                 };
                 await addDoc(ordersCollectionRef, newOrder);
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
@@ -144,5 +158,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
-
-    
