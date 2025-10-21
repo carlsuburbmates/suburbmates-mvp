@@ -1,13 +1,13 @@
 
 'use client';
 
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import type { Vendor, Listing } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export default function VendorProfilePage({
   params,
@@ -26,6 +28,9 @@ export default function VendorProfilePage({
   params: { vendorId: string };
 }) {
   const firestore = useFirestore();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
 
   // Fetch Vendor Details
   const vendorRef = useMemoFirebase(
@@ -44,6 +49,51 @@ export default function VendorProfilePage({
   );
   const { data: listings, isLoading: areListingsLoading } =
     useCollection<Listing>(listingsQuery);
+
+  const handlePurchase = async (listing: Listing) => {
+    if (!vendor || !vendor.stripeAccountId) {
+      toast({
+        variant: 'destructive',
+        title: 'Vendor Not Ready for Payments',
+        description: 'This vendor has not connected their payment account yet.',
+      });
+      return;
+    }
+
+    setIsRedirecting(listing.id);
+
+    try {
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing: {
+            listingName: listing.listingName,
+            description: listing.description,
+            price: listing.price,
+          },
+          vendorStripeAccountId: vendor.stripeAccountId,
+          vendorId: vendor.id,
+          listingId: listing.id
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) throw new Error(error);
+      if (url) router.push(url);
+
+    } catch (e: any) {
+      console.error('Purchase Error:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Checkout Failed',
+        description: e.message || 'Could not initiate checkout. Please try again.',
+      });
+      setIsRedirecting(null);
+    }
+  };
+
 
   if (isVendorLoading) {
     return (
@@ -111,6 +161,7 @@ export default function VendorProfilePage({
 
           {listings?.map((listing) => {
             const listingImage = PlaceHolderImages.find(p => p.id === 'vendor-bookshop');
+            const isRedirectingToListing = isRedirecting === listing.id;
             return (
               <Card key={listing.id}>
                 {listingImage &&
@@ -137,7 +188,10 @@ export default function VendorProfilePage({
 
                   <div className="flex items-center justify-between mt-4">
                     <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                    <Button disabled>Add to Cart</Button>
+                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.stripeAccountId || isRedirectingToListing}>
+                       {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                       {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
