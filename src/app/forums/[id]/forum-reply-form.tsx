@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 import { collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -55,8 +56,22 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
 
   const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
 
+  if (!user) {
+    return (
+       <Card className="text-center p-6">
+          <CardTitle>Join the conversation</CardTitle>
+          <CardDescription className="mt-2">You must be a registered business owner to post a reply.</CardDescription>
+          <Button asChild className="mt-4">
+            <Link href="/vendors/onboard">Login or Register</Link>
+          </Button>
+        </Card>
+    )
+  }
+
+
   async function onSubmit(values: z.infer<typeof replyFormSchema>) {
     if (!user || !firestore) {
+      // This should not happen if the component renders, but as a safeguard.
       toast({
         variant: 'destructive',
         title: 'Not Authenticated',
@@ -72,7 +87,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
 
     const newPost = {
       authorId: user.uid,
-      authorName: user.displayName || user.email || 'Anonymous',
+      authorName: user.displayName || 'Business Owner',
       // This is a placeholder. In a real app, users would have profile avatars.
       authorAvatarId: 'user-avatar-1', 
       timestamp: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
@@ -94,12 +109,12 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar>
             {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt={user?.displayName || 'user'} data-ai-hint={userAvatar.imageHint}/>}
-            <AvatarFallback>{user?.displayName?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{user?.displayName?.charAt(0) || 'B'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="font-headline text-xl">Post a Reply</CardTitle>
           <CardDescription>
-            Replying as {user?.displayName || user?.email}
+            Replying as {user?.displayName}
           </CardDescription>
         </div>
       </CardHeader>

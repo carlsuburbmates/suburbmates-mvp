@@ -17,14 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DiscussionSummary } from "./discussion-summary";
 import { Separator } from "@/components/ui/separator";
-import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import type { ForumThread, ForumPost } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ForumReplyForm } from "./forum-reply-form";
 
 export default function ForumThreadPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const threadRef = useMemoFirebase(
     () => (firestore ? doc(firestore, "forumThreads", params.id) : null),
@@ -136,17 +135,7 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
       </div>
        <Separator className="my-8" />
        
-       {user ? (
-          <ForumReplyForm threadId={params.id} />
-       ) : (
-        <Card className="text-center p-6">
-          <CardTitle>Join the conversation</CardTitle>
-          <CardDescription className="mt-2">You must be logged in to post a reply.</CardDescription>
-          <Button asChild className="mt-4">
-            <Link href="/vendors/onboard">Login or Sign Up</Link>
-          </Button>
-        </Card>
-       )}
+       <ForumReplyForm threadId={params.id} />
     </div>
   );
 }

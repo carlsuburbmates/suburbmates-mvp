@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { DashboardSidebar } from "./vendor/sidebar";
 import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import type { Vendor, Resident } from "@/lib/types";
+import type { Vendor } from "@/lib/types";
 
 export default function DashboardLayout({
   children,
@@ -20,27 +20,17 @@ export default function DashboardLayout({
     [firestore, user]
   );
   const { data: vendor, isLoading: isVendorLoading } = useDoc<Vendor>(vendorRef);
-  
-  const residentRef = useMemoFirebase(
-    () => (firestore && user ? doc(firestore, "residents", user.uid) : null),
-    [firestore, user]
-  );
-  const { data: resident, isLoading: isResidentLoading } = useDoc<Resident>(residentRef);
 
-
-  const isVendor = !!vendor;
-  const isLoading = isUserLoading || isVendorLoading || isResidentLoading;
+  const isLoading = isUserLoading || isVendorLoading;
 
   const getTitle = () => {
     if (isLoading) return "Loading Dashboard...";
-    return isVendor ? "Vendor Dashboard" : "Resident Dashboard";
+    return vendor?.businessName || "Business Dashboard";
   };
 
   const getDescription = () => {
     if (isLoading) return "Please wait while we load your information.";
-    return isVendor
-      ? "Manage your profile, listings, and payments."
-      : "Manage your profile and view your order history.";
+    return "Manage your business profile, listings, and sales.";
   };
 
   return (
@@ -52,7 +42,7 @@ export default function DashboardLayout({
       <div className="container mx-auto px-4 pb-16">
         <div className="grid lg:grid-cols-5 gap-8">
           <aside className="lg:col-span-1">
-            <DashboardSidebar isVendor={isVendor} />
+            <DashboardSidebar isVendor={!!vendor?.paymentsEnabled} />
           </aside>
           <main className="lg:col-span-4">{children}</main>
         </div>
@@ -60,5 +50,3 @@ export default function DashboardLayout({
     </div>
   );
 }
-
-    

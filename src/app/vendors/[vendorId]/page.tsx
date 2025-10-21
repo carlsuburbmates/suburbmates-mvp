@@ -3,11 +3,12 @@
 
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, collection, runTransaction } from 'firebase/firestore';
 import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare } from 'lucide-react';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -85,10 +86,10 @@ export default function VendorProfilePage({
   // Fetch Vendor Listings
   const listingsQuery = useMemoFirebase(
     () =>
-      firestore
+      firestore && vendor?.paymentsEnabled
         ? collection(firestore, 'vendors', params.vendorId, 'listings')
         : null,
-    [firestore, params.vendorId]
+    [firestore, params.vendorId, vendor?.paymentsEnabled]
   );
   const { data: listings, isLoading: areListingsLoading } =
     useCollection<Listing>(listingsQuery);
@@ -107,7 +108,7 @@ export default function VendorProfilePage({
 
   const handlePurchase = async (listing: Listing) => {
     if (!user) {
-        toast({ variant: 'destructive', title: 'Please log in to purchase an item.' });
+        toast({ variant: 'destructive', title: 'Please log in to purchase an item.', description: 'Only registered business owners can make purchases at this time.' });
         return;
     }
     if (!vendor || !vendor.stripeAccountId || !vendor.paymentsEnabled) {
@@ -173,7 +174,7 @@ export default function VendorProfilePage({
         const newReviewRef = doc(reviewsRef);
         transaction.set(newReviewRef, {
           residentId: user.uid,
-          residentName: user.displayName || 'Anonymous Resident',
+          residentName: user.displayName || 'Anonymous Business',
           rating: values.rating,
           comment: values.comment,
           timestamp: new Date().toISOString(),
@@ -261,6 +262,12 @@ export default function VendorProfilePage({
                            <span>{vendor.phone}</span>
                         </p>
                     )}
+                    {vendor.address && (
+                        <p className="flex items-center gap-2">
+                           <Phone className="h-4 w-4"/>
+                           <span>{vendor.address}</span>
+                        </p>
+                    )}
                     <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                          <span>
@@ -272,57 +279,59 @@ export default function VendorProfilePage({
             </div>
         </Card>
 
+        {vendor.paymentsEnabled && (
+            <>
+                <h2 className="text-2xl font-bold font-headline mb-6">Our Offerings</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {areListingsLoading && Array.from({ length: 3 }).map((_, i) => (
+                     <Card key={i}><CardHeader className="p-0"><Skeleton className="h-48 w-full rounded-t-lg" /></CardHeader><CardContent className="pt-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
+                  ))}
 
-        <h2 className="text-2xl font-bold font-headline mb-6">Our Offerings</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {areListingsLoading && Array.from({ length: 3 }).map((_, i) => (
-             <Card key={i}><CardHeader className="p-0"><Skeleton className="h-48 w-full rounded-t-lg" /></CardHeader><CardContent className="pt-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
-          ))}
+                  {listings?.map((listing) => {
+                    const isRedirectingToListing = isRedirecting === listing.id;
+                    return (
+                      <Card key={listing.id}>
+                        {listing.imageUrl &&
+                            <CardHeader className="p-0">
+                                <div className="relative h-48 w-full">
+                                    <Image src={listing.imageUrl} alt={listing.listingName} fill className="object-cover rounded-t-lg" />
+                                </div>
+                            </CardHeader>
+                        }
+                        <CardContent className="p-4">
+                          <h3 className="font-bold font-headline text-lg">{listing.listingName}</h3>
+                          <p className="text-muted-foreground text-sm mt-1 flex-grow">{listing.description}</p>
+                          
+                          <div className="mt-4 space-y-2 text-sm">
+                             <div className="flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-primary"/>
+                                <Badge variant="outline">{listing.category}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Truck className="w-4 h-4 text-primary"/>
+                                <span>{listing.deliveryMethod}</span>
+                            </div>
+                          </div>
 
-          {listings?.map((listing) => {
-            const isRedirectingToListing = isRedirecting === listing.id;
-            return (
-              <Card key={listing.id}>
-                {listing.imageUrl &&
-                    <CardHeader className="p-0">
-                        <div className="relative h-48 w-full">
-                            <Image src={listing.imageUrl} alt={listing.listingName} fill className="object-cover rounded-t-lg" />
-                        </div>
-                    </CardHeader>
-                }
-                <CardContent className="p-4">
-                  <h3 className="font-bold font-headline text-lg">{listing.listingName}</h3>
-                  <p className="text-muted-foreground text-sm mt-1 flex-grow">{listing.description}</p>
-                  
-                  <div className="mt-4 space-y-2 text-sm">
-                     <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-primary"/>
-                        <Badge variant="outline">{listing.category}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4 text-primary"/>
-                        <span>{listing.deliveryMethod}</span>
-                    </div>
-                  </div>
+                          <div className="flex items-center justify-between mt-4">
+                            <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
+                            <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
+                               {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                               {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
 
-                  <div className="flex items-center justify-between mt-4">
-                    <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
-                       {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                       {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-
-          {!areListingsLoading && listings?.length === 0 && (
-            <p className="text-muted-foreground md:col-span-3">This vendor has not added any listings yet.</p>
-          )}
-        </div>
-
-        <Separator className="my-12" />
+                  {!areListingsLoading && listings?.length === 0 && (
+                    <p className="text-muted-foreground md:col-span-3">This vendor has not added any listings yet.</p>
+                  )}
+                </div>
+                <Separator className="my-12" />
+            </>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
@@ -330,7 +339,7 @@ export default function VendorProfilePage({
                  <p className="text-muted-foreground">See what others are saying about {vendor.businessName}.</p>
             </div>
             <div className="md:col-span-2 space-y-8">
-                {user && (
+                {user ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="font-headline">Leave a Review</CardTitle>
@@ -384,6 +393,14 @@ export default function VendorProfilePage({
                       </Form>
                     </CardContent>
                   </Card>
+                ) : (
+                    <Card className="text-center p-6">
+                        <CardTitle>Want to leave a review?</CardTitle>
+                        <CardDescription className="mt-2">Please log in or register your business to share your feedback.</CardDescription>
+                        <Button asChild className="mt-4">
+                            <Link href="/vendors/onboard">Login / Register</Link>
+                        </Button>
+                    </Card>
                 )}
                 {areReviewsLoading && <Skeleton className="h-32 w-full" />}
                 {reviews?.map(review => {
@@ -430,5 +447,3 @@ export default function VendorProfilePage({
     </div>
   );
 }
-
-    

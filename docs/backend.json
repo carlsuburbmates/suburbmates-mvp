@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Vendor",
       "type": "object",
-      "description": "Represents a verified vendor in the marketplace.",
+      "description": "Represents a verified vendor in the marketplace, who may or may not be an active seller.",
       "properties": {
         "businessName": {
           "type": "string",
@@ -29,13 +29,17 @@
           "description": "The vendor's business website URL.",
           "format": "uri"
         },
+        "address": {
+          "type": "string",
+          "description": "The physical address of the business."
+        },
         "stripeAccountId": {
           "type": "string",
           "description": "Stripe account ID associated with the vendor, populated after successful hand-off."
         },
         "paymentsEnabled": {
             "type": "boolean",
-            "description": "Flag indicating if the vendor's Stripe account is fully set up to receive payments."
+            "description": "Flag indicating if the vendor's Stripe account is fully set up to receive payments. This determines if they are a 'Vendor (upgraded)'."
         },
         "reviewCount": {
             "type": "number",
@@ -52,18 +56,14 @@
         "longitude": {
             "type": "number",
             "description": "The longitude of the vendor's business location."
-        },
-        "tier": {
-          "type": "string",
-          "description": "The subscription tier of the vendor.",
-          "enum": ["Basic", "Premium"]
         }
       },
       "required": [
         "businessName",
         "abn",
         "email",
-        "tier"
+        "address",
+        "paymentsEnabled"
       ]
     },
     "Listing": {
@@ -110,32 +110,6 @@
         "category",
         "deliveryMethod",
         "imageUrl"
-      ]
-    },
-    "Resident": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Resident",
-      "type": "object-v2",
-      "description": "Represents a resident user of the application.",
-      "properties": {
-        "uid": {
-          "type": "string",
-          "description": "The user's unique ID from Firebase Authentication."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the user.",
-          "format": "email"
-        },
-        "displayName": {
-          "type": "string",
-          "description": "The user's display name."
-        }
-      },
-      "required": [
-        "uid",
-        "email",
-        "displayName"
       ]
     },
     "ForumThread": {
@@ -260,7 +234,7 @@
       "schema": {
         "$ref": "#/entities/Vendor"
       },
-      "description": "Stores documents for each verified vendor."
+      "description": "Stores documents for each business in the directory. Businesses with paymentsEnabled=true are active marketplace vendors."
     },
     "/vendors/{vendorId}/listings/{listingId}": {
       "schema": {
@@ -279,12 +253,6 @@
             "$ref": "#/entities/Review"
         },
         "description": "Stores all reviews for a specific vendor."
-    },
-    "/residents/{residentId}": {
-      "schema": {
-        "$ref": "#/entities/Resident"
-      },
-      "description": "Stores public profiles for resident users."
     },
     "/forumThreads/{threadId}": {
       "schema": {

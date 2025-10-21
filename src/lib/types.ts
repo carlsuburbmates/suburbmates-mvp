@@ -13,13 +13,13 @@ export type Vendor = {
   email: string;
   phone?: string;
   website?: string;
+  address?: string;
   stripeAccountId?: string;
   paymentsEnabled?: boolean;
   reviewCount?: number;
   averageRating?: number;
   latitude?: number;
   longitude?: number;
-  tier: 'Basic' | 'Premium';
 };
 
 export type Listing = {
@@ -85,10 +85,3 @@ export type Review = {
   comment: string;
   timestamp: string;
 };
-
-export type Resident = {
-    id: string;
-    uid: string;
-    email: string;
-    displayName: string;
-}

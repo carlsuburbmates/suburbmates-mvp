@@ -3,14 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, List, CreditCard, ShoppingCart, LayoutGrid, Building, Zap } from 'lucide-react';
+import { CreditCard, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 const vendorNavItems = [
   {
-    title: 'Profile & Listings',
+    title: 'Dashboard',
     href: '/dashboard/vendor',
     icon: <LayoutGrid className="mr-2 h-4 w-4" />,
   },
@@ -24,24 +24,19 @@ const vendorNavItems = [
     href: '/dashboard/vendor/payments',
     icon: <CreditCard className="mr-2 h-4 w-4" />,
   },
-  {
-    title: 'Upgrade',
-    href: '/dashboard/vendor/upgrade',
-    icon: <Zap className="mr-2 h-4 w-4" />,
-  },
 ];
 
-const residentNavItems = [
+const businessOwnerNavItems = [
     {
         title: 'Dashboard',
-        href: '/dashboard/resident',
+        href: '/dashboard/vendor',
         icon: <LayoutGrid className="mr-2 h-4 w-4" />,
     }
 ]
 
 export function DashboardSidebar({ isVendor }: { isVendor: boolean }) {
   const pathname = usePathname();
-  const navItems = isVendor ? vendorNavItems : residentNavItems;
+  const navItems = isVendor ? vendorNavItems : businessOwnerNavItems;
 
   return (
     <Card className="sticky top-[140px]">
@@ -56,29 +51,13 @@ export function DashboardSidebar({ isVendor }: { isVendor: boolean }) {
                   variant: pathname === item.href ? 'default' : 'ghost',
                   size: 'default',
                 }),
-                'justify-start',
-                item.href === '/dashboard/vendor/upgrade' && 'mt-4 bg-gradient-to-r from-yellow-400/20 via-orange-400/20 to-rose-400/20 text-orange-700 hover:text-orange-600'
+                'justify-start'
               )}
             >
               {item.icon}
               {item.title}
             </Link>
           ))}
-          {!isVendor && (
-             <Link
-              href="/dashboard/vendor/register"
-              className={cn(
-                buttonVariants({
-                  variant: pathname === '/dashboard/vendor/register' ? 'default' : 'ghost',
-                  size: 'default',
-                }),
-                'justify-start mt-4 bg-accent/50 text-accent-foreground'
-              )}
-            >
-              <Building className="mr-2 h-4 w-4" />
-              Become a Vendor
-            </Link>
-          )}
         </nav>
       </CardContent>
     </Card>
