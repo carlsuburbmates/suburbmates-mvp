@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/footer";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 
 export const metadata: Metadata = {
-  title: "Suburbmates",
+  title: "Darebin Business Directory",
   description: "Your local community hub for vendors and discussions.",
 };
 

@@ -9,7 +9,7 @@ import type { Vendor, Listing } from '@/lib/types';
 import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ListPlus, Tag, Truck, Edit, Trash2 } from 'lucide-react';
+import { ListPlus, Tag, Truck, Edit, Trash2, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -70,6 +70,8 @@ export default function VendorDashboardPage() {
     setListingToDelete(null);
   };
 
+  const canCreateMoreListings = vendor?.tier === 'Premium' || (listings && listings.length < 1);
+
 
   if (isUserLoading || isVendorLoading) {
     return (
@@ -116,12 +118,17 @@ export default function VendorDashboardPage() {
                       <CardTitle className="font-headline">{vendor.businessName}</CardTitle>
                       <CardDescription>{vendor.email}</CardDescription>
                   </div>
-                   <Button asChild variant="outline">
-                      <Link href="/vendors/profile/edit">
-                         <Edit className="mr-2 h-4 w-4"/>
-                         Edit Profile
-                      </Link>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                     <Badge variant={vendor.tier === 'Premium' ? 'default' : 'secondary'}>
+                        {vendor.tier} Tier
+                      </Badge>
+                       <Button asChild variant="outline">
+                          <Link href="/vendors/profile/edit">
+                             <Edit className="mr-2 h-4 w-4"/>
+                             Edit Profile
+                          </Link>
+                      </Button>
+                  </div>
               </CardHeader>
                <CardContent>
                  <Button asChild variant="secondary">
@@ -136,7 +143,7 @@ export default function VendorDashboardPage() {
                       <CardTitle className="font-headline">Your Listings</CardTitle>
                       <CardDescription>Manage your products and services offered on the marketplace.</CardDescription>
                   </div>
-                  <Button asChild>
+                  <Button asChild disabled={!canCreateMoreListings}>
                       <Link href="/vendors/onboard/listing">
                           <ListPlus className="mr-2 h-4 w-4" />
                           Create New Listing
@@ -144,6 +151,21 @@ export default function VendorDashboardPage() {
                   </Button>
               </CardHeader>
               <CardContent>
+                 {!canCreateMoreListings && (
+                    <div className="mb-6 bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-md" role="alert">
+                      <div className="flex items-center">
+                        <Zap className="h-5 w-5 mr-3" />
+                        <div>
+                          <p className="font-bold">Basic Tier Limit Reached</p>
+                          <p className="text-sm">You can only create one listing on the Basic tier. Please upgrade to create more.</p>
+                          <Button asChild size="sm" className="mt-2">
+                            <Link href="/dashboard/vendor/upgrade">Upgrade to Premium</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                  <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
                       {areListingsLoading && Array.from({ length: 2 }).map((_, i) => (
                           <Card key={i}>
@@ -208,7 +230,7 @@ export default function VendorDashboardPage() {
                       <div className="text-center py-12 border-2 border-dashed rounded-lg">
                           <h3 className="font-semibold">You have no listings yet</h3>
                           <p className="text-muted-foreground text-sm mt-1">Create your first listing to get started.</p>
-                           <Button asChild className="mt-4">
+                           <Button asChild className="mt-4" disabled={!canCreateMoreListings}>
                               <Link href="/vendors/onboard/listing">
                                   <ListPlus className="mr-2 h-4 w-4" />
                                   Create a Listing

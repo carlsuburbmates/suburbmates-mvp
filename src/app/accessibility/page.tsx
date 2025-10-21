@@ -20,7 +20,7 @@ export default function AccessibilityPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground">
             <p>
-              Suburbmates is committed to making its website accessible, in
+              The Darebin Business Directory is committed to making its website accessible, in
               accordance with WCAG 2.1 Level AA. We believe in providing a
               positive customer experience to all our customers, and we aim
               to promote accessibility and inclusion.
@@ -35,7 +35,7 @@ export default function AccessibilityPage() {
                 requirements for designers and developers to improve
                 accessibility for people with disabilities. It defines three
                 levels of conformance: Level A, Level AA, and Level AAA.
-                Suburbmates is partially conformant with WCAG 2.1 level AA.
+                The Darebin Business Directory is partially conformant with WCAG 2.1 level AA.
                 Partially conformant means that some parts of the content do
                 not fully conform to the accessibility standard.
               </p>
@@ -49,11 +49,11 @@ export default function AccessibilityPage() {
                 2. Feedback
               </h3>
               <p>
-                We welcome your feedback on the accessibility of Suburbmates.
+                We welcome your feedback on the accessibility of the Darebin Business Directory.
                 Please let us know if you encounter accessibility barriers:
               </p>
                <ul className="list-disc pl-6">
-                <li>E-mail: contact@suburbmates.example.com</li>
+                <li>E-mail: contact@darebin-directory.example.com</li>
                 <li>Postal address: 123 Main Street, Northcote VIC 3070</li>
               </ul>
               <p>We try to respond to feedback within 5 business days.</p>
@@ -64,7 +64,7 @@ export default function AccessibilityPage() {
                 3. Technical specifications
               </h3>
               <p>
-                Accessibility of Suburbmates relies on the following technologies to work with the particular combination of web browser and any assistive technologies or plugins installed on your computer: HTML, WAI-ARIA, CSS, and JavaScript. These technologies are relied upon for conformance with the accessibility standards used.
+                Accessibility of the Darebin Business Directory relies on the following technologies to work with the particular combination of web browser and any assistive technologies or plugins installed on your computer: HTML, WAI-ARIA, CSS, and JavaScript. These technologies are relied upon for conformance with the accessibility standards used.
               </p>
             </div>
           </CardContent>

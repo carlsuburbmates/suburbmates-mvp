@@ -104,7 +104,7 @@ export default function OnboardPage() {
 
       toast({
         title: 'Account Created!',
-        description: 'Welcome to Suburbmates!',
+        description: 'Welcome to the Darebin Business Directory!',
       });
       router.push('/dashboard/resident');
 
@@ -148,7 +148,7 @@ export default function OnboardPage() {
   return (
     <>
       <PageHeader
-        title="Join Suburbmates"
+        title="Join Darebin Business Directory"
         description="Join our community or log in to manage your profile."
       />
       <div className="container mx-auto px-4 pb-16 flex justify-center">
@@ -205,7 +205,7 @@ export default function OnboardPage() {
                       )}
                     />
                      <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-                       {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                       {isSubmitting && <loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Login
                     </Button>
                   </form>
@@ -258,7 +258,7 @@ export default function OnboardPage() {
                               )}
                           />
                           <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
-                              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {isSubmitting && <loader2 className="mr-2 h-4 w-4 animate-spin" />}
                               Create Account
                           </Button>
                       </form>

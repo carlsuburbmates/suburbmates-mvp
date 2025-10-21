@@ -1,4 +1,4 @@
-# Suburbmates
+# Darebin Business Directory
 
 This is a Next.js application, built with Firebase Studio, that serves as a local community hub.
 

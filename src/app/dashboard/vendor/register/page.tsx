@@ -99,6 +99,7 @@ export default function VendorRegistrationPage() {
             phone: values.phone || '',
             website: values.website || '',
             paymentsEnabled: false,
+            tier: 'Basic' as const, // All new vendors start on Basic tier
         };
 
         setDocumentNonBlocking(vendorRef, vendorData, { merge: true });

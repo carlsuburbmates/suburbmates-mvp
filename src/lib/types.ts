@@ -19,6 +19,7 @@ export type Vendor = {
   averageRating?: number;
   latitude?: number;
   longitude?: number;
+  tier: 'Basic' | 'Premium';
 };
 
 export type Listing = {
@@ -91,5 +92,3 @@ export type Resident = {
     email: string;
     displayName: string;
 }
-
-    

@@ -20,7 +20,7 @@ export default function TermsPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground">
             <p>
-              By accessing or using Suburbmates, you agree to be bound by these
+              By accessing or using the Darebin Business Directory, you agree to be bound by these
               Terms of Service and our Privacy Policy. If you do not agree to
               all the terms and conditions, then you may not access the
               service.
@@ -62,7 +62,7 @@ export default function TermsPage() {
                 4. Limitation of Liability
               </h3>
               <p>
-                Suburbmates is provided "as is," and we make no warranties
+                The Darebin Business Directory is provided "as is," and we make no warranties
                 regarding the reliability, timeliness, or accuracy of the
                 service. We are not liable for any disputes between users and
                 vendors.

@@ -57,7 +57,7 @@ export default function Home() {
               Connecting Neighbors, Supporting Locals.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-prose">
-              Suburbmates is your trusted platform for discovering local vendors
+              The Darebin Business Directory is your trusted platform for discovering local vendors
               and engaging in community life. Welcome to a stronger, more
               connected neighborhood.
             </p>
@@ -144,7 +144,7 @@ export default function Home() {
               A Marketplace You Can Trust
             </h3>
             <p className="text-lg text-muted-foreground">
-              Every vendor on Suburbmates undergoes ABN validation and secure
+              Every vendor on the Darebin Business Directory undergoes ABN validation and secure
               onboarding. Find reliable local services with transparent reviews
               and easy discovery through our map-based search.
             </p>

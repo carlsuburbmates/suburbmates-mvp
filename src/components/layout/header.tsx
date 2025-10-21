@@ -61,7 +61,7 @@ export function Header() {
         <div className="mr-8 flex items-center">
           <Logo className="h-6 w-6 text-primary" />
           <Link href="/" className="ml-2 text-lg font-bold font-headline">
-            Suburbmates
+            Darebin Business Directory
           </Link>
         </div>
 
@@ -142,7 +142,7 @@ export function Header() {
                     href="/"
                     className="ml-2 text-lg font-bold font-headline"
                   >
-                    Suburbmates
+                    Darebin Business Directory
                   </Link>
                 </div>
                 <nav className="flex flex-col gap-6">

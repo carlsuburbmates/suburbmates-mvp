@@ -52,12 +52,18 @@
         "longitude": {
             "type": "number",
             "description": "The longitude of the vendor's business location."
+        },
+        "tier": {
+          "type": "string",
+          "description": "The subscription tier of the vendor.",
+          "enum": ["Basic", "Premium"]
         }
       },
       "required": [
         "businessName",
         "abn",
-        "email"
+        "email",
+        "tier"
       ]
     },
     "Listing": {
@@ -300,4 +306,3 @@
     }
   }
 }
-    
