@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getFirestore, doc, updateDoc, collection, addDoc } from 'firebase-admin/firestore';
+import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName) {
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && session.payment_intent) {
             console.log('Checkout session completed, creating order...');
             try {
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
@@ -78,6 +78,7 @@ export async function POST(request: Request) {
                     date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
                     amount: (session.amount_total || 0) / 100, // Convert cents to dollars
                     status: 'Completed' as const,
+                    paymentIntentId: session.payment_intent,
                 };
                 await addDoc(ordersCollectionRef, newOrder);
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
@@ -85,6 +86,54 @@ export async function POST(request: Request) {
                 console.error('Failed to create order in Firestore:', error);
                  return NextResponse.json({ error: 'Failed to create order.' }, { status: 500 });
             }
+        }
+        break;
+
+    case 'charge.refunded':
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId = charge.payment_intent;
+
+        if (typeof paymentIntentId !== 'string') {
+            console.log('Charge refunded but no payment_intent ID found.');
+            break;
+        }
+
+        try {
+            console.log(`Processing refund for payment intent: ${paymentIntentId}`);
+            const q = query(
+              collection(db, 'vendors'), 
+            );
+            const vendorsSnapshot = await getDocs(q);
+
+            const batch = writeBatch(db);
+            let orderFound = false;
+
+            for (const vendorDoc of vendorsSnapshot.docs) {
+                const ordersRef = collection(db, `vendors/${vendorDoc.id}/orders`);
+                const orderQuery = query(ordersRef, where('paymentIntentId', '==', paymentIntentId));
+                const orderSnapshot = await getDocs(orderQuery);
+
+                if (!orderSnapshot.empty) {
+                    orderSnapshot.forEach(orderDoc => {
+                        console.log(`Found order ${orderDoc.id} for vendor ${vendorDoc.id}. Marking as Refunded.`);
+                        batch.update(orderDoc.ref, { status: 'Refunded' });
+                        orderFound = true;
+                    });
+                    // Break the outer loop once we found the order(s)
+                    break; 
+                }
+            }
+            
+            if (orderFound) {
+                await batch.commit();
+                console.log(`Successfully updated order status to Refunded.`);
+            } else {
+                console.warn(`Could not find an order with paymentIntentId: ${paymentIntentId}`);
+            }
+
+        } catch (error) {
+            console.error(`Failed to process refund for payment intent ${paymentIntentId}:`, error);
+            return NextResponse.json({ error: 'Failed to update order for refund.' }, { status: 500 });
         }
         break;
 

@@ -66,4 +66,5 @@ export type Order = {
   date: string;
   amount: number;
   status: 'Pending' | 'Completed' | 'Refunded';
+  paymentIntentId?: string;
 };

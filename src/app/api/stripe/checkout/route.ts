@@ -6,8 +6,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
 
-// Assume a 5% platform fee for now
-const PLATFORM_FEE_PERCENT = 0.05;
+// Set platform fee to 10% as per requirements
+const PLATFORM_FEE_PERCENT = 0.10;
 
 export async function POST(request: Request) {
   try {

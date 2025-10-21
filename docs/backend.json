@@ -190,9 +190,13 @@
         "status": {
           "type": "string",
           "enum": ["Pending", "Completed", "Refunded"]
+        },
+        "paymentIntentId": {
+          "type": "string",
+          "description": "The Stripe Payment Intent ID associated with this order."
         }
       },
-      "required": ["listingName", "customerName", "date", "amount", "status"]
+      "required": ["listingName", "customerName", "date", "amount", "status", "paymentIntentId"]
     },
     "CheckoutSession": {
         "$schema": "http://json-schema.org/draft-07/schema#",

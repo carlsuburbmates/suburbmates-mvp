@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -11,6 +12,16 @@
         {
           "fieldPath": "timestamp",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "paymentIntentId",
+          "order": "ASCENDING"
         }
       ]
     }
