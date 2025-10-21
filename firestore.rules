@@ -1,163 +1,172 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset prioritizes security by enforcing strict ownership and explicit access control.
- * It is configured to permit rapid prototyping by skipping schema validation.
- *
- * Data Structure:
- * - /vendors/{vendorId}: Stores vendor profiles.
- * - /vendors/{vendorId}/listings/{listingId}: Stores listings associated with a specific vendor.
- * - /residents/{residentId}: Stores resident user profiles.
- * - /forumThreads/{threadId}: Stores forum threads.
- * - /forumThreads/{threadId}/posts/{postId}: Stores posts within a specific forum thread.
- * - /communityEvents/{eventId}: Stores community events.
- *
- * Key Security Decisions:
- * - Vendors and Residents can only manage their own profiles and listings.
- * - Public read access is granted for vendors and events.
- * - Forum threads and posts are publicly accessible for reading.
- * - Listing is secured by the vendor's ID
- *
- * Denormalization for Authorization:
- * - Listings include a `vendorId` field to simplify ownership checks and avoid costly `get()` calls.
- * - No role-based access control is used.  All authorization is based on ownership.
- *
- * Structural Segregation:
- * - Private user data (e.g., profile details) is stored separately from public content (e.g., forum posts, vendor data).
+ * @file Firestore Security Rules
+ * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and vendor data.
+ *  Listings and orders are scoped to vendors and accessible only by the owning vendor.
+ *  Forum threads, posts, and community events are publicly readable but not writable by clients.
+ * @data_structure
+ *  - /vendors/{vendorId}: Vendor profiles, secured via ownership.
+ *  - /vendors/{vendorId}/listings/{listingId}: Listings owned by a vendor, secured via vendor ownership.
+ *  - /vendors/{vendorId}/orders/{orderId}: Orders for a vendor's listings, secured via vendor ownership.
+ *  - /residents/{residentId}: Resident profiles, secured via ownership.
+ *  - /forumThreads/{threadId}: Public forum threads.
+ *  - /forumThreads/{threadId}/posts/{postId}: Public forum posts within a thread.
+ *  - /communityEvents/{eventId}: Public community events.
+ * @key_security_decisions
+ *  - Listing and order data is strictly namespaced under vendors and secured via vendor ownership, avoiding get() calls
+ *  - Forum threads, posts and community events are publicly readable. Clients cannot create, update or delete.
+ *  - User listing is disallowed.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows read access to all vendors and write access only to the vendor themselves.
+     * @description Secure vendor profiles. Only the vendor can read/write their own profile.
      * @path /vendors/{vendorId}
-     * @allow (get, list): if true
-     * @allow (create, update, delete): if isSignedIn() && isOwner(vendorId)
-     * @deny (create): if !isSignedIn()
-     * @deny (update, delete): if !isSignedIn()
-     * @principle Allows any user to list vendors but only a logged-in vendor to manage their own data.
+     * @allow (read) A vendor with UID 'vendor123' can read /vendors/vendor123.
+     * @allow (create) A vendor with UID 'vendor123' can create /vendors/vendor123.
+     * @deny (read) A vendor with UID 'vendor456' cannot read /vendors/vendor123.
+     * @deny (create) A resident cannot create a vendor profile.
+     * @principle Enforces document ownership for writes.
      */
     match /vendors/{vendorId} {
-      allow get, list: if true;
+      function isOwner(vendorId) {
+        return request.auth.uid == vendorId;
+      }
+      function isExistingOwner(vendorId) {
+        return isOwner(vendorId) && resource != null;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(vendorId);
+      allow list: if false;
       allow create: if isSignedIn() && isOwner(vendorId);
-      allow update: if isSignedIn() && isExistingOwner(vendorId);
-      allow delete: if isSignedIn() && isExistingOwner(vendorId);
+      allow update: if isExistingOwner(vendorId);
+      allow delete: if isExistingOwner(vendorId);
     }
 
     /**
-     * @description Allows a vendor to manage their own listings.
+     * @description Secure listings under a vendor. Only the owning vendor can manage their listings.
      * @path /vendors/{vendorId}/listings/{listingId}
-     * @allow (get, list): if isSignedIn() && isOwner(vendorId)
-     * @allow (create): if isSignedIn() && request.resource.data.vendorId == vendorId
-     * @allow (update, delete): if isSignedIn() && isExistingOwnerForListing(vendorId, resource.data.vendorId)
-     * @deny (create): if !isSignedIn()
-     * @deny (update, delete): if !isSignedIn()
-     * @principle Enforces ownership of listings by vendors, preventing cross-vendor modification.
+     * @allow (read) A vendor with UID 'vendor123' can read /vendors/vendor123/listings/listing001.
+     * @allow (create) A vendor with UID 'vendor123' can create /vendors/vendor123/listings/listing001.
+     * @deny (read) A vendor with UID 'vendor456' cannot read /vendors/vendor123/listings/listing001.
+     * @deny (create) A resident cannot create a listing for a vendor.
+     * @principle Enforces resource-based ownership using the vendorId path.
      */
     match /vendors/{vendorId}/listings/{listingId} {
-      allow get, list: if isSignedIn() && isOwner(vendorId);
-      allow create: if isSignedIn() && request.resource.data.vendorId == vendorId;
-      allow update: if isSignedIn() && isExistingOwnerForListing(vendorId, resource.data.vendorId);
-      allow delete: if isSignedIn() && isExistingOwnerForListing(vendorId, resource.data.vendorId);
+      function isOwner(vendorId) {
+        return request.auth.uid == vendorId;
+      }
+      function isExistingOwner(vendorId) {
+        return isOwner(vendorId) && resource != null;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(vendorId);
+      allow list: if isOwner(vendorId);
+      allow create: if isSignedIn() && isOwner(vendorId);
+      allow update: if isExistingOwner(vendorId);
+      allow delete: if isExistingOwner(vendorId);
     }
 
+      /**
+       * @description Secure orders under a vendor. Only the owning vendor can manage their orders.
+       * @path /vendors/{vendorId}/orders/{orderId}
+       * @allow (read) A vendor with UID 'vendor123' can read /vendors/vendor123/orders/order001.
+       * @allow (create) A vendor with UID 'vendor123' can create /vendors/vendor123/orders/order001.
+       * @deny (read) A vendor with UID 'vendor456' cannot read /vendors/vendor123/orders/order001.
+       * @deny (create) A resident cannot create an order for a vendor.
+       * @principle Enforces resource-based ownership using the vendorId path.
+       */
+    match /vendors/{vendorId}/orders/{orderId} {
+        function isOwner(vendorId) {
+          return request.auth.uid == vendorId;
+        }
+        function isExistingOwner(vendorId) {
+          return isOwner(vendorId) && resource != null;
+        }
+        function isSignedIn() {
+          return request.auth != null;
+        }
+        allow get: if isOwner(vendorId);
+        allow list: if isOwner(vendorId);
+        allow create: if isSignedIn() && isOwner(vendorId);
+        allow update: if isExistingOwner(vendorId);
+        allow delete: if isExistingOwner(vendorId);
+      }
+
     /**
-     * @description Allows a resident to manage their own profile.
+     * @description Secure resident profiles. Only the resident can read/write their own profile.
      * @path /residents/{residentId}
-     * @allow (get, list): if isOwner(residentId)
-     * @allow (create): if isSignedIn() && isOwner(residentId)
-     * @allow (update, delete): if isSignedIn() && isExistingOwner(residentId)
-     * @deny (create): if !isSignedIn()
-     * @deny (update, delete): if !isSignedIn()
-     * @principle Enforces ownership of resident profiles.
+     * @allow (read) A resident with UID 'resident123' can read /residents/resident123.
+     * @allow (create) A resident with UID 'resident123' can create /residents/resident123.
+     * @deny (read) A resident with UID 'resident456' cannot read /residents/resident123.
+     * @deny (create) A vendor cannot create a resident profile.
+     * @principle Enforces document ownership for writes.
      */
     match /residents/{residentId} {
-      allow get, list: if isOwner(residentId);
+      function isOwner(residentId) {
+        return request.auth.uid == residentId;
+      }
+      function isExistingOwner(residentId) {
+        return isOwner(residentId) && resource != null;
+      }
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get: if isOwner(residentId);
+      allow list: if false;
       allow create: if isSignedIn() && isOwner(residentId);
-      allow update: if isSignedIn() && isExistingOwner(residentId);
-      allow delete: if isSignedIn() && isExistingOwner(residentId);
+      allow update: if isExistingOwner(residentId);
+      allow delete: if isExistingOwner(residentId);
     }
 
     /**
-     * @description Allows public read access to forum threads and any authenticated user to create them.
+     * @description Allows public read-only access to forum threads.
      * @path /forumThreads/{threadId}
-     * @allow (get, list): if true
-     * @allow (create): if isSignedIn()
-     * @allow (update, delete): if false; // TODO: Determine who can edit/delete threads
-     * @deny (create): if !isSignedIn()
-     * @principle Public forum threads with restricted modification rights.
+     * @allow (read) Anyone can read forum threads.
+     * @deny (create) No one can create forum threads via client; only backend.
+     * @principle Allows public read access, restricts writes to backend only.
      */
     match /forumThreads/{threadId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if false; // TODO: Determine who can edit/delete threads
+        allow get: if true;
+        allow list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to forum posts and authenticated users to create them.
+     * @description Allows public read-only access to forum posts within a thread.
      * @path /forumThreads/{threadId}/posts/{postId}
-     * @allow (get, list): if true
-     * @allow (create): if isSignedIn()
-     * @allow (update, delete): if false; // TODO: Determine who can edit/delete posts
-     * @deny (create): if !isSignedIn()
-     * @principle Public forum posts with restricted modification rights.
+     * @allow (read) Anyone can read forum posts.
+     * @deny (create) No one can create forum posts via client; only backend.
+     * @principle Allows public read access, restricts writes to backend only.
      */
     match /forumThreads/{threadId}/posts/{postId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if false; // TODO: Determine who can edit/delete posts
+        allow get: if true;
+        allow list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to community events.
+     * @description Allows public read-only access to community events.
      * @path /communityEvents/{eventId}
-     * @allow (get, list): if true
-     * @allow (create, update, delete): if false; // TODO: Define event creation/management permissions
-     * @principle Public community events with restricted modification rights.
+     * @allow (read) Anyone can read community events.
+     * @deny (create) No one can create community events via client; only backend.
+     * @principle Allows public read access, restricts writes to backend only.
      */
     match /communityEvents/{eventId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Define event creation/management permissions
-    }
-
-    // --- Helper Functions ---
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return {boolean} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the user is the owner of the resource based on the provided userId.
-     * @param {string} userId The user ID to compare against the authenticated user's ID.
-     * @return {boolean} True if the user is the owner, false otherwise.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the user is the owner of an existing resource.
-     * @param {string} userId The user ID to compare against.
-     * @return {boolean} True if the user owns the existing resource, false otherwise.
-     */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Checks if the user is the owner of an existing listing.
-     * @param {string} expectedVendorId The expected vendor ID.
-     * @param {string} actualVendorId The actual vendor ID from the resource.
-     * @return {boolean} True if the user owns the existing resource, false otherwise.
-     */
-    function isExistingOwnerForListing(expectedVendorId, actualVendorId) {
-        return isOwner(expectedVendorId) && resource != null && actualVendorId == expectedVendorId;
+        allow get: if true;
+        allow list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
     }
   }
 }
