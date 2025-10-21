@@ -154,13 +154,41 @@ export default function OnboardPage() {
   }
 
 
-  function handleStripeConnect() {
-    toast({
-      title: 'Redirecting to Stripe...',
-      description:
-        'You are being securely redirected to Stripe to connect your account. This is a simulation.',
-    });
-    router.push('/vendors/onboard/listing');
+  async function handleStripeConnect() {
+    try {
+      toast({
+        title: 'Redirecting to Stripe...',
+        description: 'Please wait while we prepare your secure connection.',
+      });
+
+      const response = await fetch('/api/stripe/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/vendors/onboard/listing`,
+          refreshUrl: `${window.location.origin}/vendors/onboard`,
+        }),
+      });
+
+      const { url, error } = await response.json();
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      if (url) {
+        router.push(url);
+      }
+    } catch (e: any) {
+      console.error('Stripe Connect Error:', e);
+      toast({
+        variant: 'destructive',
+        title: 'Could not connect to Stripe',
+        description: e.message || 'An unknown error occurred. Please try again.',
+      });
+    }
   }
 
   return (
