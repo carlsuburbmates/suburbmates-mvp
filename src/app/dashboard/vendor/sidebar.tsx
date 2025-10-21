@@ -12,18 +12,17 @@ const navItems = [
   {
     title: 'Profile & Listings',
     href: '/dashboard/vendor',
-    icon: <User className="mr-2" />,
+    icon: <User className="mr-2 h-4 w-4" />,
   },
   {
     title: 'Payments',
-    href: '#',
-    icon: <CreditCard className="mr-2" />,
-    disabled: true,
+    href: '/dashboard/vendor/payments',
+    icon: <CreditCard className="mr-2 h-4 w-4" />,
   },
   {
     title: 'Orders',
     href: '#',
-    icon: <List className="mr-2" />,
+    icon: <List className="mr-2 h-4 w-4" />,
     disabled: true,
   },
 ];

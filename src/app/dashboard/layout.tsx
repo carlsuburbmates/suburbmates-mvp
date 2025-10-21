@@ -13,11 +13,11 @@ export default function DashboardLayout({
         description="Manage your profile, listings, and payments."
       />
       <div className="container mx-auto px-4 pb-16">
-        <div className="grid lg:grid-cols-4 gap-8">
+        <div className="grid lg:grid-cols-5 gap-8">
           <aside className="lg:col-span-1">
             <DashboardSidebar />
           </aside>
-          <main className="lg:col-span-3">{children}</main>
+          <main className="lg:col-span-4">{children}</main>
         </div>
       </div>
     </div>
