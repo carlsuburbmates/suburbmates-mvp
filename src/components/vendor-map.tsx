@@ -23,14 +23,14 @@ export function VendorMap({ vendors }: VendorMapProps) {
         return (
             <div className="flex items-center justify-center h-full bg-muted">
                 <p className="text-destructive-foreground bg-destructive p-4 rounded-md">
-                    Google Maps API key is missing. Please add it to your .env file.
+                    Google Maps API key is missing. Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your .env file.
                 </p>
             </div>
         );
     }
     
     return (
-        <APIProvider apiKey={apiKey}>
+        <APIProvider apiKey={apiKey} key={apiKey}>
             <Map
                 defaultCenter={defaultCenter}
                 defaultZoom={13}
