@@ -56,7 +56,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
   const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
 
   async function onSubmit(values: z.infer<typeof replyFormSchema>) {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Not Authenticated',
