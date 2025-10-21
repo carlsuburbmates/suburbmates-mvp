@@ -21,6 +21,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
@@ -165,12 +166,28 @@ export default function VendorDashboardPage() {
                                       Edit
                                   </Link>
                               </Button>
-                               <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm" onClick={() => setListingToDelete(listing)}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </Button>
-                                </AlertDialogTrigger>
+                               <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                   <Button variant="destructive" size="sm" onClick={() => setListingToDelete(listing)}>
+                                     <Trash2 className="mr-2 h-4 w-4" />
+                                     Delete
+                                   </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       This action cannot be undone. This will permanently delete the listing for "{listing?.listingName}" from our servers.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel onClick={() => setListingToDelete(null)}>Cancel</AlertDialogCancel>
+                                     <AlertDialogAction onClick={handleDeleteListing}>
+                                       Continue
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
                           </CardFooter>
                       </Card>
                       ))}
@@ -191,22 +208,6 @@ export default function VendorDashboardPage() {
           </Card>
       </div>
       
-       <AlertDialog open={!!listingToDelete} onOpenChange={(open) => !open && setListingToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the listing for "{listingToDelete?.listingName}" from our servers.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteListing}>
-                Continue
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
     </>
   );
 }
