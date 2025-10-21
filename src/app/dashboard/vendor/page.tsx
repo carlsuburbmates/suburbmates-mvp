@@ -165,14 +165,12 @@ export default function VendorDashboardPage() {
                                       Edit
                                   </Link>
                               </Button>
-                               <AlertDialog>
-                                <AlertDialogTrigger asChild>
+                               <AlertDialogTrigger asChild>
                                   <Button variant="destructive" size="sm" onClick={() => setListingToDelete(listing)}>
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                   </Button>
                                 </AlertDialogTrigger>
-                              </AlertDialog>
                           </CardFooter>
                       </Card>
                       ))}
