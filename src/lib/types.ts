@@ -17,6 +17,8 @@ export type Vendor = {
   paymentsEnabled?: boolean;
   reviewCount?: number;
   averageRating?: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type Listing = {

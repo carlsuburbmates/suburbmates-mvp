@@ -44,6 +44,14 @@
         "averageRating": {
             "type": "number",
             "description": "The average rating for this vendor, from 1 to 5."
+        },
+        "latitude": {
+            "type": "number",
+            "description": "The latitude of the vendor's business location."
+        },
+        "longitude": {
+            "type": "number",
+            "description": "The longitude of the vendor's business location."
         }
       },
       "required": [
@@ -298,4 +306,3 @@
     }
   }
 }
-
