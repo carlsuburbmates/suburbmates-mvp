@@ -2,25 +2,23 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// This is a placeholder for the real implementation.
-// In a real application, you would initialize Stripe with your secret key.
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
 
 export async function POST(request: Request) {
   try {
-    const { returnUrl, refreshUrl } = await request.json();
+    const { returnUrl, refreshUrl, userId } = await request.json();
 
-    if (!returnUrl || !refreshUrl) {
-      return NextResponse.json({ error: 'Missing returnUrl or refreshUrl' }, { status: 400 });
+    if (!returnUrl || !refreshUrl || !userId) {
+      return NextResponse.json({ error: 'Missing returnUrl, refreshUrl, or userId' }, { status: 400 });
     }
 
-    // In a real application, you would associate this account with your
-    // internal user ID. For now, we create a new account each time.
     const account = await stripe.accounts.create({
       type: 'standard',
-      // Add other details like email, business_type if you have them.
+      metadata: {
+        firebase_uid: userId,
+      },
     });
 
     const accountLink = await stripe.accountLinks.create({

@@ -32,6 +32,10 @@
         "stripeAccountId": {
           "type": "string",
           "description": "Stripe account ID associated with the vendor, populated after successful hand-off."
+        },
+        "paymentsEnabled": {
+            "type": "boolean",
+            "description": "Flag indicating if the vendor's Stripe account is fully set up to receive payments."
         }
       },
       "required": [

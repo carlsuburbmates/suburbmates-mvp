@@ -70,6 +70,8 @@ export default function OnboardPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user } = useUser();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -105,6 +107,7 @@ export default function OnboardPage() {
         values.password
       );
       const user = userCredential.user;
+      setCurrentUserId(user.uid);
 
       const vendorRef = doc(firestore, 'vendors', user.uid);
       const vendorData = {
@@ -113,6 +116,7 @@ export default function OnboardPage() {
         email: values.email,
         phone: values.phone || '',
         website: values.website || '',
+        paymentsEnabled: false,
       };
 
       setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
@@ -155,6 +159,16 @@ export default function OnboardPage() {
 
 
   async function handleStripeConnect() {
+     if (!currentUserId) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'Could not identify the user. Please try signing up again.',
+      });
+      setStep(1);
+      return;
+    }
+
     try {
       toast({
         title: 'Redirecting to Stripe...',
@@ -169,6 +183,7 @@ export default function OnboardPage() {
         body: JSON.stringify({
           returnUrl: `${window.location.origin}/vendors/onboard/listing`,
           refreshUrl: `${window.location.origin}/vendors/onboard`,
+          userId: currentUserId,
         }),
       });
 
