@@ -48,17 +48,15 @@ export async function POST(request: Request) {
       const firebaseUid = account.metadata?.firebase_uid;
 
       if (firebaseUid) {
-        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
-        // This is where an admin approval flow would begin.
-        // We save the Stripe Account ID, but we DO NOT automatically enable payments.
-        // An admin must manually set `paymentsEnabled` to true in the vendor document.
+        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated. Charges enabled: ${account.charges_enabled}`);
+        
         try {
           const vendorRef = doc(db, 'vendors', firebaseUid);
           await updateDoc(vendorRef, {
             stripeAccountId: account.id,
-            // REMOVED: paymentsEnabled is now handled by an admin approval process.
+            paymentsEnabled: account.charges_enabled,
           });
-          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID. Awaiting admin approval.`);
+          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID and payment status.`);
         } catch (error) {
             console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
         }

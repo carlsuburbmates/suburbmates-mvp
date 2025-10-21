@@ -63,5 +63,3 @@ export function DashboardSidebar({ isVendor }: { isVendor: boolean }) {
     </Card>
   );
 }
-
-    

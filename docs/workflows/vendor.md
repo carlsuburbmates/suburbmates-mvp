@@ -231,6 +231,15 @@ Path: `/dashboard/vendor`
 
 ---
 
+## 4. Governance
+
+*   **Rule Changes:** All platform-wide rule changes will be communicated to vendors with a minimum of 30 days' notice.
+*   **Dispute Resolution:** Administrator decisions on disputes are final, following the documented moderation and appeal process.
+*   **Appeals:** Vendors can appeal a moderation decision once via the official support channel. The appeal will be reviewed by a different moderator or administrator.
+*   **Policy Versioning:** The Terms of Service and Privacy Policy will be versioned, and major changes will require explicit re-consent from all active users.
+
+---
+
 ### ✅ Summary
 
 Suburbmates vendors:
