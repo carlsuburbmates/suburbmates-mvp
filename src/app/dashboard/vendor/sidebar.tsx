@@ -21,9 +21,8 @@ const navItems = [
   },
   {
     title: 'Orders',
-    href: '#',
+    href: '/dashboard/vendor/orders',
     icon: <List className="mr-2 h-4 w-4" />,
-    disabled: true,
   },
 ];
 

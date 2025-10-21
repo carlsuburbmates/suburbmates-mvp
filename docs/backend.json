@@ -166,6 +166,23 @@
         "imageId": { "type": "string" }
       },
       "required": ["title", "date", "location", "description", "details", "imageId"]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer order for a vendor's listing.",
+      "properties": {
+        "listingName": { "type": "string" },
+        "customerName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "amount": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Completed", "Refunded"]
+        }
+      },
+      "required": ["listingName", "customerName", "date", "amount", "status"]
     }
   },
   "auth": {
@@ -185,6 +202,12 @@
         "$ref": "#/entities/Listing"
       },
       "description": "Stores all listings for a specific vendor as a sub-collection."
+    },
+    "/vendors/{vendorId}/orders/{orderId}": {
+        "schema": {
+            "$ref": "#/entities/Order"
+        },
+        "description": "Stores all orders for a specific vendor."
     },
     "/residents/{residentId}": {
       "schema": {

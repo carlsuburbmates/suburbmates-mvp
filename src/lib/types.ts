@@ -57,3 +57,12 @@ export type CommunityEvent = {
   details: string;
   imageId: string;
 };
+
+export type Order = {
+  id: string;
+  listingName: string;
+  customerName: string;
+  date: string;
+  amount: number;
+  status: 'Pending' | 'Completed' | 'Refunded';
+};
