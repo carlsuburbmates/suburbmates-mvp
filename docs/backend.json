@@ -105,6 +105,10 @@
           "description": "Email address of the user.",
           "format": "email"
         },
+        "password": {
+          "type": "string",
+          "description": "The user's password (hashed)."
+        },
         "displayName": {
           "type": "string",
           "description": "The user's display name."
@@ -262,3 +266,5 @@
     }
   }
 }
+
+    
