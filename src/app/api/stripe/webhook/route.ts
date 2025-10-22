@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
+import { headers } from 'next/headers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -22,9 +23,18 @@ if (!getApps().length) {
 
 const db = getFirestore(app);
 
+// Idempotency check
+const processedEvents = new Set();
+
+// Placeholder for sending emails
+async function sendTransactionalEmail(template: string, data: any) {
+    console.log(`[EMAIL] Sending '${template}' email with data:`, data);
+    // In a real app, you would integrate with a service like Resend here.
+}
+
 
 export async function POST(request: Request) {
-  const sig = request.headers.get('stripe-signature');
+  const sig = headers().get('stripe-signature');
   const body = await request.text();
 
   let event: Stripe.Event;
@@ -37,9 +47,17 @@ export async function POST(request: Request) {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
   } catch (err: any) {
-    console.error(`Webhook Error: ${err.message}`);
+    console.error(`Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
+
+  // Idempotency: Check if we've already processed this event
+  if (processedEvents.has(event.id)) {
+      console.log(`[IDEMPOTENCY] Already processed event: ${event.id}`);
+      return NextResponse.json({ received: true, message: 'Event already processed.' });
+  }
+  processedEvents.add(event.id);
+
 
   // Handle the event
   switch (event.type) {
@@ -49,16 +67,17 @@ export async function POST(request: Request) {
 
       if (firebaseUid) {
         console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
-        // This is where an admin approval flow would begin.
-        // We save the Stripe Account ID, but we DO NOT automatically enable payments.
-        // An admin must manually set `paymentsEnabled` to true in the vendor document.
         try {
           const vendorRef = doc(db, 'vendors', firebaseUid);
           await updateDoc(vendorRef, {
             stripeAccountId: account.id,
-            // REMOVED: paymentsEnabled is now handled by an admin approval process.
+            // Payouts are disabled/enabled by the admin, but we can track account health.
+            paymentsEnabled: account.charges_enabled && account.details_submitted,
           });
-          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID. Awaiting admin approval.`);
+          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID and status.`);
+           if (!account.charges_enabled) {
+              await sendTransactionalEmail('vendor_action_required', { vendorId: firebaseUid, message: 'Your Stripe account needs attention. Payouts may be disabled.'});
+           }
         } catch (error) {
             console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
         }
@@ -68,29 +87,78 @@ export async function POST(request: Request) {
     case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
-        const paymentIntent = session.payment_intent;
+        const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata?.listingName && paymentIntent) {
-            console.log('Checkout session completed, creating order...');
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata.buyerId && paymentIntentId) {
+            console.log('Checkout session completed, creating order and communication channel...');
             try {
+                // 1. Create the Order
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
-                const newOrder = {
+                const newOrderRef = doc(ordersCollectionRef);
+                
+                // 2. Create the Communication Channel
+                const commChannelsCollectionRef = collection(db, 'comm_channels');
+                const newCommChannelRef = doc(commChannelsCollectionRef);
+
+                const batch = writeBatch(db);
+
+                const orderData = {
+                    id: newOrderRef.id,
                     listingName: metadata.listingName,
-                    customerName: 'Local Shopper', // Placeholder
-                    customerId: metadata.customerId,
+                    buyerId: metadata.buyerId,
+                    vendorId: metadata.vendorId,
                     date: new Date().toISOString(),
-                    amount: (session.amount_total || 0) / 100, // Convert cents to dollars
+                    amount: (session.amount_total || 0) / 100,
                     status: 'Completed' as const,
-                    paymentIntentId: typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id,
+                    paymentIntentId: paymentIntentId,
+                    commChannelId: newCommChannelRef.id,
                 };
-                await addDoc(ordersCollectionRef, newOrder);
-                console.log(`Successfully created order for vendor ${metadata.vendorId}`);
+                batch.set(newOrderRef, orderData);
+
+                const commChannelData = {
+                    id: newCommChannelRef.id,
+                    orderId: newOrderRef.id,
+                    buyerId: metadata.buyerId,
+                    vendorId: metadata.vendorId,
+                    status: 'OPEN' as const,
+                };
+                batch.set(newCommChannelRef, commChannelData);
+
+                await batch.commit();
+
+                console.log(`Successfully created order ${newOrderRef.id} and comm channel ${newCommChannelRef.id}`);
+
+                // 5. Emit Notifications (Transactional Email)
+                await sendTransactionalEmail('order_confirmation_buyer', {
+                    orderId: newOrderRef.id,
+                    buyerId: metadata.buyerId,
+                    listingName: metadata.listingName,
+                    vendorName: metadata.vendorName, // Assuming you add this to checkout metadata
+                    commChannelUrl: `/dashboard/orders/${newOrderRef.id}/messages`
+                });
+                await sendTransactionalEmail('new_order_vendor', {
+                     orderId: newOrderRef.id,
+                     vendorId: metadata.vendorId,
+                     listingName: metadata.listingName,
+                     amount: orderData.amount
+                });
+
+
             } catch (error) {
                 console.error('Failed to create order in Firestore:', error);
                  return NextResponse.json({ error: 'Failed to create order.' }, { status: 500 });
             }
         }
         break;
+    
+    case 'payment_intent.canceled':
+        const paymentIntentCanceled = event.data.object as Stripe.PaymentIntent;
+        console.log(`Payment intent canceled: ${paymentIntentCanceled.id}`);
+        // Find the order and update its status
+        await updateOrderStatusByPaymentIntent(paymentIntentCanceled.id, 'FAILED_PAYMENT');
+        // You could also notify the buyer here.
+        break;
+
 
     case 'charge.refunded':
         const charge = event.data.object as Stripe.Charge;
@@ -103,35 +171,27 @@ export async function POST(request: Request) {
 
         try {
             console.log(`Processing refund for payment intent: ${chargePaymentIntentId}`);
-            const q = query(
-              collection(db, 'vendors'), 
-            );
-            const vendorsSnapshot = await getDocs(q);
-
-            const batch = writeBatch(db);
-            let orderFound = false;
-
-            for (const vendorDoc of vendorsSnapshot.docs) {
-                const ordersRef = collection(db, `vendors/${vendorDoc.id}/orders`);
-                const orderQuery = query(ordersRef, where('paymentIntentId', '==', chargePaymentIntentId));
-                const orderSnapshot = await getDocs(orderQuery);
-
-                if (!orderSnapshot.empty) {
-                    orderSnapshot.forEach(orderDoc => {
-                        console.log(`Found order ${orderDoc.id} for vendor ${vendorDoc.id}. Marking as Refunded.`);
-                        batch.update(orderDoc.ref, { status: 'Refunded' });
-                        orderFound = true;
-                    });
-                    // Break the outer loop once we found the order(s)
-                    if(orderFound) break; 
-                }
-            }
+            const orderUpdated = await updateOrderStatusByPaymentIntent(chargePaymentIntentId, 'Refunded');
             
-            if (orderFound) {
-                await batch.commit();
-                console.log(`Successfully updated order status to Refunded.`);
+            if (orderUpdated) {
+                const refundReqQuery = query(collection(db, `vendors/${orderUpdated.vendorId}/refund_requests`), where('orderId', '==', orderUpdated.id));
+                const refundReqSnapshot = await getDocs(refundReqQuery);
+                if (!refundReqSnapshot.empty) {
+                    const refundReqDoc = refundReqSnapshot.docs[0];
+                    await updateDoc(refundReqDoc.ref, {
+                        state: 'RESOLVED',
+                        stripeRefundId: charge.refunds.data[0]?.id
+                    });
+                    console.log(`Updated refund request ${refundReqDoc.id} to RESOLVED.`);
+
+                    // Notify buyer
+                    await sendTransactionalEmail('refund_processed_buyer', {
+                        buyerId: orderUpdated.buyerId,
+                        orderId: orderUpdated.id
+                    });
+                }
             } else {
-                console.warn(`Could not find an order with paymentIntentId: ${chargePaymentIntentId}`);
+                 console.warn(`Could not find an order with paymentIntentId: ${chargePaymentIntentId} to mark as refunded.`);
             }
 
         } catch (error) {
@@ -139,11 +199,43 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to update order for refund.' }, { status: 500 });
         }
         break;
+    
+    case 'payout.failed':
+        const payoutFailed = event.data.object as Stripe.Payout;
+        const failedAccountId = payoutFailed.destination as string; // Assuming it's an account ID
+        console.error(`Payout failed for Stripe account: ${failedAccountId}`);
+        // Find vendor by stripeAccountId and notify them
+        // This is a critical event requiring immediate vendor notification.
+        break;
 
     default:
-      console.log(`Unhandled event type ${event.type}`);
+      console.log(`[INFO] Unhandled event type ${event.type}`);
   }
 
   return NextResponse.json({ received: true });
 }
+
+/**
+ * Helper function to find and update an order's status based on its paymentIntentId.
+ * This is used for both refunds and cancellations.
+ */
+async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status: 'Refunded' | 'FAILED_PAYMENT'): Promise<any | null> {
+    const q = query(collection(db, 'vendors'));
+    const vendorsSnapshot = await getDocs(q);
+
+    for (const vendorDoc of vendorsSnapshot.docs) {
+        const ordersRef = collection(db, `vendors/${vendorDoc.id}/orders`);
+        const orderQuery = query(ordersRef, where('paymentIntentId', '==', paymentIntentId));
+        const orderSnapshot = await getDocs(orderQuery);
+
+        if (!orderSnapshot.empty) {
+            const orderDoc = orderSnapshot.docs[0];
+            await updateDoc(orderDoc.ref, { status });
+            console.log(`Found order ${orderDoc.id} for vendor ${vendorDoc.id}. Marked as ${status}.`);
+            return { ...orderDoc.data(), id: orderDoc.id }; // Return the updated order data
+        }
+    }
+    return null; // Return null if no order was found
+}
+
     

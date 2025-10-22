@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, useRouter, useSearchParams } from 'next/navigation';
@@ -7,7 +8,7 @@ import { doc, collection, runTransaction } from 'firebase/firestore';
 import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin, ShieldCheck } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin, ShieldCheck, FileText } from 'lucide-react';
 import Link from 'next/link';
 import {
   Card,
@@ -304,6 +305,12 @@ export default function VendorProfilePage({
                           {vendor.reviewCount ? ` (${vendor.reviewCount} reviews)` : ''}
                         </span>
                     </div>
+                     {vendor.refundPolicyUrl && (
+                        <p className="flex items-center gap-2">
+                            <FileText className="h-4 w-4"/>
+                            <a href={vendor.refundPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">Refund Policy</a>
+                        </p>
+                    )}
                 </div>
             </div>
         </Card>
@@ -479,4 +486,6 @@ export default function VendorProfilePage({
     </div>
   );
 }
+    
+
     

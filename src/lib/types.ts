@@ -21,6 +21,9 @@ export type Vendor = {
   averageRating?: number;
   latitude?: number;
   longitude?: number;
+  refundPolicyUrl?: string;
+  supportEmail?: string;
+  fulfilmentTerms?: string;
 };
 
 export type Listing = {
@@ -69,13 +72,14 @@ export type CommunityEvent = {
 export type Order = {
   id: string;
   listingName: string;
-  customerName: string;
-  customerId?: string;
-  vendorId?: string;
+  buyerId: string;
+  vendorId: string;
   date: string;
   amount: number;
-  status: 'Pending' | 'Completed' | 'Refunded';
-  paymentIntentId?: string;
+  status: 'Pending' | 'Completed' | 'Refunded' | 'FAILED_PAYMENT';
+  paymentIntentId: string;
+  fulfilmentEta?: string;
+  commChannelId?: string;
 };
 
 export type Review = {
@@ -86,3 +90,54 @@ export type Review = {
   comment: string;
   timestamp: string;
 };
+
+export type CommunicationChannel = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  vendorId: string;
+  status: 'OPEN' | 'CLOSED';
+};
+
+export type Message = {
+  id: string;
+  commChannelId: string;
+  senderId: string;
+  role: 'buyer' | 'vendor' | 'system';
+  body: string;
+  createdAt: string;
+};
+
+export type Agreement = {
+  id: string;
+  type: 'buyer_tos' | 'vendor_tos' | 'refund_policy';
+  version: string;
+  url: string;
+  _lastValidated: string;
+};
+
+export type Consent = {
+  id: string;
+  userId: string;
+  agreementId: string;
+  version: string;
+  ip: string;
+  ua: string;
+  timestamp: string;
+};
+
+export type RefundRequest = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  vendorId: string;
+  reason: string;
+  attachments?: string[];
+  state: 'OPEN' | 'VENDOR_REVIEW' | 'STRIPE_PROCESSING' | 'RESOLVED' | 'REJECTED' | 'ESCALATED';
+  stripeRefundId?: string;
+  decision?: string;
+  decisionBy?: string;
+  decisionAt?: string;
+};
+
+    

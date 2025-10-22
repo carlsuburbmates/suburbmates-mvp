@@ -60,6 +60,19 @@
         "longitude": {
             "type": "number",
             "description": "The longitude of the business location."
+        },
+        "refundPolicyUrl": {
+            "type": "string",
+            "description": "URL to the vendor's refund policy."
+        },
+        "supportEmail": {
+            "type": "string",
+            "format": "email",
+            "description": "The vendor's customer support email address."
+        },
+        "fulfilmentTerms": {
+            "type": "string",
+            "description": "A description of the vendor's fulfillment terms for local delivery."
         }
       },
       "required": [
@@ -178,20 +191,22 @@
       "description": "Represents a customer order for a Vendor's listing.",
       "properties": {
         "listingName": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "vendorId": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
         "amount": { "type": "number" },
         "status": {
           "type": "string",
-          "enum": ["Pending", "Completed", "Refunded"]
+          "enum": ["Pending", "Completed", "Refunded", "FAILED_PAYMENT"]
         },
         "paymentIntentId": {
           "type": "string",
           "description": "The Stripe Payment Intent ID associated with this order."
-        }
+        },
+        "fulfilmentEta": { "type": "string" },
+        "commChannelId": { "type": "string" }
       },
-      "required": ["listingName", "customerName", "date", "amount", "status", "paymentIntentId"]
+      "required": ["listingName", "buyerId", "vendorId", "date", "amount", "status", "paymentIntentId"]
     },
     "Review": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -239,6 +254,80 @@
         "displayName": { "type": "string" }
       },
       "required": ["uid", "email"]
+    },
+    "CommunicationChannel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CommunicationChannel",
+      "type": "object",
+      "description": "A communication channel for an order between a buyer and a vendor.",
+      "properties": {
+        "orderId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED"] }
+      },
+      "required": ["orderId", "buyerId", "vendorId", "status"]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "A message within a communication channel.",
+      "properties": {
+        "commChannelId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "role": { "type": "string", "enum": ["buyer", "vendor", "system"] },
+        "body": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["commChannelId", "senderId", "role", "body", "createdAt"]
+    },
+    "Agreement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Agreement",
+      "type": "object",
+      "description": "A legal agreement document.",
+      "properties": {
+        "type": { "type": "string", "enum": ["buyer_tos", "vendor_tos", "refund_policy"] },
+        "version": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "_lastValidated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "version", "url", "_lastValidated"]
+    },
+    "Consent": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Consent",
+      "type": "object",
+      "description": "A record of a user's consent to a legal agreement.",
+      "properties": {
+        "userId": { "type": "string" },
+        "agreementId": { "type": "string" },
+        "version": { "type": "string" },
+        "ip": { "type": "string" },
+        "ua": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "agreementId", "version", "timestamp"]
+    },
+     "RefundRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RefundRequest",
+      "type": "object",
+      "description": "A request for a refund on an order.",
+      "properties": {
+        "orderId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "reason": { "type": "string" },
+        "attachments": { "type": "array", "items": { "type": "string" } },
+        "state": { "type": "string", "enum": ["OPEN", "VENDOR_REVIEW", "STRIPE_PROCESSING", "RESOLVED", "REJECTED", "ESCALATED"] },
+        "stripeRefundId": { "type": "string" },
+        "decision": { "type": "string" },
+        "decisionBy": { "type": "string" },
+        "decisionAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderId", "buyerId", "vendorId", "reason", "state"]
     }
   },
   "auth": {
@@ -272,6 +361,12 @@
         },
         "description": "Stores all reviews for a specific Business."
     },
+     "/vendors/{vendorId}/refund_requests/{requestId}": {
+        "schema": {
+            "$ref": "#/entities/RefundRequest"
+        },
+        "description": "Stores all refund requests for a specific Vendor."
+    },
     "/forumThreads/{threadId}": {
       "schema": {
         "$ref": "#/entities/ForumThread"
@@ -289,6 +384,32 @@
             "$ref": "#/entities/CommunityEvent"
         },
         "description": "Stores all events for the Civic Hub."
+    },
+    "/comm_channels/{channelId}": {
+      "schema": {
+        "$ref": "#/entities/CommunicationChannel"
+      },
+      "description": "Stores communication channels for orders."
+    },
+    "/comm_channels/{channelId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/Message"
+      },
+      "description": "Stores messages within a communication channel."
+    },
+     "/agreements/{agreementId}": {
+      "schema": {
+        "$ref": "#/entities/Agreement"
+      },
+      "description": "Stores legal agreement documents."
+    },
+    "/consents/{consentId}": {
+      "schema": {
+        "$ref": "#/entities/Consent"
+      },
+      "description": "Stores records of user consents to agreements."
     }
   }
 }
+
+    
