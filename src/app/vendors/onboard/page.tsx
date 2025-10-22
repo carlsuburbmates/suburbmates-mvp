@@ -28,7 +28,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@/firebase';
 
 const loginSchema = z.object({
@@ -43,6 +43,12 @@ export default function OnboardPage() {
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!isUserLoading && user) {
+        router.replace('/dashboard/vendor');
+    }
+  }, [user, isUserLoading, router]);
+
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -51,17 +57,12 @@ export default function OnboardPage() {
     },
   });
 
-  if (isUserLoading) {
+  if (isUserLoading || user) {
     return (
-        <div className="container mx-auto px-4 pb-16 flex justify-center">
+        <div className="container mx-auto px-4 pb-16 flex justify-center pt-24">
             <Loader2 className="animate-spin h-8 w-8 text-primary" />
         </div>
     );
-  }
-
-  if (user) {
-    router.push('/dashboard/vendor');
-    return null;
   }
 
   async function handleLogin(values: z.infer<typeof loginSchema>) {

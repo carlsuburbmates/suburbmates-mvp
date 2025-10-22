@@ -7,7 +7,7 @@ import { doc, collection, runTransaction } from 'firebase/firestore';
 import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import {
   Card,
@@ -264,7 +264,7 @@ export default function VendorProfilePage({
                     )}
                     {vendor.address && (
                         <p className="flex items-center gap-2">
-                           <Phone className="h-4 w-4"/>
+                           <MapPin className="h-4 w-4"/>
                            <span>{vendor.address}</span>
                         </p>
                     )}

@@ -30,7 +30,10 @@ export default function DashboardLayout({
 
   const getDescription = () => {
     if (isLoading) return "Please wait while we load your information.";
-    return "Manage your business profile, listings, and sales.";
+    if (vendor?.paymentsEnabled) {
+      return "Manage your business profile, marketplace listings, and sales.";
+    }
+    return "Manage your business profile and directory listing."
   };
 
   return (

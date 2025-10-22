@@ -120,6 +120,7 @@ export default function VendorDashboardPage() {
   }
   
   if (!user || !vendor) {
+    // This can happen briefly on first load or after logout
     return null;
   }
 
