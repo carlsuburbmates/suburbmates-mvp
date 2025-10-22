@@ -1,3 +1,4 @@
+
 # Workflow: Vendor Lifecycle — Accounts, Profiles, Payments, and Responsibilities
 
 > Canonical source: /docs/SSOT.md
