@@ -15,6 +15,10 @@
           "type": "string",
           "description": "Australian Business Number of the business."
         },
+        "abnVerified": {
+            "type": "boolean",
+            "description": "Flag indicating if the ABN has been successfully validated. If true, a 'Verified' badge is shown."
+        },
         "email": {
           "type": "string",
           "description": "Contact email address for the business.",
@@ -63,7 +67,8 @@
         "abn",
         "email",
         "address",
-        "paymentsEnabled"
+        "paymentsEnabled",
+        "abnVerified"
       ]
     },
     "Listing": {

@@ -10,6 +10,7 @@ export type Vendor = {
   id: string;
   businessName: string;
   abn: string;
+  abnVerified?: boolean;
   email: string;
   phone?: string;
   website?: string;

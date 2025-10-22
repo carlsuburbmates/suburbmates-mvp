@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Star, ShieldCheck } from "lucide-react";
 import { collection, query, where } from "firebase/firestore";
 
 import { PageHeader } from "@/components/page-header";
@@ -181,11 +181,16 @@ export default function VendorsPage() {
                           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                       )}
+                       {vendor.abnVerified && (
+                        <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                          <ShieldCheck className="h-3 w-3" />
+                          ABN Verified
+                        </div>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 flex-grow flex flex-col">
                       <h3 className="font-bold font-headline text-lg">{vendor.businessName}</h3>
-                      <p className="text-sm text-muted-foreground">{vendor.abn}</p>
                       <div className="text-sm text-muted-foreground mt-2 flex-grow">
                           {vendor.website && <p><Link href={vendor.website} target="_blank" className="hover:text-primary underline">Website</Link></p>}
                           {vendor.phone && <p>{vendor.phone}</p>}
@@ -211,7 +216,7 @@ export default function VendorsPage() {
                       Check back soon or become the first business in the directory!
                     </CardDescription>
                     <Button asChild className="mt-4">
-                      <Link href="/vendors/onboard/register">Register Your Business</Link>
+                      <Link href="/dashboard/vendor/register">Register Your Business</Link>
                     </Button>
                   </Card>
                 )}

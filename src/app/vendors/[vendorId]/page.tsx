@@ -7,7 +7,7 @@ import { doc, collection, runTransaction } from 'firebase/firestore';
 import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import {
   Card,
@@ -29,6 +29,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GoogleAuthProvider, signInWithPopup, useAuth } from 'firebase/auth';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -42,6 +43,7 @@ export default function VendorProfilePage({
   params: { vendorId: string };
 }) {
   const firestore = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -108,7 +110,7 @@ export default function VendorProfilePage({
 
   const handlePurchase = async (listing: Listing) => {
     if (!user) {
-        toast({ variant: 'destructive', title: 'Please log in to purchase an item.', description: 'Only registered business owners can make purchases at this time.' });
+        toast({ variant: 'destructive', title: 'Please log in to purchase an item.' });
         return;
     }
     if (!vendor || !vendor.stripeAccountId || !vendor.paymentsEnabled) {
@@ -174,7 +176,7 @@ export default function VendorProfilePage({
         const newReviewRef = doc(reviewsRef);
         transaction.set(newReviewRef, {
           residentId: user.uid,
-          residentName: user.displayName || 'Anonymous Business',
+          residentName: user.displayName || 'Anonymous',
           rating: values.rating,
           comment: values.comment,
           timestamp: new Date().toISOString(),
@@ -211,6 +213,24 @@ export default function VendorProfilePage({
     }
   };
 
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toast({
+            title: "Logged In",
+            description: "Welcome! You can now leave a review.",
+        });
+    } catch (error) {
+        console.error("Google login error", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Could not log you in with Google. Please try again.",
+        });
+    }
+  };
+
 
   if (isVendorLoading) {
     return (
@@ -238,7 +258,7 @@ export default function VendorProfilePage({
     <div>
       <PageHeader
         title={vendor.businessName}
-        description={`Your trusted local ${vendor.abn ? 'ABN-verified' : ''} business.`}
+        description={`Your trusted local business.`}
       />
       
       <div className="container mx-auto px-4 pb-16">
@@ -249,6 +269,12 @@ export default function VendorProfilePage({
             </div>
             <div className="flex-1 p-6">
                 <CardTitle className="font-headline text-2xl">{vendor.businessName}</CardTitle>
+                {vendor.abnVerified && (
+                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-800 border-green-200">
+                    <ShieldCheck className="mr-1.5 h-4 w-4" />
+                    ABN Verified
+                  </Badge>
+                )}
                 <div className="mt-4 flex flex-col gap-3 text-muted-foreground">
                     {vendor.website && (
                          <p className="flex items-center gap-2">
@@ -394,11 +420,14 @@ export default function VendorProfilePage({
                     </CardContent>
                   </Card>
                 ) : (
-                    <Card className="text-center p-6">
+                    <Card className="text-center p-6 bg-secondary/30">
                         <CardTitle>Want to leave a review?</CardTitle>
-                        <CardDescription className="mt-2">Please log in or register your business to share your feedback.</CardDescription>
-                        <Button asChild className="mt-4">
-                            <Link href="/vendors/onboard">Login / Register</Link>
+                        <CardDescription className="mt-2">Please sign in to share your feedback.</CardDescription>
+                         <Button className="mt-4" onClick={handleGoogleLogin}>
+                            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                            <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                            </svg>
+                            Sign in with Google
                         </Button>
                     </Card>
                 )}
