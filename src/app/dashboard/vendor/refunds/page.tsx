@@ -33,7 +33,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function VendorRefundsPage() {
   const { user } = useUser();
@@ -42,6 +46,8 @@ export default function VendorRefundsPage() {
   const { toast } = useToast();
 
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedRequest, setSelectedRequest] = useState<RefundRequest | null>(null);
 
   const requestsQuery = useMemoFirebase(
     () =>
@@ -78,12 +84,21 @@ export default function VendorRefundsPage() {
     }
   };
 
-  const handleReject = async (request: RefundRequest) => {
-    if (!auth.currentUser) return;
-    setProcessingId(request.id);
-     try {
+  const handleReject = async () => {
+    if (!auth.currentUser || !selectedRequest || !rejectionReason) {
+        toast({
+            variant: 'destructive',
+            title: 'Action Failed',
+            description: 'A reason is required to reject a request.',
+        });
+        return;
+    };
+    
+    setProcessingId(selectedRequest.id);
+
+    try {
       const idToken = await auth.currentUser.getIdToken();
-      const result = await rejectRefund(request.id, user!.uid, "Vendor has rejected this request.", idToken);
+      const result = await rejectRefund(selectedRequest.id, user!.uid, rejectionReason, idToken);
        if (result.success) {
         toast({
           title: 'Refund Rejected',
@@ -99,11 +114,14 @@ export default function VendorRefundsPage() {
       });
     } finally {
       setProcessingId(null);
+      setSelectedRequest(null);
+      setRejectionReason('');
     }
   };
 
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Manage Refund Requests</CardTitle>
@@ -186,9 +204,11 @@ export default function VendorRefundsPage() {
                                <Button variant="outline" size="sm" onClick={() => handleApprove(request)}>
                                     <Check className="mr-2 h-4 w-4" /> Approve
                                </Button>
-                               <Button variant="destructive" size="sm" onClick={() => handleReject(request)}>
-                                    <X className="mr-2 h-4 w-4" /> Reject
-                               </Button>
+                               <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" onClick={() => setSelectedRequest(request)}>
+                                        <X className="mr-2 h-4 w-4" /> Reject
+                                    </Button>
+                               </DialogTrigger>
                             </>
                         )
                     )}
@@ -210,5 +230,40 @@ export default function VendorRefundsPage() {
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={!!selectedRequest} onOpenChange={() => { setSelectedRequest(null); setRejectionReason('')}}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Reject Refund Request</DialogTitle>
+                <DialogDescription>
+                    Please provide a clear reason for rejecting this refund request. This will be sent to the customer.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="rejection-reason" className="text-right">
+                        Reason
+                    </Label>
+                    <Textarea
+                        id="rejection-reason"
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        className="col-span-3"
+                        placeholder="e.g., The item was returned in a used condition."
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                <Button type="button" onClick={handleReject} disabled={!rejectionReason || !!processingId}>
+                    {processingId === selectedRequest?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Confirm Rejection
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
