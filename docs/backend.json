@@ -1,32 +1,32 @@
 
 {
   "entities": {
-    "Vendor": {
+    "Business": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Vendor",
+      "title": "Business",
       "type": "object",
-      "description": "Represents a verified vendor in the marketplace, who may or may not be an active seller.",
+      "description": "Represents a business entity in the directory. A business can be upgraded to a Vendor to sell in the marketplace.",
       "properties": {
         "businessName": {
           "type": "string",
-          "description": "The name of the vendor's business."
+          "description": "The name of the business."
         },
         "abn": {
           "type": "string",
-          "description": "Australian Business Number of the vendor."
+          "description": "Australian Business Number of the business."
         },
         "email": {
           "type": "string",
-          "description": "Contact email address for the vendor.",
+          "description": "Contact email address for the business.",
           "format": "email"
         },
         "phone": {
           "type": "string",
-          "description": "Contact phone number for the vendor."
+          "description": "Contact phone number for the business."
         },
         "website": {
           "type": "string",
-          "description": "The vendor's business website URL.",
+          "description": "The business's website URL.",
           "format": "uri"
         },
         "address": {
@@ -35,27 +35,27 @@
         },
         "stripeAccountId": {
           "type": "string",
-          "description": "Stripe account ID associated with the vendor, populated after successful hand-off."
+          "description": "Stripe account ID associated with the business, populated after successful hand-off."
         },
         "paymentsEnabled": {
             "type": "boolean",
-            "description": "Flag indicating if the vendor's Stripe account is fully set up to receive payments. This determines if they are a 'Vendor (upgraded)'."
+            "description": "Flag indicating if the Business has been approved by an Admin to become a Vendor. If true, they can create listings and receive payments."
         },
         "reviewCount": {
             "type": "number",
-            "description": "The total number of reviews for this vendor."
+            "description": "The total number of reviews for this business."
         },
         "averageRating": {
             "type": "number",
-            "description": "The average rating for this vendor, from 1 to 5."
+            "description": "The average rating for this business, from 1 to 5."
         },
         "latitude": {
             "type": "number",
-            "description": "The latitude of the vendor's business location."
+            "description": "The latitude of the business location."
         },
         "longitude": {
             "type": "number",
-            "description": "The longitude of the vendor's business location."
+            "description": "The longitude of the business location."
         }
       },
       "required": [
@@ -69,12 +69,12 @@
     "Listing": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Listing",
-      "type": "object-v2",
-      "description": "Represents a marketplace listing offered by a vendor.",
+      "type": "object",
+      "description": "Represents a marketplace listing offered by a Vendor.",
       "properties": {
         "vendorId": {
           "type": "string",
-          "description": "The ID of the vendor who owns this listing."
+          "description": "The ID of the Vendor who owns this listing."
         },
         "listingName": {
           "type": "string",
@@ -115,7 +115,7 @@
     "ForumThread": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Forum Thread",
-      "type": "object-v2",
+      "type": "object",
       "description": "Represents a single discussion thread in the Civic Hub.",
       "properties": {
         "title": { "type": "string" },
@@ -140,7 +140,7 @@
     "ForumPost": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Forum Post",
-      "type": "object-v2",
+      "type": "object",
       "description": "Represents a single post within a forum thread.",
       "properties": {
         "authorId": { "type": "string" },
@@ -154,7 +154,7 @@
     "CommunityEvent": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Community Event",
-      "type": "object-v2",
+      "type": "object",
       "description": "Represents a local community event.",
       "properties": {
         "title": { "type": "string" },
@@ -169,8 +169,8 @@
     "Order": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Order",
-      "type": "object-v2",
-      "description": "Represents a customer order for a vendor's listing.",
+      "type": "object",
+      "description": "Represents a customer order for a Vendor's listing.",
       "properties": {
         "listingName": { "type": "string" },
         "customerName": { "type": "string" },
@@ -192,7 +192,7 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Review",
         "type": "object",
-        "description": "Represents a customer review for a vendor.",
+        "description": "Represents a Resident's review for a Business or Vendor.",
         "properties": {
           "residentId": { "type": "string" },
           "residentName": { "type": "string" },
@@ -222,6 +222,18 @@
             "listingId": { "type": "string" }
         },
         "required": ["listing", "vendorStripeAccountId", "vendorId", "listingId"]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a basic registered user (a Resident). They can be upgraded to a Business.",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" }
+      },
+      "required": ["uid", "email"]
     }
   },
   "auth": {
@@ -232,27 +244,27 @@
   "firestore": {
     "/vendors/{vendorId}": {
       "schema": {
-        "$ref": "#/entities/Vendor"
+        "$ref": "#/entities/Business"
       },
-      "description": "Stores documents for each business in the directory. Businesses with paymentsEnabled=true are active marketplace vendors."
+      "description": "Stores documents for each business in the directory. A document in this collection represents a 'Business'. If 'paymentsEnabled' is true, they are considered a 'Vendor'."
     },
     "/vendors/{vendorId}/listings/{listingId}": {
       "schema": {
         "$ref": "#/entities/Listing"
       },
-      "description": "Stores all listings for a specific vendor as a sub-collection."
+      "description": "Stores all listings for a specific Vendor as a sub-collection."
     },
     "/vendors/{vendorId}/orders/{orderId}": {
         "schema": {
             "$ref": "#/entities/Order"
         },
-        "description": "Stores all orders for a specific vendor."
+        "description": "Stores all orders for a specific Vendor."
     },
      "/vendors/{vendorId}/reviews/{reviewId}": {
         "schema": {
             "$ref": "#/entities/Review"
         },
-        "description": "Stores all reviews for a specific vendor."
+        "description": "Stores all reviews for a specific Business."
     },
     "/forumThreads/{threadId}": {
       "schema": {
@@ -274,3 +286,5 @@
     }
   }
 }
+
+    

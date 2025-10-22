@@ -19,15 +19,15 @@ This document defines the canonical terminology for the Darebin Business Directo
 - **Abilities:**
     - All abilities of a Guest.
     - Purchase items from Vendors.
-    - Post reviews on Vendor profiles.
+    - Post reviews on Business profiles.
     - Reply to discussions in the Civic Hub.
     - Access a basic user dashboard.
-- **Key Distinction:** They have an authentication record but no associated `vendor` document in Firestore.
+- **Key Distinction:** This is the base account type. They do not have a business listing.
 
 ### 1.3. Business (Directory Listing)
 - **Definition:** A `Resident` who has successfully filled out the "Register Your Business" form, creating a business profile.
 - **Abilities:**
-    - All abilities of a Resident.
+    - All abilities of a `Resident`.
     - Appears in the public **Business Directory**.
     - Can edit their business profile information (name, address, etc.).
 - **Key Distinction:** This user has a `vendor` document in Firestore with `paymentsEnabled` set to `false`. They are not yet able to sell.
@@ -35,7 +35,7 @@ This document defines the canonical terminology for the Darebin Business Directo
 ### 1.4. Vendor (Marketplace Seller)
 - **Definition:** A `Business` that has successfully connected a Stripe account and has been approved by an Administrator.
 - **Abilities:**
-    - All abilities of a Business.
+    - All abilities of a `Business`.
     - Create, edit, and delete product/service listings.
     - Appear in the filtered **Marketplace** view.
     - Receive payments for sales via Stripe Connect.
@@ -47,7 +47,7 @@ This document defines the canonical terminology for the Darebin Business Directo
 - **Abilities:**
     - Access the secure `/admin` dashboard.
     - Review all registered Businesses.
-    - Approve a `Business` to become a `Vendor` by enabling their payment status.
+    - Approve a `Business` to become a `Vendor` by toggling their payment status.
 
 ---
 
@@ -64,3 +64,5 @@ This document defines the canonical terminology for the Darebin Business Directo
 
 ### 2.4. Dashboard
 - **Definition:** The private, authenticated area located at `/dashboard/vendor` where all logged-in users (`Residents`, `Businesses`, and `Vendors`) manage their accounts and activities. The content and navigation within the dashboard adapt based on the user's status.
+
+    
