@@ -1,17 +1,36 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
 
+if (!getApps().length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
+    initializeApp({
+        credential: cert(serviceAccount)
+    });
+}
+const auth = getAuth();
+
+
 export async function POST(request: Request) {
   try {
-    const { returnUrl, refreshUrl, userId } = await request.json();
+    const authorization = request.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const idToken = authorization.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const userId = decodedToken.uid;
 
-    if (!returnUrl || !refreshUrl || !userId) {
-      return NextResponse.json({ error: 'Missing returnUrl, refreshUrl, or userId' }, { status: 400 });
+    const { returnUrl, refreshUrl } = await request.json();
+
+    if (!returnUrl || !refreshUrl) {
+      return NextResponse.json({ error: 'Missing returnUrl or refreshUrl' }, { status: 400 });
     }
 
     const account = await stripe.accounts.create({

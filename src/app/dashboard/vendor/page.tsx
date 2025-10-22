@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection, useAuth } from '@/firebase';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Vendor, Listing } from '@/lib/types';
@@ -30,6 +30,7 @@ export default function VendorDashboardPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
   const [listingToDelete, setListingToDelete] = useState<Listing | null>(null);
 
@@ -68,7 +69,7 @@ export default function VendorDashboardPage() {
   };
   
   async function handleStripeConnect() {
-     if (!user) {
+     if (!user || !auth.currentUser) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -83,15 +84,17 @@ export default function VendorDashboardPage() {
         description: 'Please wait while we prepare your secure connection.',
       });
 
+      const idToken = await auth.currentUser.getIdToken();
+
       const response = await fetch('/api/stripe/connect', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           returnUrl: `${window.location.origin}/dashboard/vendor`,
           refreshUrl: `${window.location.origin}/dashboard/vendor`,
-          userId: user.uid,
         }),
       });
 

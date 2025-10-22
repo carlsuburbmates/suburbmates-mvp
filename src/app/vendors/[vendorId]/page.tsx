@@ -104,7 +104,7 @@ export default function VendorProfilePage({
 
 
   const handlePurchase = async (listing: Listing) => {
-    if (!user) {
+    if (!user || !auth.currentUser) {
         toast({ variant: 'destructive', title: 'Please log in to purchase an item.' });
         return;
     }
@@ -120,9 +120,13 @@ export default function VendorProfilePage({
     setIsRedirecting(listing.id);
 
     try {
+      const idToken = await auth.currentUser.getIdToken();
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           listing: {
             listingName: listing.listingName,
@@ -132,7 +136,6 @@ export default function VendorProfilePage({
           vendorStripeAccountId: vendor.stripeAccountId,
           vendorId: vendor.id,
           listingId: listing.id,
-          userId: user.uid,
         }),
       });
 

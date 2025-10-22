@@ -23,9 +23,18 @@ const auth = getAuth();
 
 export async function POST(request: Request) {
   try {
-    const { listing, vendorStripeAccountId, vendorId, listingId, userId } = await request.json();
+    const authorization = request.headers.get('Authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const idToken = authorization.split('Bearer ')[1];
+    const decodedToken = await auth.verifyIdToken(idToken);
+    const userId = decodedToken.uid;
 
-    if (!listing || !vendorStripeAccountId || !vendorId || !listingId || !userId) {
+
+    const { listing, vendorStripeAccountId, vendorId, listingId } = await request.json();
+
+    if (!listing || !vendorStripeAccountId || !vendorId || !listingId) {
       return NextResponse.json({ error: 'Missing required checkout information.' }, { status: 400 });
     }
 
