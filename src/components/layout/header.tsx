@@ -51,7 +51,7 @@ export function Header() {
     }
   }, [user]);
 
-  const handleLoginForVendor = async () => {
+  const handleBecomeVendor = async () => {
     if (user) {
       router.push('/dashboard/vendor/register');
       return;
@@ -194,7 +194,7 @@ export function Header() {
                 <Button variant="ghost" onClick={handleGoogleLogin}>
                     Sign in
                 </Button>
-                <Button onClick={handleLoginForVendor}>Become a Vendor</Button>
+                <Button onClick={handleBecomeVendor}>Become a Vendor</Button>
               </div>
             ))}
 
@@ -257,7 +257,7 @@ export function Header() {
                       <Button onClick={handleGoogleLogin} variant="secondary">
                         Sign in
                       </Button>
-                      <Button onClick={handleLoginForVendor}>Become a Vendor</Button>
+                      <Button onClick={handleBecomeVendor}>Become a Vendor</Button>
                     </>
                   )}
                 </div>
@@ -269,5 +269,3 @@ export function Header() {
     </header>
   );
 }
-
-    
