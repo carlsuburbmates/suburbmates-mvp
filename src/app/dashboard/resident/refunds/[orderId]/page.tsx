@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Paperclip } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { doc, collection, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -19,6 +19,7 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
@@ -34,6 +35,7 @@ import type { Order, Vendor } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { sendNewRefundRequestNotification } from '@/lib/email';
+import { uploadImage } from '@/ai/flows/upload-image';
 
 
 const refundRequestSchema = z.object({
@@ -41,7 +43,18 @@ const refundRequestSchema = z.object({
     .string()
     .min(20, 'Please provide a detailed reason of at least 20 characters.')
     .max(1000, 'Your reason cannot exceed 1000 characters.'),
+  attachment: z.any().optional(),
 });
+
+// Helper function to convert file to data URI
+const fileToDataUri = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 
 export default function RefundRequestPage() {
   const { toast } = useToast();
@@ -71,6 +84,8 @@ export default function RefundRequestPage() {
       reason: '',
     },
   });
+
+  const attachmentRef = form.register('attachment');
   
   async function onSubmit(values: z.infer<typeof refundRequestSchema>) {
     if (!user || !firestore || !vendorId || !orderId || !order) {
@@ -83,14 +98,29 @@ export default function RefundRequestPage() {
     }
     
     setIsSubmitting(true);
+    let attachmentUrl: string | undefined = undefined;
 
     try {
+        // Handle file upload if present
+        if (values.attachment && values.attachment.length > 0) {
+            const file = values.attachment[0];
+            const fileDataUri = await fileToDataUri(file);
+
+            toast({ title: "Uploading image...", description: "Please wait." });
+            const uploadResult = await uploadImage({
+                fileDataUri,
+                filePath: `refund_attachments/${user.uid}/${Date.now()}_${file.name}`,
+            });
+            attachmentUrl = uploadResult.publicUrl;
+        }
+
         const refundRequestData = {
             orderId: orderId as string,
             buyerId: user.uid,
             vendorId: vendorId as string,
             reason: values.reason,
             state: 'OPEN' as const,
+            attachments: attachmentUrl ? [attachmentUrl] : [],
         };
 
         const refundRequestsRef = collection(firestore, `vendors/${vendorId}/refund_requests`);
@@ -182,6 +212,26 @@ export default function RefundRequestPage() {
                   </FormControl>
                   <FormDescription>
                     Your feedback is important. The vendor will be notified of your request.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="attachment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className='flex items-center gap-2'>
+                    <Paperclip className="h-4 w-4" />
+                    Attach Photo (Optional)
+                  </FormLabel>
+                  <FormControl>
+                     <Input type="file" accept="image/*" {...attachmentRef} />
+                  </FormControl>
+                  <FormDescription>
+                    If the item is damaged or not as described, please provide a photo.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
