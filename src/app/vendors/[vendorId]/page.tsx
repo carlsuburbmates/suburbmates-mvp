@@ -29,7 +29,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GoogleAuthProvider, signInWithPopup, useAuth } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -268,13 +269,15 @@ export default function VendorProfilePage({
                 {vendorImage && <Image src={vendorImage.imageUrl} alt={vendor.businessName} fill className="object-cover" data-ai-hint={vendorImage.imageHint} />}
             </div>
             <div className="flex-1 p-6">
-                <CardTitle className="font-headline text-2xl">{vendor.businessName}</CardTitle>
-                {vendor.abnVerified && (
-                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-800 border-green-200">
-                    <ShieldCheck className="mr-1.5 h-4 w-4" />
-                    ABN Verified
-                  </Badge>
-                )}
+                <div className="flex items-center gap-4">
+                  <CardTitle className="font-headline text-2xl">{vendor.businessName}</CardTitle>
+                  {vendor.abnVerified && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                      <ShieldCheck className="mr-1.5 h-4 w-4" />
+                      ABN Verified
+                    </Badge>
+                  )}
+                </div>
                 <div className="mt-4 flex flex-col gap-3 text-muted-foreground">
                     {vendor.website && (
                          <p className="flex items-center gap-2">
