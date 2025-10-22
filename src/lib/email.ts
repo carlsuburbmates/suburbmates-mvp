@@ -142,7 +142,7 @@ The Darebin Business Directory Team
 `;
   try {
     await resend.emails.send({
-      from: FROM_EMAIL,
+      from: FROM_EmaiL,
       to: vendor.email,
       subject: subject,
       text: text,

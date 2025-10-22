@@ -78,13 +78,14 @@ export async function approveRefund(requestId: string, vendorId: string, idToken
         });
 
         // 2. Update Firestore documents
-        await updateDoc(requestRef, {
-            state: 'RESOLVED',
+        const updatedRequestData = {
+            state: 'RESOLVED' as const,
             stripeRefundId: refund.id,
             decision: 'Refund approved and processed via Stripe.',
             decisionBy: vendorId,
             decisionAt: new Date().toISOString(),
-        });
+        }
+        await updateDoc(requestRef, updatedRequestData);
 
         // This will be picked up by the webhook to update order status,
         // but we can also update it here for immediate UI feedback if needed.
@@ -93,9 +94,10 @@ export async function approveRefund(requestId: string, vendorId: string, idToken
         
         // 3. Notify customer
         const buyer = await auth.getUser(request.buyerId);
-        const vendor = (await getDoc(doc(db, 'vendors', vendorId))).data() as Vendor;
+        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
+        const vendor = vendorSnap.data() as Vendor;
         if (buyer.email) {
-            await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, state: 'RESOLVED' }, vendor);
+            await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, ...updatedRequestData }, vendor);
         }
 
         revalidatePath(`/dashboard/vendor/refunds`);
@@ -125,19 +127,21 @@ export async function rejectRefund(requestId: string, vendorId: string, reason: 
         }
 
         // 1. Update Firestore
-        await updateDoc(requestRef, {
-            state: 'REJECTED',
+        const updatedRequestData = {
+            state: 'REJECTED' as const,
             decision: reason,
             decisionBy: vendorId,
             decisionAt: new Date().toISOString(),
-        });
+        }
+        await updateDoc(requestRef, updatedRequestData);
         
         // 2. Notify customer
         const order = await getOrder(vendorId, request.orderId);
         const buyer = await auth.getUser(request.buyerId);
-        const vendor = (await getDoc(doc(db, 'vendors', vendorId))).data() as Vendor;
+        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
+        const vendor = vendorSnap.data() as Vendor;
         if (buyer.email) {
-             await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, state: 'REJECTED', decision: reason }, vendor);
+             await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, ...updatedRequestData }, vendor);
         }
 
 

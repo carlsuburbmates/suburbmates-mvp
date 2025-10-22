@@ -17,10 +17,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { RefundRequest, Order } from '@/lib/types';
+import type { RefundRequest } from '@/lib/types';
 import { FileQuestion, Check, X, Loader2 } from 'lucide-react';
 import { useUser, useCollection, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
-import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -32,9 +32,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -85,7 +85,7 @@ export default function VendorRefundsPage() {
   };
 
   const handleReject = async () => {
-    if (!auth.currentUser || !selectedRequest || !rejectionReason) {
+    if (!auth.currentUser || !selectedRequest || !rejectionReason.trim()) {
         toast({
             variant: 'destructive',
             title: 'Action Failed',
@@ -102,6 +102,7 @@ export default function VendorRefundsPage() {
        if (result.success) {
         toast({
           title: 'Refund Rejected',
+          description: 'The customer has been notified.',
         });
       } else {
         throw new Error(result.error);
@@ -195,7 +196,7 @@ export default function VendorRefundsPage() {
                   <TableCell className="text-right space-x-2">
                     {request.state === 'OPEN' && (
                         processingId === request.id ? (
-                            <Button disabled size="sm">
+                            <Button disabled size="sm" className="w-48">
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Processing...
                             </Button>
@@ -231,7 +232,7 @@ export default function VendorRefundsPage() {
       </CardContent>
     </Card>
 
-    <Dialog open={!!selectedRequest} onOpenChange={() => { setSelectedRequest(null); setRejectionReason('')}}>
+    <Dialog open={!!selectedRequest} onOpenChange={(isOpen) => { if(!isOpen) { setSelectedRequest(null); setRejectionReason('') } }}>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Reject Refund Request</DialogTitle>
@@ -240,16 +241,16 @@ export default function VendorRefundsPage() {
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="rejection-reason" className="text-right">
-                        Reason
+                <div className="grid w-full items-center gap-2">
+                    <Label htmlFor="rejection-reason">
+                        Reason for Rejection
                     </Label>
                     <Textarea
                         id="rejection-reason"
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        className="col-span-3"
                         placeholder="e.g., The item was returned in a used condition."
+                        rows={4}
                     />
                 </div>
             </div>
@@ -257,7 +258,7 @@ export default function VendorRefundsPage() {
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">Cancel</Button>
                 </DialogClose>
-                <Button type="button" onClick={handleReject} disabled={!rejectionReason || !!processingId}>
+                <Button type="button" onClick={handleReject} disabled={!rejectionReason.trim() || !!processingId}>
                     {processingId === selectedRequest?.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     Confirm Rejection
                 </Button>
