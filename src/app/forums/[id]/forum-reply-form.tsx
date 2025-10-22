@@ -62,7 +62,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
           <CardTitle>Join the conversation</CardTitle>
           <CardDescription className="mt-2">You must be a registered business owner to post a reply.</CardDescription>
           <Button asChild className="mt-4">
-            <Link href="/vendors/onboard/register">Login or Register</Link>
+            <Link href="/vendors/onboard/register">Register Your Business</Link>
           </Button>
         </Card>
     )
