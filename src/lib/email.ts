@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import type { Order, Vendor } from './types';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+const FROM_EMAIL = 'onboarding@resend.dev';
 
 export async function sendOrderConfirmationEmail(order: Order, vendor: Vendor, customerEmail: string) {
   const subject = `Your order for ${order.listingName} is confirmed!`;
