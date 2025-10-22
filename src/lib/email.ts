@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import type { Order, Vendor } from './types';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = 'onboarding@resend.dev'; // Replace with your verified domain email
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
 export async function sendOrderConfirmationEmail(order: Order, vendor: Vendor, customerEmail: string) {
   const subject = `Your order for ${order.listingName} is confirmed!`;
@@ -95,5 +95,6 @@ export async function sendStripeActionRequiredEmail(vendor: Vendor, message: str
        console.error('[EMAIL] Error sending Stripe action required email:', error);
     }
   }
+
 
 
