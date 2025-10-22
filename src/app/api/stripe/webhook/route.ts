@@ -121,7 +121,9 @@ export async function POST(request: Request) {
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
 
                 // Emit Notifications (Transactional Email)
-                await sendOrderConfirmationEmail(orderData as any, vendor, customer.email!);
+                if (customer.email) {
+                  await sendOrderConfirmationEmail(orderData as any, vendor, customer.email);
+                }
                 await sendNewOrderNotification(orderData as any, vendor);
 
             } catch (error) {

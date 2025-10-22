@@ -95,6 +95,3 @@ export async function sendStripeActionRequiredEmail(vendor: Vendor, message: str
        console.error('[EMAIL] Error sending Stripe action required email:', error);
     }
   }
-
-
-
