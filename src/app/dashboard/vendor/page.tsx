@@ -187,7 +187,7 @@ export default function VendorDashboardPage() {
                         <CardDescription>Manage your products and services offered on the marketplace.</CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href="/vendors/onboard/listing">
+                        <Link href="/dashboard/vendor/edit-listing/new">
                             <ListPlus className="mr-2 h-4 w-4" />
                             Create New Listing
                         </Link>
@@ -237,7 +237,7 @@ export default function VendorDashboardPage() {
                             </CardContent>
                             <CardFooter className="flex gap-2">
                                  <Button variant="outline" size="sm" asChild>
-                                    <Link href={`/vendors/profile/edit-listing/${listing.id}`}>
+                                    <Link href={`/dashboard/vendor/edit-listing/${listing.id}`}>
                                         <Edit className="mr-2 h-4 w-4"/>
                                         Edit
                                     </Link>
@@ -259,7 +259,7 @@ export default function VendorDashboardPage() {
                             <h3 className="font-semibold">You have no listings yet</h3>
                             <p className="text-muted-foreground text-sm mt-1">Create your first listing to get started.</p>
                              <Button asChild className="mt-4">
-                                <Link href="/vendors/onboard/listing">
+                                <Link href="/dashboard/vendor/edit-listing/new">
                                     <ListPlus className="mr-2 h-4 w-4" />
                                     Create a Listing
                                 </Link>
@@ -296,3 +296,5 @@ export default function VendorDashboardPage() {
     </>
   );
 }
+
+    
