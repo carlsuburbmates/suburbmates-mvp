@@ -8,6 +8,8 @@ import { CreditCard, CheckCircle2, Phone, Link2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -34,8 +36,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { validateAbn } from '@/ai/flows/validate-abn';
+import { Separator } from '@/components/ui/separator';
 
 const vendorRegistrationSchema = z.object({
+  displayName: z.string().min(2, 'Your name must be at least 2 characters.'),
+  email: z.string().email(),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
   businessName: z
     .string()
     .min(2, 'Business name must be at least 2 characters.'),
@@ -45,6 +51,7 @@ const vendorRegistrationSchema = z.object({
       /^\d{2} \d{3} \d{3} \d{3}$/,
       'Please enter a valid ABN format (e.g., 12 345 678 901).'
     ),
+  address: z.string().min(5, 'Please enter a valid business address.'),
   phone: z.string().optional(),
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   consent: z.boolean().refine(val => val === true, {
@@ -56,7 +63,7 @@ export default function VendorRegistrationPage() {
   const [step, setStep] = useState(1);
   const { toast } = useToast();
   const router = useRouter();
-  const { user } = useUser();
+  const auth = useAuth();
   const firestore = useFirestore();
   const [isAbnLoading, setIsAbnLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,19 +72,21 @@ export default function VendorRegistrationPage() {
   const form = useForm<z.infer<typeof vendorRegistrationSchema>>({
     resolver: zodResolver(vendorRegistrationSchema),
     defaultValues: {
+      displayName: '',
+      email: '',
+      password: '',
       businessName: '',
       abn: '',
+      address: '',
       phone: '',
       website: '',
       consent: false,
     },
   });
+  
+  const currentAuthUser = useUser();
 
   async function handleVendorRegistration(values: z.infer<typeof vendorRegistrationSchema>) {
-    if (!user || !firestore) {
-        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to register as a vendor.' });
-        return;
-    }
     setIsSubmitting(true);
     setIsAbnLoading(true);
 
@@ -89,6 +98,10 @@ export default function VendorRegistrationPage() {
         }
 
         toast({ title: 'ABN Validated!', description: validationResult.message });
+
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: values.displayName });
         
         const vendorRef = doc(firestore, 'vendors', user.uid);
         const vendorData = {
@@ -96,6 +109,7 @@ export default function VendorRegistrationPage() {
             email: user.email,
             businessName: values.businessName,
             abn: values.abn,
+            address: values.address,
             phone: values.phone || '',
             website: values.website || '',
             paymentsEnabled: false,
@@ -104,16 +118,20 @@ export default function VendorRegistrationPage() {
         setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
 
         toast({
-            title: 'Business Details Saved',
-            description: 'Your business details have been successfully validated.',
+            title: 'Business Account Created',
+            description: 'Your business details have been validated and saved.',
         });
         setStep(2);
     } catch (error: any) {
       console.error('Onboarding Error:', error);
+      let description = 'Could not save business details. Please try again.';
+      if (error.code === 'auth/email-already-in-use') {
+        description = 'This email is already registered. Please log in or use a different email.';
+      }
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: 'Could not save business details. Please try again.',
+        description: description,
       });
     } finally {
         setIsAbnLoading(false);
@@ -123,7 +141,7 @@ export default function VendorRegistrationPage() {
 
 
   async function handleStripeConnect() {
-     if (!user) {
+     if (!currentAuthUser.user) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
@@ -146,8 +164,8 @@ export default function VendorRegistrationPage() {
         },
         body: JSON.stringify({
           returnUrl: `${window.location.origin}/dashboard/vendor`,
-          refreshUrl: `${window.location.origin}/dashboard/vendor/register`,
-          userId: user.uid,
+          refreshUrl: `${window.location.origin}/dashboard/vendor`,
+          userId: currentAuthUser.user.uid,
         }),
       });
 
@@ -180,10 +198,10 @@ export default function VendorRegistrationPage() {
         <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-lg shadow-2xl">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">
-              {step === 1 ? "Step 1: Business Details" : "Step 2: Connect for Payments"}
+              {step === 1 ? "Step 1: Business & Account Details" : "Step 2: Connect for Payments"}
             </CardTitle>
             <CardDescription>
-              {step === 1 ? "Provide your business information for verification." : "Securely connect your Stripe account to receive payments."}
+              {step === 1 ? "This information is used to create your account and verify your business." : "Securely connect your Stripe account to receive payments for sales."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -193,73 +211,141 @@ export default function VendorRegistrationPage() {
                     onSubmit={form.handleSubmit(handleVendorRegistration)}
                     className="space-y-8"
                     >
-                    <FormField
-                        control={form.control}
-                        name="businessName"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Business Name</FormLabel>
-                            <FormControl>
-                            <Input
-                                placeholder="e.g., Green Thumb Gardening"
-                                {...field}
+                    
+                    <div className='space-y-4 p-4 border rounded-lg'>
+                        <h3 className='font-medium'>Your Account Credentials</h3>
+                        <FormField
+                            control={form.control}
+                            name="displayName"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Your Full Name</FormLabel>
+                                <FormControl>
+                                <Input
+                                    placeholder="e.g., Jane Doe"
+                                    {...field}
+                                />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Login Email</FormLabel>
+                                    <FormControl>
+                                    <Input type="email" placeholder="you@email.com" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
                             />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="abn"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Australian Business Number (ABN)</FormLabel>
-                            <FormControl>
-                            <Input placeholder="12 345 678 901" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                            We validate your ABN to ensure all vendors are
-                            legitimate businesses.
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Password</FormLabel>
+                                    <FormControl>
+                                    <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className='space-y-4 p-4 border rounded-lg'>
+                        <h3 className='font-medium'>Public Business Details</h3>
                         <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
+                            control={form.control}
+                            name="businessName"
+                            render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Contact Phone (Optional)</FormLabel>
-                            <FormControl>
-                                <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="0412 345 678" {...field} className="pl-8"/>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
+                                <FormLabel>Business Name</FormLabel>
+                                <FormControl>
+                                <Input
+                                    placeholder="e.g., Green Thumb Gardening"
+                                    {...field}
+                                />
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
-                        )}
+                            )}
                         />
                         <FormField
-                        control={form.control}
-                        name="website"
-                        render={({ field }) => (
+                            control={form.control}
+                            name="abn"
+                            render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Website (Optional)</FormLabel>
-                            <FormControl>
-                                <div className="relative">
-                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input placeholder="https://your-business.com.au" {...field} className="pl-8"/>
-                                </div>
-                            </FormControl>
-                            <FormMessage />
+                                <FormLabel>Australian Business Number (ABN)</FormLabel>
+                                <FormControl>
+                                <Input placeholder="12 345 678 901" {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                We validate your ABN to ensure all vendors are
+                                legitimate businesses.
+                                </FormDescription>
+                                <FormMessage />
                             </FormItem>
-                        )}
+                            )}
                         />
+                         <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Business Address</FormLabel>
+                                <FormControl>
+                                <Input placeholder="e.g., 123 High St, Northcote VIC 3070" {...field} />
+                                </FormControl>
+                                <FormDescription>
+                                Your business must be located in the Darebin council area.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Contact Phone (Optional)</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="0412 345 678" {...field} className="pl-8"/>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                            <FormField
+                            control={form.control}
+                            name="website"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Website (Optional)</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="https://your-business.com.au" {...field} className="pl-8"/>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        </div>
                     </div>
                     
                     <FormField
@@ -276,22 +362,21 @@ export default function VendorRegistrationPage() {
                             <div className="space-y-1 leading-none">
                             <FormLabel>Agree to Terms and Conditions</FormLabel>
                             <FormDescription>
-                                By checking this box, you agree to our{' '}
+                                I understand that my business details will be public. By checking this box, I agree to the{' '}
                                 <Link
                                 href="/terms"
                                 className="underline hover:text-primary"
                                 >
                                 Terms of Service
                                 </Link>{' '}
-                                and acknowledge our{' '}
+                                and acknowledge the{' '}
                                 <Link
                                 href="/privacy"
                                 className="underline hover:text-primary"
                                 >
                                 Privacy Policy
                                 </Link>
-                                , including purpose-specific data usage for vendor
-                                verification.
+                                .
                             </FormDescription>
                             <FormMessage />
                             </div>
@@ -300,7 +385,7 @@ export default function VendorRegistrationPage() {
                     />
                     <Button type="submit" className="w-full md:w-auto" disabled={isAbnLoading || isSubmitting}>
                             {(isAbnLoading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isAbnLoading ? 'Validating ABN...' : 'Validate and Continue'}
+                        {isAbnLoading ? 'Validating ABN...' : 'Create Account and Continue'}
                     </Button>
                     </form>
                 </Form>
@@ -309,14 +394,12 @@ export default function VendorRegistrationPage() {
             {step === 2 && (
               <div className="space-y-8">
                 <div className="text-center bg-secondary p-8 rounded-lg">
+                  <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-4" />
                   <h3 className="font-headline text-xl font-bold">
-                    Connect your Stripe account
+                    Account Created! One Last Step.
                   </h3>
                   <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                    We partner with Stripe for secure payment processing. You
-                    will be redirected to Stripe to connect your account
-                    securely. We do not handle your financial information
-                    directly.
+                    To sell products and receive payments, connect your Stripe account. We partner with Stripe for secure payment processing and never handle your financial data directly.
                   </p>
                   <Button
                     className="mt-6"
@@ -326,10 +409,10 @@ export default function VendorRegistrationPage() {
                     <CreditCard className="mr-2 h-5 w-5" />
                     Connect with Stripe
                   </Button>
+                   <Button variant="link" onClick={() => router.push('/dashboard/vendor')} className="mt-2">
+                        Skip for now
+                    </Button>
                 </div>
-                <Button variant="outline" onClick={() => setStep(1)}>
-                  Back
-                </Button>
               </div>
             )}
           </CardContent>
@@ -338,5 +421,3 @@ export default function VendorRegistrationPage() {
     </>
   );
 }
-
-    

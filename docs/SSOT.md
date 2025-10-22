@@ -1,3 +1,4 @@
+
 # Single Source of Truth (SSOT) - Core Terminology
 
 This document defines the canonical terminology for the Darebin Business Directory application. All user-facing text, documentation, and code comments should adhere to these definitions to ensure clarity and consistency.
@@ -15,17 +16,17 @@ This document defines the canonical terminology for the Darebin Business Directo
 - **Limitations:** Cannot perform any action requiring an identity (purchase, post, review, manage content).
 
 ### 1.2. Resident
-- **Definition:** A user who has created a basic account with a Name, Email, and Password. This is the standard authenticated user.
+- **Definition:** A user who has created a basic account, typically via a social login like Google. This is the standard authenticated user for community participation.
 - **Abilities:**
     - All abilities of a Guest.
     - Purchase items from Vendors.
     - Post reviews on Business profiles.
     - Reply to discussions in the Civic Hub.
     - Access a basic user dashboard.
-- **Key Distinction:** This is the base account type. They do not have a business listing.
+- **Key Distinction:** They do not have a business listing and have not registered via the business-specific flow.
 
 ### 1.3. Business (Directory Listing)
-- **Definition:** A `Resident` who has successfully filled out the "Register Your Business" form, creating a business profile.
+- **Definition:** A user who has successfully registered their business via the dedicated "Become a Vendor" flow, creating a business profile.
 - **Abilities:**
     - All abilities of a `Resident`.
     - Appears in the public **Business Directory**.
@@ -64,5 +65,3 @@ This document defines the canonical terminology for the Darebin Business Directo
 
 ### 2.4. Dashboard
 - **Definition:** The private, authenticated area located at `/dashboard/vendor` where all logged-in users (`Residents`, `Businesses`, and `Vendors`) manage their accounts and activities. The content and navigation within the dashboard adapt based on the user's status.
-
-    

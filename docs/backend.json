@@ -120,7 +120,7 @@
       "properties": {
         "title": { "type": "string" },
         "authorName": { "type": "string" },
-        "authorAvatarId": { "type": "string" },
+        "authorAvatarUrl": { "type": "string" },
         "timestamp": { "type": "string" },
         "tags": {
           "type": "array",
@@ -145,7 +145,7 @@
       "properties": {
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
-        "authorAvatarId": { "type": "string" },
+        "authorAvatarUrl": { "type": "string" },
         "timestamp": { "type": "string" },
         "content": { "type": "string" }
       },
@@ -238,7 +238,8 @@
   },
   "auth": {
     "providers": [
-      "password"
+      "password",
+      "google.com"
     ]
   },
   "firestore": {
@@ -286,5 +287,3 @@
     }
   }
 }
-
-    

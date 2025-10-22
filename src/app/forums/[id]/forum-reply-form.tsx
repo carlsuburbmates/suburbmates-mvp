@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { collection } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useAuth } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -45,6 +46,7 @@ type ForumReplyFormProps = {
 export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { user } = useUser();
 
   const form = useForm<z.infer<typeof replyFormSchema>>({
@@ -54,15 +56,34 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     },
   });
 
-  const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toast({
+            title: "Logged In",
+            description: "You can now join the discussion!",
+        });
+    } catch (error) {
+        console.error("Google login error", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Could not log you in with Google. Please try again.",
+        });
+    }
+  };
 
   if (!user) {
     return (
        <Card className="text-center p-6">
           <CardTitle>Join the conversation</CardTitle>
-          <CardDescription className="mt-2">You must have an account to post a reply. Register your business to participate.</CardDescription>
-          <Button asChild className="mt-4">
-            <Link href="/register">Create an Account</Link>
+          <CardDescription className="mt-2">Sign in with Google to post a reply.</CardDescription>
+          <Button className="mt-4" onClick={handleGoogleLogin}>
+              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                  <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+              </svg>
+              Sign in with Google to Reply
           </Button>
         </Card>
     )
@@ -71,7 +92,6 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
 
   async function onSubmit(values: z.infer<typeof replyFormSchema>) {
     if (!user || !firestore) {
-      // This should not happen if the component renders, but as a safeguard.
       toast({
         variant: 'destructive',
         title: 'Not Authenticated',
@@ -88,8 +108,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     const newPost = {
       authorId: user.uid,
       authorName: user.displayName || 'Anonymous User',
-      // This is a placeholder. In a real app, users would have profile avatars.
-      authorAvatarId: 'user-avatar-1', 
+      authorAvatarUrl: user.photoURL || undefined,
       timestamp: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
       content: values.content,
     };
@@ -108,8 +127,8 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     <Card>
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar>
-            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt={user?.displayName || 'user'} data-ai-hint={userAvatar.imageHint}/>}
-            <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+            <AvatarImage src={user.photoURL || undefined} alt={user?.displayName || 'user'} />
+            <AvatarFallback>{user?.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="font-headline text-xl">Post a Reply</CardTitle>

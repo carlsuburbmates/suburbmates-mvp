@@ -3,8 +3,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, LogOut, Shield } from 'lucide-react';
-import { signOut } from 'firebase/auth';
+import { Menu, LogOut, Shield, User } from 'lucide-react';
+import { signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import Image from 'next/image';
+
 
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/lib/types';
@@ -14,6 +16,16 @@ import { Logo } from '@/components/icons';
 import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+
 
 const navItems: NavItem[] = [
   { title: 'Home', href: '/' },
@@ -37,6 +49,25 @@ export function Header() {
       setIsAdmin(false);
     }
   }, [user]);
+
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toast({
+            title: "Logged In",
+            description: "Welcome to the community!",
+        });
+    } catch (error) {
+        console.error("Google login error", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Could not log you in with Google. Please try again.",
+        });
+    }
+  };
+
 
   const handleLogout = async () => {
     try {
@@ -80,19 +111,6 @@ export function Header() {
               {item.title}
             </Link>
           ))}
-          {user && (
-             <Link
-              href="/dashboard/vendor"
-              className={cn(
-                'transition-colors hover:text-foreground/80',
-                pathname?.startsWith('/dashboard')
-                  ? 'text-foreground font-semibold'
-                  : 'text-foreground/60'
-              )}
-            >
-              Dashboard
-            </Link>
-          )}
            {isAdmin && (
              <Link
               href="/admin"
@@ -112,17 +130,46 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end gap-2">
           {!isUserLoading &&
             (user ? (
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                       <Avatar className="h-8 w-8">
+                         {user.photoURL ? (
+                            <AvatarImage src={user.photoURL} alt={user.displayName || 'User'}/>
+                         ) : (
+                           <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+                         )}
+                       </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                     <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                     <DropdownMenuItem asChild>
+                        <Link href="/dashboard/vendor"><User className="mr-2 h-4 w-4" />Dashboard</Link>
+                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                <Button asChild variant="ghost">
-                  <Link href="/vendors/onboard">Login</Link>
+                <Button variant="ghost" onClick={handleGoogleLogin}>
+                    Sign in with Google
                 </Button>
                 <Button asChild>
-                  <Link href="/register">Create Account</Link>
+                  <Link href="/dashboard/vendor/register">Become a Vendor</Link>
                 </Button>
               </div>
             ))}
@@ -160,19 +207,6 @@ export function Header() {
                       {item.title}
                     </Link>
                   ))}
-                   {user && (
-                    <Link
-                      href="/dashboard/vendor"
-                      className={cn(
-                        'text-lg',
-                        pathname?.startsWith('/dashboard')
-                          ? 'text-primary font-bold'
-                          : 'text-muted-foreground'
-                      )}
-                    >
-                      Dashboard
-                    </Link>
-                  )}
                    {isAdmin && (
                     <Link
                       href="/admin"
@@ -188,7 +222,7 @@ export function Header() {
                     </Link>
                   )}
                 </nav>
-                <div className="mt-8 flex flex-col gap-4">
+                 <div className="mt-auto flex flex-col gap-4 pt-8">
                   {user ? (
                      <Button onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -196,11 +230,11 @@ export function Header() {
                       </Button>
                   ) : (
                     <>
-                      <Button asChild variant="secondary">
-                        <Link href="/vendors/onboard">Login</Link>
+                      <Button onClick={handleGoogleLogin} variant="secondary">
+                        Sign in with Google
                       </Button>
                       <Button asChild>
-                        <Link href="/register">Create Account</Link>
+                        <Link href="/dashboard/vendor/register">Become a Vendor</Link>
                       </Button>
                     </>
                   )}
