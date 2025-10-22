@@ -61,7 +61,7 @@ export function DiscussionSummary({ discussionText }: DiscussionSummaryProps) {
             Use our AI tool to get the key points from this discussion.
           </AlertDescription>
         </div>
-        <Button onClick={handleSummarize} disabled={isLoading} className="w-full md:w-auto mt-2 md:mt-0 shrink-0">
+        <Button onClick={handleSummarize} disabled={isLoading || !discussionText} className="w-full md:w-auto mt-2 md:mt-0 shrink-0">
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

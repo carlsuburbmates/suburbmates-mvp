@@ -39,8 +39,9 @@ export type Listing = {
 
 export type ForumPost = {
   id: string;
+  authorId: string;
   authorName: string;
-  authorAvatarId: string;
+  authorAvatarUrl: string | null;
   timestamp: string;
   content: string;
 };
@@ -49,7 +50,7 @@ export type ForumThread = {
   id: string;
   title: string;
   authorName: string;
-  authorAvatarId: string;
+  authorAvatarUrl: string;
   timestamp: string;
   tags: {
     name: string;

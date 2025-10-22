@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from "next/link";
@@ -26,7 +25,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { EventSummary } from "./event-summary";
@@ -82,9 +80,7 @@ export default function ForumsPage() {
                   </CardFooter>
                 </Card>
               ))}
-              {forumThreads?.map((thread) => {
-                const authorAvatar = PlaceHolderImages.find(p => p.id === thread.authorAvatarId);
-                return (
+              {forumThreads?.map((thread) => (
                   <Card key={thread.id}>
                     <CardHeader>
                       <CardTitle className="font-headline text-xl">
@@ -97,11 +93,11 @@ export default function ForumsPage() {
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2 text-sm pt-2">
                         <Avatar className="h-6 w-6">
-                           {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt={thread.authorName} data-ai-hint={authorAvatar.imageHint}/>}
+                           <AvatarImage src={thread.authorAvatarUrl} alt={thread.authorName} />
                           <AvatarFallback>{thread.authorName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span>
-                          {thread.authorName} started this discussion{" "}
+                          {thread.authorName} started this discussion on{" "}
                           {thread.timestamp}.
                         </span>
                       </CardDescription>
@@ -123,8 +119,8 @@ export default function ForumsPage() {
                       </div>
                     </CardFooter>
                   </Card>
-                );
-              })}
+                )
+              )}
               {!areThreadsLoading && forumThreads?.length === 0 && (
                 <Card className="text-center p-8">
                   <CardTitle>No Discussions Yet</CardTitle>
@@ -149,18 +145,15 @@ export default function ForumsPage() {
                   </CardContent>
                 </Card>
               ))}
-              {communityEvents?.map((event) => {
-                const eventImage = PlaceHolderImages.find(p => p.id === event.imageId);
-                return (
+              {communityEvents?.map((event) => (
                 <Card key={event.id} className="flex flex-col">
-                  {eventImage && (
+                  {event.imageId && (
                     <div className="relative h-56 w-full">
                        <Image
-                        src={eventImage.imageUrl}
+                        src={`https://picsum.photos/seed/${event.imageId}/600/400`}
                         alt={event.title}
                         fill
                         className="object-cover rounded-t-lg"
-                        data-ai-hint={eventImage.imageHint}
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                     </div>
@@ -183,7 +176,7 @@ export default function ForumsPage() {
                     <EventSummary eventDetails={event.details} />
                   </CardFooter>
                 </Card>
-              )})}
+              ))}
                {!areEventsLoading && communityEvents?.length === 0 && (
                 <Card className="md:col-span-2 lg:col-span-3 text-center p-8">
                   <CardTitle>No Upcoming Events</CardTitle>

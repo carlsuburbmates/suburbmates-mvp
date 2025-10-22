@@ -1,12 +1,10 @@
-
 'use client';
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MessageSquare, ArrowLeft, Building2 } from "lucide-react";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, orderBy, query } from "firebase/firestore";
 
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import {
   Card,
   CardContent,
@@ -32,7 +30,7 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
   const { data: thread, isLoading: isThreadLoading } = useDoc<ForumThread>(threadRef);
 
   const postsQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, "forumThreads", params.id, "posts") : null),
+    () => (firestore ? query(collection(firestore, "forumThreads", params.id, "posts"), orderBy('timestamp', 'asc')) : null),
     [firestore, params.id]
   );
   const { data: posts, isLoading: arePostsLoading } = useCollection<ForumPost>(postsQuery);
@@ -103,11 +101,7 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
            <Card key={i}><CardHeader><Skeleton className="h-24 w-full" /></CardHeader></Card>
         ))}
         {posts?.map((post, index) => {
-          const authorAvatar = PlaceHolderImages.find(
-            (p) => p.id === post.authorAvatarId
-          );
           const isFirstPost = index === 0;
-
           return (
             <Card
               key={post.id}
@@ -115,13 +109,13 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
             >
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                 <Avatar className="h-10 w-10">
-                  {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt={post.authorName} data-ai-hint={authorAvatar.imageHint}/>}
+                  <AvatarImage src={post.authorAvatarUrl} alt={post.authorName} />
                   <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <p className="font-semibold">{post.authorName}</p>
                   <p className="text-xs text-muted-foreground">
-                    {post.timestamp}
+                    {new Date(post.timestamp).toLocaleString()}
                   </p>
                 </div>
                 {isFirstPost && <Badge variant="outline">Original Post</Badge>}

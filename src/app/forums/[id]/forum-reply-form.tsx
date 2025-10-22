@@ -1,10 +1,9 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { MessageSquare } from 'lucide-react';
+import { Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { collection } from 'firebase/firestore';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -30,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useAuth } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
 
 const replyFormSchema = z.object({
   content: z
@@ -47,6 +47,8 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
   const firestore = useFirestore();
   const auth = useAuth();
   const { user } = useUser();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const form = useForm<z.infer<typeof replyFormSchema>>({
     resolver: zodResolver(replyFormSchema),
@@ -98,7 +100,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
       });
       return;
     }
-
+    setIsSubmitting(true);
     const postsCollectionRef = collection(
       firestore,
       `forumThreads/${threadId}/posts`
@@ -107,19 +109,29 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     const newPost = {
       authorId: user.uid,
       authorName: user.displayName || 'Anonymous User',
-      authorAvatarUrl: user.photoURL || undefined,
-      timestamp: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      authorAvatarUrl: user.photoURL || null,
+      timestamp: new Date().toISOString(),
       content: values.content,
     };
 
-    addDocumentNonBlocking(postsCollectionRef, newPost);
+    try {
+        await addDocumentNonBlocking(postsCollectionRef, newPost);
 
-    toast({
-      title: 'Reply Posted!',
-      description: 'Your reply has been added to the discussion.',
-    });
+        toast({
+        title: 'Reply Posted!',
+        description: 'Your reply has been added to the discussion.',
+        });
 
-    form.reset();
+        form.reset();
+    } catch(e) {
+        toast({
+            variant: "destructive",
+            title: "Reply Failed",
+            description: "Could not save your reply. Please try again.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   return (
@@ -158,9 +170,13 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
             />
 
             <div className="flex justify-end">
-                <Button type="submit">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Submit Reply
+                <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                )}
+                {isSubmitting ? 'Posting...' : 'Submit Reply'}
                 </Button>
             </div>
           </form>
@@ -169,5 +185,3 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     </Card>
   );
 }
-
-    
