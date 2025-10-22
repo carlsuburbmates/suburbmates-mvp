@@ -99,7 +99,6 @@ export default function VendorRegistrationPage() {
             phone: values.phone || '',
             website: values.website || '',
             paymentsEnabled: false,
-            tier: 'Basic' as const, // All new vendors start on Basic tier
         };
 
         setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
@@ -146,7 +145,7 @@ export default function VendorRegistrationPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          returnUrl: `${window.location.origin}/vendors/onboard/listing`,
+          returnUrl: `${window.location.origin}/dashboard/vendor`,
           refreshUrl: `${window.location.origin}/dashboard/vendor/register`,
           userId: user.uid,
         }),
@@ -325,7 +324,7 @@ export default function VendorRegistrationPage() {
                     onClick={handleStripeConnect}
                   >
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Connect with Stripe & Create Listing
+                    Connect with Stripe
                   </Button>
                 </div>
                 <Button variant="outline" onClick={() => setStep(1)}>
@@ -339,3 +338,5 @@ export default function VendorRegistrationPage() {
     </>
   );
 }
+
+    
