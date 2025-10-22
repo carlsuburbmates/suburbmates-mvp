@@ -1,10 +1,13 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
+import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, getDoc } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { headers } from 'next/headers';
+import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail } from '@/lib/email';
+import type { Vendor } from '@/lib/types';
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -27,12 +30,6 @@ const auth = getAuth(app);
 
 // Idempotency check
 const processedEvents = new Set();
-
-// Placeholder for sending emails
-async function sendTransactionalEmail(template: string, data: any) {
-    console.log(`[EMAIL] Sending '${template}' email with data:`, data);
-    // In a real app, you would integrate with a service like Resend here.
-}
 
 
 export async function POST(request: Request) {
@@ -74,11 +71,14 @@ export async function POST(request: Request) {
           await updateDoc(vendorRef, {
             stripeAccountId: account.id,
             // Payouts are disabled/enabled by the admin, but we can track account health.
-            paymentsEnabled: account.charges_enabled && account.details_submitted,
+            // paymentsEnabled: account.charges_enabled && account.details_submitted,
           });
           console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID and status.`);
            if (!account.charges_enabled) {
-              await sendTransactionalEmail('vendor_action_required', { vendorId: firebaseUid, message: 'Your Stripe account needs attention. Payouts may be disabled.'});
+              const vendorSnap = await getDoc(vendorRef);
+              if (vendorSnap.exists()) {
+                await sendStripeActionRequiredEmail(vendorSnap.data() as Vendor, 'Your Stripe account needs attention. Payouts may be disabled.');
+              }
            }
         } catch (error) {
             console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
@@ -95,6 +95,14 @@ export async function POST(request: Request) {
             console.log('Checkout session completed, creating order...');
             try {
                 const customer = await auth.getUser(metadata.customerId);
+                const vendorRef = doc(db, 'vendors', metadata.vendorId);
+                const vendorSnap = await getDoc(vendorRef);
+
+                if (!vendorSnap.exists()) {
+                  throw new Error(`Vendor ${metadata.vendorId} not found.`);
+                }
+                const vendor = vendorSnap.data() as Vendor;
+
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
                 
                 const orderData = {
@@ -113,16 +121,8 @@ export async function POST(request: Request) {
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
 
                 // Emit Notifications (Transactional Email)
-                await sendTransactionalEmail('order_confirmation_buyer', {
-                    buyerId: metadata.customerId,
-                    listingName: metadata.listingName,
-                });
-                await sendTransactionalEmail('new_order_vendor', {
-                     vendorId: metadata.vendorId,
-                     listingName: metadata.listingName,
-                     amount: orderData.amount,
-                     customerName: orderData.customerName,
-                });
+                await sendOrderConfirmationEmail(orderData as any, vendor, customer.email!);
+                await sendNewOrderNotification(orderData as any, vendor);
 
             } catch (error) {
                 console.error('Failed to create order in Firestore:', error);
@@ -163,12 +163,6 @@ export async function POST(request: Request) {
                         stripeRefundId: charge.refunds.data[0]?.id
                     });
                     console.log(`Updated refund request ${refundReqDoc.id} to RESOLVED.`);
-
-                    // Notify buyer
-                    await sendTransactionalEmail('refund_processed_buyer', {
-                        buyerId: orderUpdated.buyerId,
-                        orderId: orderUpdated.id
-                    });
                 }
             } else {
                  console.warn(`Could not find an order with paymentIntentId: ${chargePaymentIntentId} to mark as refunded.`);
