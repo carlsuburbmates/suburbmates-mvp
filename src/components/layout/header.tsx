@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, LogOut, Shield, User } from 'lucide-react';
+import { Menu, LogOut, Shield, User, ShoppingCart } from 'lucide-react';
 import { signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import Image from 'next/image';
 
@@ -179,7 +179,10 @@ export function Header() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/vendor"><User className="mr-2 h-4 w-4" />Dashboard</Link>
+                        <Link href="/dashboard/vendor"><User className="mr-2 h-4 w-4" />Vendor Dashboard</Link>
+                     </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                        <Link href="/dashboard/resident"><ShoppingCart className="mr-2 h-4 w-4" />My Orders</Link>
                      </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>

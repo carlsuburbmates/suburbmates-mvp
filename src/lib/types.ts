@@ -80,7 +80,7 @@ export type Order = {
   paymentIntentId: string;
   fulfilmentEta?: string;
   commChannelId?: string;
-  customerName?: string; // Added to know who the customer is
+  customerName?: string; 
 };
 
 export type Review = {
