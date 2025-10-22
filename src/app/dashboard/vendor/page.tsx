@@ -35,7 +35,7 @@ export default function VendorDashboardPage() {
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.replace('/vendors/onboard');
+      router.replace('/');
     }
   }, [user, isUserLoading, router]);
   
@@ -134,7 +134,7 @@ export default function VendorDashboardPage() {
             </CardHeader>
             <CardContent>
                 <Button asChild>
-                    <Link href="/vendors/onboard/register">
+                    <Link href="/dashboard/vendor/register">
                         Register Your Business
                     </Link>
                 </Button>
@@ -316,3 +316,5 @@ export default function VendorDashboardPage() {
     </>
   );
 }
+
+    

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, LogOut, Shield, User } from 'lucide-react';
 import { signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import Image from 'next/image';
@@ -37,6 +37,7 @@ export function Header() {
   const pathname = usePathname();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -49,6 +50,30 @@ export function Header() {
       setIsAdmin(false);
     }
   }, [user]);
+
+  const handleLoginForVendor = async () => {
+    if (user) {
+      router.push('/dashboard/vendor/register');
+      return;
+    }
+
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toast({
+            title: "Logged In",
+            description: "Welcome! You can now register your business.",
+        });
+        router.push('/dashboard/vendor/register');
+    } catch (error) {
+        console.error("Google login error", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Could not log you in with Google. Please try again.",
+        });
+    }
+  };
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -76,6 +101,7 @@ export function Header() {
         title: 'Logged Out',
         description: 'You have been successfully logged out.',
       });
+      router.push('/');
     } catch (error) {
       console.error('Logout Error:', error);
       toast({
@@ -166,11 +192,9 @@ export function Header() {
             ) : (
               <div className="hidden md:flex items-center gap-2">
                 <Button variant="ghost" onClick={handleGoogleLogin}>
-                    Sign in with Google
+                    Sign in
                 </Button>
-                <Button asChild>
-                  <Link href="/dashboard/vendor/register">Become a Vendor</Link>
-                </Button>
+                <Button onClick={handleLoginForVendor}>Become a Vendor</Button>
               </div>
             ))}
 
@@ -231,11 +255,9 @@ export function Header() {
                   ) : (
                     <>
                       <Button onClick={handleGoogleLogin} variant="secondary">
-                        Sign in with Google
+                        Sign in
                       </Button>
-                      <Button asChild>
-                        <Link href="/dashboard/vendor/register">Become a Vendor</Link>
-                      </Button>
+                      <Button onClick={handleLoginForVendor}>Become a Vendor</Button>
                     </>
                   )}
                 </div>
@@ -247,3 +269,5 @@ export function Header() {
     </header>
   );
 }
+
+    
