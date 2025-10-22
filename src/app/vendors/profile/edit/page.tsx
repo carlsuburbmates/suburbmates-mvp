@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Save, Phone, Link2, Trash2 } from 'lucide-react';
+import { Save, Phone, Link2, Trash2, FileText, Mail, Text } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -51,6 +53,9 @@ const profileFormSchema = z.object({
     .min(2, 'Business name must be at least 2 characters.'),
   phone: z.string().optional(),
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  supportEmail: z.string().email('Please enter a valid email.').optional().or(z.literal('')),
+  refundPolicyUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  fulfilmentTerms: z.string().max(500, "Terms cannot exceed 500 characters.").optional(),
 });
 
 export default function EditProfilePage() {
@@ -73,6 +78,9 @@ export default function EditProfilePage() {
       businessName: '',
       phone: '',
       website: '',
+      supportEmail: '',
+      refundPolicyUrl: '',
+      fulfilmentTerms: '',
     },
   });
 
@@ -82,6 +90,9 @@ export default function EditProfilePage() {
         businessName: vendor.businessName,
         phone: vendor.phone || '',
         website: vendor.website || '',
+        supportEmail: vendor.supportEmail || '',
+        refundPolicyUrl: vendor.refundPolicyUrl || '',
+        fulfilmentTerms: vendor.fulfilmentTerms || '',
       });
     }
   }, [vendor, form]);
@@ -242,6 +253,63 @@ export default function EditProfilePage() {
                     )}
                     />
                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <FormField
+                    control={form.control}
+                    name="supportEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Support Email</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="support@your-business.com.au" {...field} className="pl-8"/>
+                                </div>
+                        </FormControl>
+                        <FormDescription>Your customer support email address for refunds and inquiries.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="refundPolicyUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Refund Policy URL (Optional)</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="https://your-business.com.au/refunds" {...field} className="pl-8"/>
+                                </div>
+                        </FormControl>
+                         <FormDescription>A public link to your business's refund policy.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="fulfilmentTerms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Local Delivery Terms</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="e.g., Free delivery within 5km of Northcote. $10 delivery for up to 10km. Contact for other areas."
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>Clearly explain your local delivery radius, costs, and timing if you offer it.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
 
                 <div className="flex justify-between items-center">
                     <div className="flex flex-col sm:flex-row gap-4">

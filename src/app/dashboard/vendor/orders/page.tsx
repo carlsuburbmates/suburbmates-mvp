@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
 import { ShoppingBag } from 'lucide-react';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function VendorOrdersPage() {
@@ -30,7 +30,7 @@ export default function VendorOrdersPage() {
   const ordersQuery = useMemoFirebase(
     () =>
       firestore && user
-        ? collection(firestore, 'vendors', user.uid, 'orders')
+        ? query(collection(firestore, 'vendors', user.uid, 'orders'), orderBy('date', 'desc'))
         : null,
     [firestore, user]
   );
@@ -87,7 +87,7 @@ export default function VendorOrdersPage() {
                   <TableCell className="font-medium">
                     {order.listingName}
                   </TableCell>
-                  <TableCell>{order.customerName}</TableCell>
+                  <TableCell>{order.customerName || 'N/A'}</TableCell>
                   <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Badge

@@ -80,6 +80,7 @@ export type Order = {
   paymentIntentId: string;
   fulfilmentEta?: string;
   commChannelId?: string;
+  customerName?: string; // Added to know who the customer is
 };
 
 export type Review = {
@@ -139,5 +140,3 @@ export type RefundRequest = {
   decisionBy?: string;
   decisionAt?: string;
 };
-
-    

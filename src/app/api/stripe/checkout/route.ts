@@ -57,6 +57,7 @@ export async function POST(request: Request) {
           request_three_d_secure: 'automatic',
         },
       },
+      customer_email: (await auth().getUser(userId)).email, // Pre-fill customer email
     });
 
     if (!session.url) {
@@ -69,5 +70,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-    

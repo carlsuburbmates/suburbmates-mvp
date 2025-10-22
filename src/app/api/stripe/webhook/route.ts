@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, writeBatch } from 'firebase-admin/firestore';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 import { headers } from 'next/headers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -22,6 +23,7 @@ if (!getApps().length) {
 }
 
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // Idempotency check
 const processedEvents = new Set();
@@ -89,60 +91,38 @@ export async function POST(request: Request) {
         const metadata = session.metadata;
         const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata.buyerId && paymentIntentId) {
-            console.log('Checkout session completed, creating order and communication channel...');
+        if (session.payment_status === 'paid' && metadata?.vendorId && metadata.customerId && paymentIntentId) {
+            console.log('Checkout session completed, creating order...');
             try {
-                // 1. Create the Order
+                const customer = await auth.getUser(metadata.customerId);
                 const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
-                const newOrderRef = doc(ordersCollectionRef);
                 
-                // 2. Create the Communication Channel
-                const commChannelsCollectionRef = collection(db, 'comm_channels');
-                const newCommChannelRef = doc(commChannelsCollectionRef);
-
-                const batch = writeBatch(db);
-
                 const orderData = {
-                    id: newOrderRef.id,
                     listingName: metadata.listingName,
-                    buyerId: metadata.buyerId,
+                    buyerId: metadata.customerId,
                     vendorId: metadata.vendorId,
+                    customerName: customer.displayName || customer.email || 'N/A', // Add customer name
                     date: new Date().toISOString(),
                     amount: (session.amount_total || 0) / 100,
                     status: 'Completed' as const,
                     paymentIntentId: paymentIntentId,
-                    commChannelId: newCommChannelRef.id,
                 };
-                batch.set(newOrderRef, orderData);
+                
+                await addDoc(ordersCollectionRef, orderData);
 
-                const commChannelData = {
-                    id: newCommChannelRef.id,
-                    orderId: newOrderRef.id,
-                    buyerId: metadata.buyerId,
-                    vendorId: metadata.vendorId,
-                    status: 'OPEN' as const,
-                };
-                batch.set(newCommChannelRef, commChannelData);
+                console.log(`Successfully created order for vendor ${metadata.vendorId}`);
 
-                await batch.commit();
-
-                console.log(`Successfully created order ${newOrderRef.id} and comm channel ${newCommChannelRef.id}`);
-
-                // 5. Emit Notifications (Transactional Email)
+                // Emit Notifications (Transactional Email)
                 await sendTransactionalEmail('order_confirmation_buyer', {
-                    orderId: newOrderRef.id,
-                    buyerId: metadata.buyerId,
+                    buyerId: metadata.customerId,
                     listingName: metadata.listingName,
-                    vendorName: metadata.vendorName, // Assuming you add this to checkout metadata
-                    commChannelUrl: `/dashboard/orders/${newOrderRef.id}/messages`
                 });
                 await sendTransactionalEmail('new_order_vendor', {
-                     orderId: newOrderRef.id,
                      vendorId: metadata.vendorId,
                      listingName: metadata.listingName,
-                     amount: orderData.amount
+                     amount: orderData.amount,
+                     customerName: orderData.customerName,
                 });
-
 
             } catch (error) {
                 console.error('Failed to create order in Firestore:', error);
@@ -237,5 +217,3 @@ async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status:
     }
     return null; // Return null if no order was found
 }
-
-    

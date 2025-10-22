@@ -8,7 +8,7 @@ import { doc, collection, runTransaction } from 'firebase/firestore';
 import type { Vendor, Listing, Review } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin, ShieldCheck, FileText } from 'lucide-react';
+import { Link2, Phone, Star, Tag, Truck, Loader2, MessageSquare, MapPin, ShieldCheck, FileText, Info, Mail } from 'lucide-react';
 import Link from 'next/link';
 import {
   Card,
@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '@/firebase';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -53,14 +54,6 @@ export default function VendorProfilePage({
   const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
   const [currentRating, setCurrentRating] = useState(0);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-
-  const reviewForm = useForm<z.infer<typeof reviewSchema>>({
-    resolver: zodResolver(reviewSchema),
-    defaultValues: {
-      rating: 0,
-      comment: '',
-    },
-  });
 
   // Display toast based on checkout status
   useEffect(() => {
@@ -298,6 +291,12 @@ export default function VendorProfilePage({
                            <span>{vendor.address}</span>
                         </p>
                     )}
+                     {vendor.supportEmail && (
+                        <p className="flex items-center gap-2">
+                           <Mail className="h-4 w-4"/>
+                           <a href={`mailto:${vendor.supportEmail}`} className="hover:text-primary underline">{vendor.supportEmail}</a>
+                        </p>
+                    )}
                     <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                          <span>
@@ -312,6 +311,15 @@ export default function VendorProfilePage({
                         </p>
                     )}
                 </div>
+                 {vendor.fulfilmentTerms && (
+                    <Alert className="mt-6">
+                        <Info className="h-4 w-4" />
+                        <AlertTitle className="font-semibold">Fulfillment & Delivery Terms</AlertTitle>
+                        <AlertDescription>
+                            {vendor.fulfilmentTerms}
+                        </AlertDescription>
+                    </Alert>
+                )}
             </div>
         </Card>
 
@@ -486,6 +494,3 @@ export default function VendorProfilePage({
     </div>
   );
 }
-    
-
-    
