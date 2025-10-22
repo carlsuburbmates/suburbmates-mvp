@@ -151,6 +151,14 @@ export default function VendorProfilePage({
       setIsRedirecting(null);
     }
   };
+  
+  const reviewForm = useForm<z.infer<typeof reviewSchema>>({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: 0,
+      comment: "",
+    },
+  });
 
   const handleReviewSubmit = async (values: z.infer<typeof reviewSchema>) => {
     if (!user || !vendorRef || !firestore) {
