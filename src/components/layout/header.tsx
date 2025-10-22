@@ -18,7 +18,7 @@ import { useEffect, useState } from 'react';
 const navItems: NavItem[] = [
   { title: 'Home', href: '/' },
   { title: 'Civic Hub', href: '/forums' },
-  { title: 'Vendor Marketplace', href: '/vendors' },
+  { title: 'Business Directory', href: '/vendors' },
 ];
 
 export function Header() {

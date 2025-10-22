@@ -1,9 +1,9 @@
+
 'use client';
 
 import { APIProvider, Map, AdvancedMarker, InfoWindow } from '@vis.gl/react-google-maps';
 import type { Vendor } from '@/lib/types';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import Link from 'next/link';
 
@@ -16,17 +16,12 @@ export function VendorMap({ vendors }: VendorMapProps) {
     const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
     useEffect(() => {
-        // This ensures the environment variable is read only on the client side,
-        // after the initial server render.
         setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
     }, []);
 
-
-    // Default center for Northcote, VIC, Australia
     const defaultCenter = { lat: -37.775, lng: 144.99 };
 
     if (apiKey === undefined) {
-        // Still loading the API key from the environment.
         return (
             <div className="flex items-center justify-center h-full bg-muted">
                 <p>Loading map...</p>
@@ -72,6 +67,7 @@ export function VendorMap({ vendors }: VendorMapProps) {
                         <div className='p-2'>
                             <h3 className="font-bold font-headline text-lg">{selectedVendor.businessName}</h3>
                             <p className="text-sm text-muted-foreground">{selectedVendor.abn}</p>
+                             {selectedVendor.paymentsEnabled && <p className="text-xs font-bold text-primary mt-1">Marketplace Vendor</p>}
                             <Button asChild variant="link" className="p-0 h-auto mt-2">
                                 <Link href={`/vendors/${selectedVendor.id}`}>View Profile</Link>
                             </Button>

@@ -29,33 +29,42 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Vendor } from "@/lib/types";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { VendorMap } from "@/components/vendor-map";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Switch } from "@/components/ui/switch";
 
 
 export default function VendorsPage() {
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState('list');
+  const [showMarketplaceOnly, setShowMarketplaceOnly] = useState(false);
 
-  // Add placeholder coordinates to vendors
   const vendorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'vendors'), where('paymentsEnabled', '==', true));
+    // Fetch all vendors, filtering will be done on the client
+    return query(collection(firestore, 'vendors'));
   }, [firestore]);
 
-  const { data: vendors, isLoading } = useCollection<Vendor>(vendorsQuery);
+  const { data: allVendors, isLoading } = useCollection<Vendor>(vendorsQuery);
 
-  const vendorsWithLocations = vendors?.map((vendor, index) => ({
-    ...vendor,
-    // Placeholder locations around Northcote, VIC
-    latitude: -37.775 + (Math.random() - 0.5) * 0.02,
-    longitude: 144.99 + (Math.random() - 0.5) * 0.02,
-  })).filter(v => v.latitude && v.longitude);
+  const vendors = useMemo(() => {
+    if (!allVendors) return [];
+    const vendorsWithLocations = allVendors.map((vendor, index) => ({
+      ...vendor,
+      latitude: vendor.latitude || -37.775 + (Math.random() - 0.5) * 0.02,
+      longitude: vendor.longitude || 144.99 + (Math.random() - 0.5) * 0.02,
+    })).filter(v => v.latitude && v.longitude);
+    
+    if (showMarketplaceOnly) {
+      return vendorsWithLocations.filter(v => v.paymentsEnabled);
+    }
+    return vendorsWithLocations;
+  }, [allVendors, showMarketplaceOnly]);
 
 
   return (
     <div>
       <PageHeader
-        title="Verified Vendor Marketplace"
+        title="Darebin Business Directory"
         description="Find trusted local professionals and businesses in your community."
       />
       <div className="container mx-auto px-4 pb-16">
@@ -67,8 +76,18 @@ export default function VendorsPage() {
         </div>
 
        {activeTab === 'map' && (
-          <Card className="h-[600px] w-full">
-            <VendorMap vendors={vendorsWithLocations || []}/>
+          <Card className="h-[600px] w-full relative">
+            <VendorMap vendors={vendors || []}/>
+            <div className="absolute top-4 left-4 bg-background p-3 rounded-lg shadow-lg border">
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="marketplace-filter-map"
+                        checked={showMarketplaceOnly}
+                        onCheckedChange={setShowMarketplaceOnly}
+                    />
+                    <Label htmlFor="marketplace-filter-map">Show Marketplace Vendors Only</Label>
+                </div>
+            </div>
           </Card>
        )}
 
@@ -77,15 +96,25 @@ export default function VendorsPage() {
             <aside className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardHeader>
-                  <CardTitle>Filter Vendors</CardTitle>
+                  <CardTitle>Filter Businesses</CardTitle>
                   <CardDescription>
                     Refine your search to find the perfect match.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="marketplace-filter-list"
+                            checked={showMarketplaceOnly}
+                            onCheckedChange={setShowMarketplaceOnly}
+                        />
+                        <Label htmlFor="marketplace-filter-list">Show Marketplace Vendors</Label>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label>Category</Label>
-                    <Select>
+                    <Select disabled>
                       <SelectTrigger>
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
@@ -104,20 +133,19 @@ export default function VendorsPage() {
                     <Label>Rating</Label>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="rating-4" />
-                        <Label htmlFor="rating-4" className="font-normal">
+                        <Checkbox id="rating-4" disabled/>
+                        <Label htmlFor="rating-4" className="font-normal text-muted-foreground">
                           4 stars & up
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="rating-3" />
-                        <Label htmlFor="rating-3" className="font-normal">
+                        <Checkbox id="rating-3" disabled/>
+                        <Label htmlFor="rating-3" className="font-normal text-muted-foreground">
                           3 stars & up
                         </Label>
                       </div>
                     </div>
                   </div>
-                  <Button className="w-full" disabled>Apply Filters</Button>
                 </CardContent>
               </Card>
             </aside>
@@ -178,12 +206,12 @@ export default function VendorsPage() {
               
               {!isLoading && vendors?.length === 0 && (
                   <Card className="md:col-span-2 xl:col-span-3 text-center p-8">
-                    <CardTitle>No Approved Vendors Yet</CardTitle>
+                    <CardTitle>No Businesses Found</CardTitle>
                     <CardDescription>
-                      Check back soon or become the first vendor in the marketplace!
+                      Check back soon or become the first business in the directory!
                     </CardDescription>
                     <Button asChild className="mt-4">
-                      <Link href="/vendors/onboard">Become a Vendor</Link>
+                      <Link href="/vendors/onboard/register">Register Your Business</Link>
                     </Button>
                   </Card>
                 )}
