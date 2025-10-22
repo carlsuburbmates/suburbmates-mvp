@@ -479,5 +479,4 @@ export default function VendorProfilePage({
     </div>
   );
 }
-
     
