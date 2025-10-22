@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Loader2, Send } from 'lucide-react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -29,9 +30,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import type { Order } from '@/lib/types';
+import type { Order, Vendor } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { sendNewRefundRequestNotification } from '@/lib/email';
+
 
 const refundRequestSchema = z.object({
   reason: z
@@ -70,7 +73,7 @@ export default function RefundRequestPage() {
   });
   
   async function onSubmit(values: z.infer<typeof refundRequestSchema>) {
-    if (!user || !firestore || !vendorId || !orderId) {
+    if (!user || !firestore || !vendorId || !orderId || !order) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -91,7 +94,15 @@ export default function RefundRequestPage() {
         };
 
         const refundRequestsRef = collection(firestore, `vendors/${vendorId}/refund_requests`);
-        await addDocumentNonBlocking(refundRequestsRef, refundRequestData);
+        const newRequestRef = await addDocumentNonBlocking(refundRequestsRef, refundRequestData);
+
+        // Fetch vendor to send notification
+        const vendorRef = doc(firestore, 'vendors', vendorId as string);
+        const vendorSnap = await getDoc(vendorRef);
+        if (vendorSnap.exists()) {
+            const vendor = vendorSnap.data() as Vendor;
+            await sendNewRefundRequestNotification(vendor, order, {id: newRequestRef.id, ...refundRequestData});
+        }
         
         toast({
           title: 'Refund Request Submitted',

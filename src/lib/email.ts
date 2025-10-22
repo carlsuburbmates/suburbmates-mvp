@@ -1,6 +1,6 @@
 
 import { Resend } from 'resend';
-import type { Order, Vendor } from './types';
+import type { Order, Vendor, RefundRequest } from './types';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'onboarding@resend.dev';
@@ -95,3 +95,60 @@ export async function sendStripeActionRequiredEmail(vendor: Vendor, message: str
        console.error('[EMAIL] Error sending Stripe action required email:', error);
     }
   }
+  
+export async function sendRefundStatusUpdateEmail(customerEmail: string, order: Order, request: RefundRequest, vendor: Vendor) {
+  const isApproved = request.state === 'RESOLVED';
+  const subject = `Update on your refund request for "${order.listingName}"`;
+  const text = `Hi,
+
+We're writing to inform you about an update on your refund request for the order of "${order.listingName}" from ${vendor.businessName}.
+
+Status: ${isApproved ? 'Approved & Processed' : 'Rejected'}
+
+Vendor's Decision: ${request.decision || (isApproved ? 'The vendor has approved your refund request. The funds should appear in your account within 5-10 business days.' : 'The vendor has rejected your refund request.')}
+
+If you have further questions, please contact the vendor directly at ${vendor.supportEmail || vendor.email}.
+
+Regards,
+The Darebin Business Directory Team
+`;
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: customerEmail,
+      subject: subject,
+      text: text,
+    });
+    console.log(`[EMAIL] Refund status update sent to ${customerEmail}`);
+  } catch (error) {
+    console.error('[EMAIL] Error sending refund status update:', error);
+  }
+}
+
+export async function sendNewRefundRequestNotification(vendor: Vendor, order: Order, request: RefundRequest) {
+  const subject = `New Refund Request for Order: ${order.listingName}`;
+  const text = `Hi ${vendor.businessName},
+
+You have received a new refund request for an order. Please review it in your vendor dashboard.
+
+Order: ${order.listingName}
+Reason: ${request.reason}
+
+You can approve or reject this request from the "Refunds" section of your dashboard.
+
+Regards,
+The Darebin Business Directory Team
+`;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: vendor.email,
+      subject: subject,
+      text: text,
+    });
+     console.log(`[EMAIL] New refund request notification sent to ${vendor.email}`);
+  } catch (error) {
+     console.error('[EMAIL] Error sending new refund request notification:', error);
+  }
+}
