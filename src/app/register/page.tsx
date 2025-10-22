@@ -46,7 +46,9 @@ export default function RegisterPage() {
 
    useEffect(() => {
     if (!isUserLoading && user) {
-        router.replace('/dashboard/vendor'); // Or a future resident dashboard
+        // After registration or if already logged in, go to the main dashboard.
+        // The dashboard will guide them if they want to become a vendor.
+        router.replace('/dashboard/vendor');
     }
   }, [user, isUserLoading, router]);
 
@@ -63,6 +65,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // Set the user's display name, which can be used across the app
       await updateProfile(userCredential.user, { displayName: values.name });
 
       toast({
@@ -70,8 +73,8 @@ export default function RegisterPage() {
         description: 'Welcome! You can now participate in the community.',
       });
 
-      router.push('/'); // Redirect to homepage after successful registration
-
+      // The useEffect will handle the redirect to the dashboard
+      
     } catch (error: any) {
       console.error('Registration Error:', error);
       toast({
@@ -98,13 +101,13 @@ export default function RegisterPage() {
     <>
       <PageHeader
         title="Create an Account"
-        description="Join the Suburbmates community to connect and participate."
+        description="Join the community to participate, or register your business."
       />
       <div className="container mx-auto px-4 pb-16 flex justify-center">
         <Card className="w-full max-w-lg bg-card/80 backdrop-blur-lg shadow-2xl">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">
-              Resident Sign Up
+              Sign Up
             </CardTitle>
             <CardDescription>
               Already have an account?{' '}
@@ -162,11 +165,8 @@ export default function RegisterPage() {
                     )}
                 />
                 
-                <p className="text-sm text-muted-foreground">
-                    Are you a business owner?{' '}
-                    <Link href="/vendors/onboard/register" className="underline hover:text-primary font-medium">
-                        Register your business here.
-                    </Link>
+                <p className="text-sm text-muted-foreground pt-4 border-t">
+                    After creating an account, you can choose to register your business from your dashboard.
                 </p>
 
                 <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>

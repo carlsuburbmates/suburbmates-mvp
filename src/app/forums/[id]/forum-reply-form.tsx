@@ -60,9 +60,9 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     return (
        <Card className="text-center p-6">
           <CardTitle>Join the conversation</CardTitle>
-          <CardDescription className="mt-2">You must be a registered business owner to post a reply.</CardDescription>
+          <CardDescription className="mt-2">You must have an account to post a reply. Register your business to participate.</CardDescription>
           <Button asChild className="mt-4">
-            <Link href="/vendors/onboard/register">Register Your Business</Link>
+            <Link href="/register">Create an Account</Link>
           </Button>
         </Card>
     )
@@ -87,7 +87,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
 
     const newPost = {
       authorId: user.uid,
-      authorName: user.displayName || 'Business Owner',
+      authorName: user.displayName || 'Anonymous User',
       // This is a placeholder. In a real app, users would have profile avatars.
       authorAvatarId: 'user-avatar-1', 
       timestamp: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
@@ -109,12 +109,12 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar>
             {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt={user?.displayName || 'user'} data-ai-hint={userAvatar.imageHint}/>}
-            <AvatarFallback>{user?.displayName?.charAt(0) || 'B'}</AvatarFallback>
+            <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="font-headline text-xl">Post a Reply</CardTitle>
           <CardDescription>
-            Replying as {user?.displayName}
+            Replying as {user.displayName || 'Anonymous User'}
           </CardDescription>
         </div>
       </CardHeader>

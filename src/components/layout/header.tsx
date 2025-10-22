@@ -122,7 +122,7 @@ export function Header() {
                   <Link href="/vendors/onboard">Login</Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/vendors/onboard/register">Register Business</Link>
+                  <Link href="/register">Create Account</Link>
                 </Button>
               </div>
             ))}
@@ -200,7 +200,7 @@ export function Header() {
                         <Link href="/vendors/onboard">Login</Link>
                       </Button>
                       <Button asChild>
-                        <Link href="/vendors/onboard/register">Register Business</Link>
+                        <Link href="/register">Create Account</Link>
                       </Button>
                     </>
                   )}

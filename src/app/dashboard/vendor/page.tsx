@@ -119,10 +119,30 @@ export default function VendorDashboardPage() {
     );
   }
   
-  if (!user || !vendor) {
+  if (!user) {
     // This can happen briefly on first load or after logout
     return null;
   }
+  
+  // If user is logged in but has not created a vendor profile yet
+  if (!vendor) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Welcome, {user.displayName || 'User'}</CardTitle>
+                <CardDescription>Get discovered by the local community by listing your business in the directory.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/vendors/onboard/register">
+                        Register Your Business
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+    )
+  }
+
 
   return (
     <>
@@ -296,5 +316,3 @@ export default function VendorDashboardPage() {
     </>
   );
 }
-
-    

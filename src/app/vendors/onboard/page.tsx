@@ -90,8 +90,8 @@ export default function OnboardPage() {
   return (
     <>
       <PageHeader
-        title="Business Owner Login"
-        description="Log in to manage your business profile and listings."
+        title="Account Login"
+        description="Log in to manage your account or business profile."
       />
       <div className="container mx-auto px-4 pb-16 flex justify-center">
         <Card className="w-full max-w-lg bg-card/80 backdrop-blur-lg shadow-2xl">
@@ -101,8 +101,8 @@ export default function OnboardPage() {
             </CardTitle>
             <CardDescription>
               Don't have an account?{' '}
-              <Link href="/vendors/onboard/register" className="underline hover:text-primary">
-                Register your business
+              <Link href="/register" className="underline hover:text-primary">
+                Create one here
               </Link>
             </CardDescription>
           </CardHeader>
