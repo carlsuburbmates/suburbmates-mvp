@@ -77,7 +77,7 @@ export type Order = {
   vendorId: string;
   date: string;
   amount: number;
-  status: 'Pending' | 'Completed' | 'Refunded' | 'FAILED_PAYMENT';
+  status: 'Pending' | 'Completed' | 'Refunded' | 'FAILED_PAYMENT' | 'DISPUTED';
   paymentIntentId: string;
   fulfilmentEta?: string;
   commChannelId?: string;
@@ -141,3 +141,20 @@ export type RefundRequest = {
   decisionBy?: string;
   decisionAt?: string;
 };
+
+export type Dispute = {
+    id?: string; // Firestore document ID
+    stripeDisputeId: string;
+    paymentIntentId: string;
+    orderId: string;
+    vendorId: string;
+    buyerId: string;
+    amount: number;
+    currency: string;
+    reason: string;
+    status: string;
+    createdAt: string;
+    evidenceDueBy: string;
+}
+
+    

@@ -17,38 +17,59 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import type { Order } from '@/lib/types';
-import { ShoppingBag, FileQuestion } from 'lucide-react';
-import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import type { Order, RefundRequest } from '@/lib/types';
+import { ShoppingBag, FileQuestion, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+type OrderWithRefundState = Order & { refundState?: RefundRequest['state'] };
+
 export default function ResidentOrdersPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderWithRefundState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrders() {
+    async function fetchOrdersAndRefunds() {
       if (!firestore || !user) {
         setIsLoading(false);
         return;
       }
       
       setIsLoading(true);
-      const allOrders: Order[] = [];
+      const allOrders: OrderWithRefundState[] = [];
+      const refundRequests = new Map<string, RefundRequest>();
+      
       const vendorsSnapshot = await getDocs(collection(firestore, 'vendors'));
 
+      // Fetch all refund requests first to build a map
+      for (const vendorDoc of vendorsSnapshot.docs) {
+        const refundsRef = collection(firestore, `vendors/${vendorDoc.id}/refund_requests`);
+        const refundsQuery = query(refundsRef, where('buyerId', '==', user.uid));
+        const refundsSnapshot = await getDocs(refundsQuery);
+        refundsSnapshot.forEach(refundDoc => {
+          const refund = { id: refundDoc.id, ...refundDoc.data() } as RefundRequest;
+          refundRequests.set(refund.orderId, refund);
+        });
+      }
+
+      // Fetch orders and attach refund state
       for (const vendorDoc of vendorsSnapshot.docs) {
         const ordersRef = collection(firestore, `vendors/${vendorDoc.id}/orders`);
         const q = query(ordersRef, where('buyerId', '==', user.uid));
         const ordersSnapshot = await getDocs(q);
         ordersSnapshot.forEach(orderDoc => {
-          allOrders.push({ id: orderDoc.id, ...orderDoc.data() } as Order);
+          const order = { id: orderDoc.id, ...orderDoc.data() } as OrderWithRefundState;
+          const refund = refundRequests.get(order.id);
+          if (refund) {
+            order.refundState = refund.state;
+          }
+          allOrders.push(order);
         });
       }
       
@@ -57,8 +78,34 @@ export default function ResidentOrdersPage() {
       setIsLoading(false);
     }
 
-    fetchOrders();
+    fetchOrdersAndRefunds();
   }, [firestore, user]);
+
+  const getStatusBadge = (order: OrderWithRefundState) => {
+    if (order.refundState) {
+        switch (order.refundState) {
+            case 'OPEN':
+            case 'VENDOR_REVIEW':
+            case 'STRIPE_PROCESSING':
+                return <Badge variant="secondary"><Clock className="mr-1.5 h-3 w-3"/>Refund Pending</Badge>;
+            case 'RESOLVED':
+                return <Badge variant="default"><CheckCircle className="mr-1.5 h-3 w-3"/>Refunded</Badge>;
+            case 'REJECTED':
+                return <Badge variant="destructive"><XCircle className="mr-1.5 h-3 w-3"/>Refund Rejected</Badge>;
+        }
+    }
+     return <Badge
+        variant={
+            order.status === 'Completed'
+            ? 'default'
+            : order.status === 'Pending'
+            ? 'secondary'
+            : 'destructive'
+        }
+        >
+        {order.status}
+    </Badge>;
+  }
 
 
   return (
@@ -113,23 +160,13 @@ export default function ResidentOrdersPage() {
                   </TableCell>
                   <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        order.status === 'Completed'
-                          ? 'default'
-                          : order.status === 'Pending'
-                          ? 'secondary'
-                          : 'destructive'
-                      }
-                    >
-                      {order.status}
-                    </Badge>
+                    {getStatusBadge(order)}
                   </TableCell>
                   <TableCell className="text-right">
                     ${order.amount.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {order.status === 'Completed' && (
+                    {order.status === 'Completed' && !order.refundState && (
                         <Button asChild variant="outline" size="sm">
                             <Link href={`/dashboard/resident/refunds/${order.id}?vendorId=${order.vendorId}`}>
                                 <FileQuestion className="mr-2 h-4 w-4" />
@@ -160,3 +197,5 @@ export default function ResidentOrdersPage() {
     </Card>
   );
 }
+
+    

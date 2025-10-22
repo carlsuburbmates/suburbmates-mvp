@@ -1,9 +1,36 @@
 
 import { Resend } from 'resend';
-import type { Order, Vendor, RefundRequest } from './types';
+import type { Order, Vendor, RefundRequest, Dispute } from './types';
+import { getFirestore, collection, addDoc } from 'firebase-admin/firestore';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'onboarding@resend.dev';
+const db = getFirestore();
+
+async function logEmail(subject: string, to: string, status: 'sent' | 'failed', error?: string) {
+    const logRef = collection(db, 'logs/emails/sends');
+    await addDoc(logRef, {
+        timestamp: new Date().toISOString(),
+        type: 'email',
+        source: 'resend',
+        eventId: `send-to-${to}-${Date.now()}`,
+        status,
+        payload: { to, subject },
+        error: error || null,
+    });
+}
+
+async function sendEmail(to: string, subject: string, text: string) {
+    try {
+        await resend.emails.send({ from: FROM_EMAIL, to, subject, text });
+        await logEmail(subject, to, 'sent');
+        console.log(`[EMAIL] Sent: "${subject}" to ${to}`);
+    } catch (error: any) {
+        await logEmail(subject, to, 'failed', error.message);
+        console.error(`[EMAIL] Error sending "${subject}" to ${to}:`, error);
+    }
+}
+
 
 export async function sendOrderConfirmationEmail(order: Order, vendor: Vendor, customerEmail: string) {
   const subject = `Your order for ${order.listingName} is confirmed!`;
@@ -21,22 +48,11 @@ Please coordinate with the vendor to arrange pickup or delivery.
 You can contact them directly at: ${vendor.supportEmail || vendor.email}
 
 This purchase is subject to the vendor's refund policy, which you can view here:
-${vendor.refundPolicyUrl || 'No policy provided.'}
+${vendor.refundPolicyUrl || 'No policy provided. View general policy: /policy'}
 
 Thank you for supporting a local business!
 `;
-
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: customerEmail,
-      subject: subject,
-      text: text,
-    });
-    console.log(`[EMAIL] Order confirmation sent to ${customerEmail}`);
-  } catch (error) {
-    console.error('[EMAIL] Error sending order confirmation:', error);
-  }
+  await sendEmail(customerEmail, subject, text);
 }
 
 export async function sendNewOrderNotification(order: Order, vendor: Vendor) {
@@ -56,17 +72,7 @@ Please contact the customer to arrange fulfillment.
 Regards,
 The Darebin Business Directory Team
 `;
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: vendor.email,
-      subject: subject,
-      text: text,
-    });
-     console.log(`[EMAIL] New order notification sent to ${vendor.email}`);
-  } catch (error) {
-     console.error('[EMAIL] Error sending new order notification:', error);
-  }
+  await sendEmail(vendor.email, subject, text);
 }
 
 
@@ -83,17 +89,7 @@ export async function sendStripeActionRequiredEmail(vendor: Vendor, message: str
   Regards,
   The Darebin Business Directory Team
   `;
-    try {
-      await resend.emails.send({
-        from: FROM_EMAIL,
-        to: vendor.email,
-        subject: subject,
-        text: text,
-      });
-       console.log(`[EMAIL] Stripe action required email sent to ${vendor.email}`);
-    } catch (error) {
-       console.error('[EMAIL] Error sending Stripe action required email:', error);
-    }
+    await sendEmail(vendor.email, subject, text);
   }
   
 export async function sendRefundStatusUpdateEmail(customerEmail: string, order: Order, request: RefundRequest, vendor: Vendor) {
@@ -113,17 +109,7 @@ Regards,
 The Darebin Business Directory Team
 `;
 
-  try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: customerEmail,
-      subject: subject,
-      text: text,
-    });
-    console.log(`[EMAIL] Refund status update sent to ${customerEmail}`);
-  } catch (error) {
-    console.error('[EMAIL] Error sending refund status update:', error);
-  }
+  await sendEmail(customerEmail, subject, text);
 }
 
 export async function sendNewRefundRequestNotification(vendor: Vendor, order: Order, request: RefundRequest) {
@@ -140,15 +126,66 @@ You can approve or reject this request from the "Refunds" section of your dashbo
 Regards,
 The Darebin Business Directory Team
 `;
-  try {
-    await resend.emails.send({
-      from: FROM_EmaiL,
-      to: vendor.email,
-      subject: subject,
-      text: text,
-    });
-     console.log(`[EMAIL] New refund request notification sent to ${vendor.email}`);
-  } catch (error) {
-     console.error('[EMAIL] Error sending new refund request notification:', error);
-  }
+  await sendEmail(vendor.email, subject, text);
 }
+
+export async function sendDisputeCreatedVendorNotification(vendor: Vendor, order: Order, dispute: Dispute) {
+    const subject = `Action Required: Dispute Opened for Order of ${order.listingName}`;
+    const text = `Hi ${vendor.businessName},
+
+A customer has opened a dispute for order #${order.id} (${order.listingName}).
+
+Dispute Details:
+- Reason: ${dispute.reason}
+- Amount: $${(dispute.amount / 100).toFixed(2)} ${dispute.currency.toUpperCase()}
+- Evidence Due By: ${new Date(dispute.evidenceDueBy).toLocaleDateString()}
+
+ACTION REQUIRED: You must submit evidence by the due date to challenge this dispute. Please log in to your Stripe Dashboard immediately to respond.
+
+Failing to respond will result in a loss of the dispute, and the funds will be returned to the customer.
+
+Regards,
+The Darebin Business Directory Team
+`;
+    await sendEmail(vendor.email, subject, text);
+}
+
+export async function sendDisputeCreatedBuyerNotification(customerEmail: string, order: Order, dispute: Dispute) {
+    const subject = `Your Dispute for Order of ${order.listingName} has been recorded`;
+    const text = `Hi,
+
+This email confirms that we have received the dispute you filed for your order of ${order.listingName}.
+
+The vendor has been notified and will provide evidence to Stripe. You will be notified via email by Stripe about the outcome of the dispute.
+
+Dispute Details:
+- Reason: ${dispute.reason}
+- Amount: $${(dispute.amount / 100).toFixed(2)} ${dispute.currency.toUpperCase()}
+
+No further action is required from you at this time.
+
+Regards,
+The Darebin Business Directory Team
+`;
+    await sendEmail(customerEmail, subject, text);
+}
+
+export async function sendDisputeClosedNotification(vendor: Vendor, customerEmail: string, order: Order, dispute: Dispute) {
+    const subject = `Dispute Closed for Order of ${order.listingName}`;
+    const text = `The dispute regarding order #${order.id} (${order.listingName}) has been closed.
+
+The final status is: ${dispute.status}.
+
+Please check your Stripe dashboard or bank statements for details on the outcome.
+
+Regards,
+The Darebin Business Directory Team
+`;
+    // Notify both vendor and buyer
+    await sendEmail(vendor.email, subject, text);
+    if (customerEmail) {
+        await sendEmail(customerEmail, subject, text);
+    }
+}
+
+    

@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 
@@ -21,6 +22,9 @@ export function Footer() {
             <Link href="/terms" className="hover:text-primary transition-colors">
               Terms of Service
             </Link>
+            <Link href="/policy" className="hover:text-primary transition-colors">
+              Refund Policy
+            </Link>
             <Link href="/accessibility" className="hover:text-primary transition-colors">
               Accessibility
             </Link>
@@ -30,3 +34,5 @@ export function Footer() {
     </footer>
   );
 }
+
+    

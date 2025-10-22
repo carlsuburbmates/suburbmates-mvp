@@ -73,6 +73,10 @@
         "fulfilmentTerms": {
             "type": "string",
             "description": "A description of the vendor's fulfillment terms for local delivery."
+        },
+        "consents": {
+            "type": "array",
+            "items": { "$ref": "#/entities/Consent" }
         }
       },
       "required": [
@@ -197,7 +201,7 @@
         "amount": { "type": "number" },
         "status": {
           "type": "string",
-          "enum": ["Pending", "Completed", "Refunded", "FAILED_PAYMENT"]
+          "enum": ["Pending", "Completed", "Refunded", "FAILED_PAYMENT", "DISPUTED"]
         },
         "paymentIntentId": {
           "type": "string",
@@ -251,7 +255,11 @@
       "properties": {
         "uid": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "displayName": { "type": "string" }
+        "displayName": { "type": "string" },
+        "consents": {
+            "type": "array",
+            "items": { "$ref": "#/entities/Consent" }
+        }
       },
       "required": ["uid", "email"]
     },
@@ -328,6 +336,42 @@
         "decisionAt": { "type": "string", "format": "date-time" }
       },
       "required": ["orderId", "buyerId", "vendorId", "reason", "state"]
+    },
+    "Dispute": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Dispute",
+        "type": "object",
+        "description": "Represents a Stripe dispute mirrored in Firestore.",
+        "properties": {
+            "stripeDisputeId": { "type": "string" },
+            "paymentIntentId": { "type": "string" },
+            "orderId": { "type": "string" },
+            "vendorId": { "type": "string" },
+            "buyerId": { "type": "string" },
+            "amount": { "type": "number" },
+            "currency": { "type": "string" },
+            "reason": { "type": "string" },
+            "status": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "evidenceDueBy": { "type": "string", "format": "date-time" }
+        },
+        "required": ["stripeDisputeId", "paymentIntentId", "vendorId", "amount", "status", "createdAt"]
+    },
+    "LogEntry": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Log Entry",
+        "type": "object",
+        "description": "A generic log entry for auditing.",
+        "properties": {
+            "timestamp": { "type": "string", "format": "date-time" },
+            "type": { "type": "string", "enum": ["webhook", "email"] },
+            "source": { "type": "string", "description": "e.g., 'stripe', 'resend'" },
+            "eventId": { "type": "string" },
+            "status": { "type": "string", "enum": ["received", "processed", "sent", "failed"] },
+            "payload": { "type": "object" },
+            "error": { "type": "string" }
+        },
+        "required": ["timestamp", "type", "source", "eventId", "status"]
     }
   },
   "auth": {
@@ -408,6 +452,20 @@
         "$ref": "#/entities/Consent"
       },
       "description": "Stores records of user consents to agreements."
+    },
+    "/disputes/{disputeId}": {
+        "schema": { "$ref": "#/entities/Dispute" },
+        "description": "Stores mirrored data for all Stripe disputes."
+    },
+    "/logs/webhooks/events/{eventId}": {
+        "schema": { "$ref": "#/entities/LogEntry" },
+        "description": "Logs all incoming webhook events for auditing."
+    },
+    "/logs/emails/sends/{sendId}": {
+        "schema": { "$ref": "#/entities/LogEntry" },
+        "description": "Logs all outgoing transactional emails for auditing."
     }
   }
 }
+
+    
