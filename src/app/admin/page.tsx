@@ -13,7 +13,7 @@ import type { Vendor, Dispute, LogEntry } from '@/lib/types';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toggleVendorPayments } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye } from 'lucide-react';
+import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
   const firestore = useFirestore();
@@ -303,11 +304,23 @@ function DisputesTab() {
 
 function WebhookLogsTab() {
   const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
   const logsQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'logs/webhooks/events'), orderBy('timestamp', 'desc'), limit(50)) : null),
     [firestore]
   );
   const { data: logs, isLoading } = useCollection<LogEntry>(logsQuery);
+
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+    if (!searchTerm) return logs;
+    return logs.filter(log => {
+      const eventType = (log.payload as any)?.type.toLowerCase();
+      const eventId = log.eventId.toLowerCase();
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      return eventType.includes(lowerCaseSearchTerm) || eventId.includes(lowerCaseSearchTerm);
+    });
+  }, [logs, searchTerm]);
 
   return (
      <Card>
@@ -318,57 +331,77 @@ function WebhookLogsTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+          <div className="mb-4 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by event type or ID..."
+              className="pl-8 sm:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           {isLoading && <Skeleton className="h-48 w-full" />}
-          {!isLoading && logs && logs.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Event Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Event ID</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
-                  <TableCell className="font-medium">{(log.payload as any)?.type}</TableCell>
-                  <TableCell>
-                      <Badge variant={log.status === 'failed' ? 'destructive' : 'secondary'}>
-                          {log.status}
-                      </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{log.eventId}</TableCell>
-                  <TableCell className="text-right">
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Payload</Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>Webhook Event Payload</DialogTitle>
-                                <DialogDescription>ID: {log.eventId}</DialogDescription>
-                            </DialogHeader>
-                            <pre className="mt-2 max-h-[60vh] w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
-                                {JSON.stringify(log.payload, null, 2)}
-                            </pre>
-                        </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          !isLoading && (
+          {!isLoading && logs && (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Event Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Event ID</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                      <TableCell className="font-medium">{(log.payload as any)?.type}</TableCell>
+                      <TableCell>
+                          <Badge variant={log.status === 'failed' ? 'destructive' : 'secondary'}>
+                              {log.status}
+                          </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{log.eventId}</TableCell>
+                      <TableCell className="text-right">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Payload</Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Webhook Event Payload</DialogTitle>
+                                    <DialogDescription>ID: {log.eventId}</DialogDescription>
+                                </DialogHeader>
+                                <pre className="mt-2 max-h-[60vh] w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
+                                    {JSON.stringify(log.payload, null, 2)}
+                                </pre>
+                            </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {filteredLogs.length === 0 && (
+                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                    <Server className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 font-semibold">No matching logs found</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Try a different search term or clear the search.
+                    </p>
+                </div>
+              )}
+            </>
+          )}
+          {!isLoading && !logs && (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
                 <Server className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 font-semibold">No webhook events logged yet</h3>
             </div>
-          )
-        )}
+          )}
       </CardContent>
     </Card>
   )
@@ -376,11 +409,23 @@ function WebhookLogsTab() {
 
 function EmailLogsTab() {
   const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
   const logsQuery = useMemoFirebase(
     () => (firestore ? query(collection(firestore, 'logs/emails/sends'), orderBy('timestamp', 'desc'), limit(50)) : null),
     [firestore]
   );
   const { data: logs, isLoading } = useCollection<LogEntry>(logsQuery);
+
+  const filteredLogs = useMemo(() => {
+    if (!logs) return [];
+    if (!searchTerm) return logs;
+    return logs.filter(log => {
+      const to = (log.payload as any)?.to.toLowerCase();
+      const subject = (log.payload as any)?.subject.toLowerCase();
+      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      return to.includes(lowerCaseSearchTerm) || subject.includes(lowerCaseSearchTerm);
+    });
+  }, [logs, searchTerm]);
 
   return (
      <Card>
@@ -391,57 +436,77 @@ function EmailLogsTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+          <div className="mb-4 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by recipient or subject..."
+              className="pl-8 sm:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
           {isLoading && <Skeleton className="h-48 w-full" />}
-          {!isLoading && logs && logs.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Status</TableHead>
-                 <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
-                  <TableCell>{(log.payload as any)?.to}</TableCell>
-                  <TableCell className="font-medium">{(log.payload as any)?.subject}</TableCell>
-                  <TableCell>
-                      <Badge variant={log.status === 'failed' ? 'destructive' : 'secondary'}>
-                          {log.status}
-                      </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                     <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Details</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Email Log Details</DialogTitle>
-                                <DialogDescription>Log ID: {log.id}</DialogDescription>
-                            </DialogHeader>
-                            <pre className="mt-2 w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
-                                {JSON.stringify(log, null, 2)}
-                            </pre>
-                        </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          !isLoading && (
+          {!isLoading && logs && (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                      <TableCell>{(log.payload as any)?.to}</TableCell>
+                      <TableCell className="font-medium">{(log.payload as any)?.subject}</TableCell>
+                      <TableCell>
+                          <Badge variant={log.status === 'failed' ? 'destructive' : 'secondary'}>
+                              {log.status}
+                          </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Details</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Email Log Details</DialogTitle>
+                                    <DialogDescription>Log ID: {log.id}</DialogDescription>
+                                </DialogHeader>
+                                <pre className="mt-2 w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
+                                    {JSON.stringify(log, null, 2)}
+                                </pre>
+                            </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {filteredLogs.length === 0 && (
+                <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                    <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 font-semibold">No matching emails found</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Try a different search term or clear the search.
+                    </p>
+                </div>
+              )}
+            </>
+          )}
+          {!isLoading && !logs && (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
                 <Mail className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 font-semibold">No emails sent yet</h3>
             </div>
-          )
-        )}
+          )}
       </CardContent>
     </Card>
   )
