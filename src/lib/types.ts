@@ -19,6 +19,8 @@ export type Consent = {
 export type Vendor = {
   id: string;
   businessName: string;
+  description: string;
+  category: string;
   abn: string;
   abnVerified?: boolean;
   email: string;
@@ -35,6 +37,7 @@ export type Vendor = {
   supportEmail?: string;
   fulfilmentTerms?: string;
   consents?: Omit<Consent, 'id' | 'userId'>[];
+  isPremium?: boolean;
 };
 
 export type Listing = {
@@ -169,4 +172,5 @@ export type LogEntry = {
     error?: string;
 }
 
+    
     

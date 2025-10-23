@@ -9,7 +9,7 @@ import type { Vendor, Listing } from '@/lib/types';
 import { doc, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ListPlus, Tag, Truck, Edit, Trash2, CreditCard, AlertCircle } from 'lucide-react';
+import { ListPlus, Tag, Truck, Edit, Trash2, CreditCard, AlertCircle, Gem } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 
 export default function VendorDashboardPage() {
   const { user, isUserLoading } = useUser();
@@ -111,6 +112,10 @@ export default function VendorDashboardPage() {
       });
     }
   }
+
+  // Determine if the user is on the basic tier and has reached their listing limit.
+  // For now, we assume any vendor without a 'premium' flag is on the basic tier.
+  const hasReachedListingLimit = vendor?.paymentsEnabled && !vendor.isPremium && listings && listings.length >= 1;
 
 
   if (isUserLoading || isVendorLoading) {
@@ -209,14 +214,31 @@ export default function VendorDashboardPage() {
                         <CardTitle className="font-headline">Your Listings</CardTitle>
                         <CardDescription>Manage your products and services offered on the marketplace.</CardDescription>
                     </div>
-                    <Button asChild>
-                        <Link href="/dashboard/vendor/edit-listing/new">
-                            <ListPlus className="mr-2 h-4 w-4" />
-                            Create New Listing
-                        </Link>
-                    </Button>
+                     { !hasReachedListingLimit && (
+                        <Button asChild>
+                            <Link href="/dashboard/vendor/edit-listing/new">
+                                <ListPlus className="mr-2 h-4 w-4" />
+                                Create New Listing
+                            </Link>
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
+                  {hasReachedListingLimit && (
+                       <Alert className="mb-6 border-primary/50 text-primary-foreground bg-primary/10">
+                          <Gem className="h-4 w-4 !text-primary" />
+                          <AlertTitle className="font-semibold !text-primary">You've reached your listing limit!</AlertTitle>
+                          <AlertDescription className="text-primary/90">
+                              Your current plan includes one active listing. To add more products and services, please upgrade to our Premium Tier.
+                          </AlertDescription>
+                           <Button asChild className="mt-3" size="sm">
+                              <Link href="/dashboard/vendor/upgrade">
+                                <Gem className="mr-2 h-4 w-4"/>
+                                Upgrade to Premium
+                              </Link>
+                           </Button>
+                       </Alert>
+                  )}
                    <div className="grid md:grid-cols-1 lg:grid-cols-2 gap-6">
                         {areListingsLoading && Array.from({ length: 2 }).map((_, i) => (
                             <Card key={i}>
@@ -319,4 +341,6 @@ export default function VendorDashboardPage() {
     </>
   );
 }
+    
+
     
