@@ -261,5 +261,3 @@ async function handleDisputeChange(dispute: Stripe.Dispute, orderStatus: Order['
         await sendDisputeClosedNotification(vendor, buyer.email || '', order, disputeData);
     }
 }
-
-    

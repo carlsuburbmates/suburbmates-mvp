@@ -187,5 +187,3 @@ The Darebin Business Directory Team
         await sendEmail(customerEmail, subject, text);
     }
 }
-
-    

@@ -157,4 +157,13 @@ export type Dispute = {
     evidenceDueBy: string;
 }
 
-    
+export type LogEntry = {
+    id?: string;
+    timestamp: string;
+    type: 'webhook' | 'email';
+    source: string;
+    eventId: string;
+    status: 'received' | 'processed' | 'sent' | 'failed';
+    payload: object;
+    error?: string;
+}
