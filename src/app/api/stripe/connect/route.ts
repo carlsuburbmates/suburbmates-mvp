@@ -3,13 +3,13 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import serviceAccount from '@/../service-account.json';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
 
 if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}');
     initializeApp({
         credential: cert(serviceAccount)
     });
