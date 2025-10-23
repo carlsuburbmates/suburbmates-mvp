@@ -1,9 +1,14 @@
 
-
 export type NavItem = {
   title: string;
   href: string;
   disabled?: boolean;
+};
+
+export type Consent = {
+  agreementId: 'vendor_tos' | 'refund_policy' | 'buyer_tos';
+  version: string;
+  timestamp: string;
 };
 
 export type Vendor = {
@@ -24,6 +29,7 @@ export type Vendor = {
   refundPolicyUrl?: string;
   supportEmail?: string;
   fulfilmentTerms?: string;
+  consents?: Consent[];
 };
 
 export type Listing = {
@@ -116,16 +122,6 @@ export type Agreement = {
   version: string;
   url: string;
   _lastValidated: string;
-};
-
-export type Consent = {
-  id: string;
-  userId: string;
-  agreementId: string;
-  version: string;
-  ip: string;
-  ua: string;
-  timestamp: string;
 };
 
 export type RefundRequest = {

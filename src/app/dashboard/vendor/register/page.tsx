@@ -48,8 +48,11 @@ const vendorRegistrationSchema = z.object({
   address: z.string().min(5, 'Please enter a valid business address.'),
   phone: z.string().optional(),
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
-  consent: z.boolean().refine(val => val === true, {
-    message: 'You must agree to the terms for your business details to be made public.',
+  termsConsent: z.boolean().refine(val => val === true, {
+    message: 'You must agree to the Terms of Service to continue.',
+  }),
+  refundPolicyConsent: z.boolean().refine(val => val === true, {
+    message: 'You must acknowledge the Refund & Dispute Policy to continue.',
   }),
 });
 
@@ -84,7 +87,8 @@ export default function VendorRegistrationPage() {
       address: '',
       phone: '',
       website: '',
-      consent: false,
+      termsConsent: false,
+      refundPolicyConsent: false,
     },
   });
 
@@ -112,6 +116,8 @@ export default function VendorRegistrationPage() {
         
         // Step 2: Create Vendor Document in Firestore
         const vendorRef = doc(firestore, 'vendors', user.uid);
+        const consentTimestamp = new Date().toISOString();
+
         const vendorData = {
             id: user.uid,
             email: user.email,
@@ -122,6 +128,18 @@ export default function VendorRegistrationPage() {
             phone: values.phone || '',
             website: values.website || '',
             paymentsEnabled: false, // Default to false, awaiting admin approval
+            consents: [
+              {
+                agreementId: 'vendor_tos',
+                version: '1.0', // This would typically be dynamic
+                timestamp: consentTimestamp,
+              },
+              {
+                agreementId: 'refund_policy',
+                version: '1.0',
+                timestamp: consentTimestamp,
+              },
+            ]
         };
 
         setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
@@ -211,26 +229,48 @@ export default function VendorRegistrationPage() {
                     </div>
                 </div>
                 
-                <FormField
-                    control={form.control}
-                    name="consent"
-                    render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                        <FormLabel>Agree to Public Listing</FormLabel>
-                        <FormDescription>
-                            I understand that my business details will be made public in the directory. By checking this box, I also agree to the{' '}
-                            <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link>{' '}
-                            and acknowledge the{' '}<Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
-                        </FormDescription>
-                        <FormMessage />
-                        </div>
-                    </FormItem>
-                    )}
-                />
+                <div className='space-y-4 p-4 border rounded-lg'>
+                  <h3 className='font-medium'>Agreements</h3>
+                  <FormField
+                      control={form.control}
+                      name="termsConsent"
+                      render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                          <FormLabel>Agree to Terms of Service</FormLabel>
+                          <FormDescription>
+                              I agree to the{' '}
+                              <Link href="/terms" className="underline hover:text-primary" target="_blank">Terms of Service</Link>.
+                          </FormDescription>
+                          <FormMessage />
+                          </div>
+                      </FormItem>
+                      )}
+                  />
+                   <FormField
+                      control={form.control}
+                      name="refundPolicyConsent"
+                      render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                          <FormLabel>Acknowledge Refund Policy</FormLabel>
+                          <FormDescription>
+                              I have read and agree to adhere to the platform's{' '}
+                              <Link href="/policy" className="underline hover:text-primary" target="_blank">Refund & Dispute Policy</Link>.
+                          </FormDescription>
+                          <FormMessage />
+                          </div>
+                      </FormItem>
+                      )}
+                  />
+                </div>
+
                 <Button type="submit" className="w-full md:w-auto" disabled={isAbnLoading || isSubmitting}>
                         {(isAbnLoading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isAbnLoading ? 'Validating ABN...' : 'Create Business Profile'}
