@@ -1,7 +1,7 @@
 
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter }from 'next/navigation';
 import { useAuth, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,21 +14,40 @@ import type { Vendor, Dispute, LogEntry } from '@/lib/types';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toggleVendorPayments } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare } from 'lucide-react';
+import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import Link from 'next/link';
+import { Label } from '@/components/ui/label';
 
 function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
   const firestore = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
   const [updatingVendorId, setUpdatingVendorId] = useState<string | null>(null);
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
 
   const vendorsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'vendors') : null),
     [firestore]
   );
-  const { data: vendors, isLoading: areVendorsLoading } = useCollection<Vendor>(vendorsQuery);
+  const { data: allVendors, isLoading: areVendorsLoading } = useCollection<Vendor>(vendorsQuery);
+  
+  const vendors = useMemo(() => {
+    if (!allVendors) return [];
+    if (showPendingOnly) {
+      return allVendors.filter(v => v.stripeAccountId && !v.paymentsEnabled);
+    }
+    return allVendors;
+  }, [allVendors, showPendingOnly]);
+
 
   const handleToggle = async (vendor: Vendor) => {
     if (!auth.currentUser) {
@@ -85,6 +104,14 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="flex items-center space-x-2 mb-4">
+            <Switch
+                id="pending-only"
+                checked={showPendingOnly}
+                onCheckedChange={setShowPendingOnly}
+            />
+            <Label htmlFor="pending-only">Show Pending Approval Only</Label>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -92,6 +119,7 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
               <TableHead>Email</TableHead>
               <TableHead>Stripe Account ID</TableHead>
               <TableHead>Payments Enabled</TableHead>
+              <TableHead>Details</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -101,6 +129,7 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
                     <TableCell><Skeleton className="h-5 w-40"/></TableCell>
                     <TableCell><Skeleton className="h-5 w-24"/></TableCell>
                     <TableCell><Skeleton className="h-5 w-20"/></TableCell>
+                    <TableCell><Skeleton className="h-8 w-20"/></TableCell>
                 </TableRow>
             ))}
             {vendors?.map((vendor) => (
@@ -109,7 +138,7 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
                 <TableCell>{vendor.email}</TableCell>
                 <TableCell>
                     <Badge variant={vendor.stripeAccountId ? 'secondary' : 'outline'}>
-                        {vendor.stripeAccountId || 'Not Connected'}
+                        {vendor.stripeAccountId ? 'Connected' : 'Not Connected'}
                     </Badge>
                 </TableCell>
                 <TableCell>
@@ -129,12 +158,60 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
                     </Badge>
                    </div>
                 </TableCell>
+                <TableCell>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">View Details</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{vendor.businessName}</DialogTitle>
+                                <DialogDescription>
+                                    Review vendor details before enabling payments.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4 text-sm">
+                                <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                    <span className="text-muted-foreground">ABN</span>
+                                    <span className="font-mono">{vendor.abn} <Badge variant={vendor.abnVerified ? 'secondary' : 'destructive'}>{vendor.abnVerified ? 'Verified' : 'Not Verified'}</Badge></span>
+                                </div>
+                                <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                    <span className="text-muted-foreground">Address</span>
+                                    <span>{vendor.address}</span>
+                                </div>
+                                 <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                    <span className="text-muted-foreground">Phone</span>
+                                    <span>{vendor.phone || 'N/A'}</span>
+                                </div>
+                                 <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                    <span className="text-muted-foreground">Website</span>
+                                    <span>{vendor.website ? <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{vendor.website}</a> : 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button asChild>
+                                    <Link href={`/vendors/${vendor.id}`} target="_blank">View Public Profile</Link>
+                                </Button>
+                                {vendor.stripeAccountId && (
+                                     <Button asChild variant="secondary">
+                                        <a href={`https://dashboard.stripe.com/accounts/${vendor.stripeAccountId}`} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink className="mr-2 h-4 w-4"/>
+                                            View in Stripe
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
         {!areVendorsLoading && vendors?.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No vendors have signed up yet.</p>
+            <p className="text-center text-muted-foreground py-8">
+              {showPendingOnly ? "No vendors are currently pending approval." : "No vendors have signed up yet."}
+            </p>
         )}
       </CardContent>
     </Card>
