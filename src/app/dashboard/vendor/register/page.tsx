@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,6 +34,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { validateAbn } from '@/ai/flows/validate-abn';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const vendorRegistrationSchema = z.object({
   businessName: z
@@ -44,6 +47,8 @@ const vendorRegistrationSchema = z.object({
       /^\d{2} \d{3} \d{3} \d{3}$/,
       'Please enter a valid ABN format (e.g., 12 345 678 901).'
     ),
+  category: z.string().min(1, 'Please select a business category.'),
+  description: z.string().min(20, 'Description must be at least 20 characters.').max(280, 'Description cannot exceed 280 characters.'),
   address: z.string().min(5, 'Please enter a valid business address.'),
   phone: z.string().optional(),
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
@@ -83,6 +88,8 @@ export default function VendorRegistrationPage() {
     defaultValues: {
       businessName: '',
       abn: '',
+      category: '',
+      description: '',
       address: '',
       phone: '',
       website: '',
@@ -123,6 +130,8 @@ export default function VendorRegistrationPage() {
             businessName: values.businessName,
             abn: values.abn,
             abnVerified: true,
+            category: values.category,
+            description: values.description,
             address: values.address,
             phone: values.phone || '',
             website: values.website || '',
@@ -202,6 +211,54 @@ export default function VendorRegistrationPage() {
                             <FormMessage />
                         </FormItem>
                     )}/>
+                     <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            >
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a category for your business" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="gardening">Gardening</SelectItem>
+                                <SelectItem value="cafe">Cafe</SelectItem>
+                                <SelectItem value="plumbing">Plumbing</SelectItem>
+                                <SelectItem value="retail">Retail</SelectItem>
+                                <SelectItem value="bakery">Bakery</SelectItem>
+                                <SelectItem value="services">
+                                Professional Services
+                                </SelectItem>
+                            </SelectContent>
+                            </Select>
+                             <FormDescription>This helps customers find you in the directory.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Short Business Description</FormLabel>
+                            <FormControl>
+                                <Textarea
+                                placeholder="Tell everyone what makes your business special..."
+                                {...field}
+                                />
+                            </FormControl>
+                            <FormDescription>A brief summary of your business (max 280 characters).</FormDescription>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                         <FormField control={form.control} name="address" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Business Address</FormLabel>
@@ -282,4 +339,3 @@ export default function VendorRegistrationPage() {
     </>
   );
 }
-    

@@ -37,10 +37,11 @@ export default function VendorsPage() {
   const firestore = useFirestore();
   const [activeTab, setActiveTab] = useState('list');
   const [showMarketplaceOnly, setShowMarketplaceOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [minimumRating, setMinimumRating] = useState(0);
 
   const vendorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Fetch all vendors, filtering will be done on the client
     return query(collection(firestore, 'vendors'));
   }, [firestore]);
 
@@ -48,17 +49,27 @@ export default function VendorsPage() {
 
   const vendors = useMemo(() => {
     if (!allVendors) return [];
-    const vendorsWithLocations = allVendors.map((vendor, index) => ({
-      ...vendor,
-      latitude: vendor.latitude || -37.775 + (Math.random() - 0.5) * 0.02,
-      longitude: vendor.longitude || 144.99 + (Math.random() - 0.5) * 0.02,
-    })).filter(v => v.latitude && v.longitude);
     
-    if (showMarketplaceOnly) {
-      return vendorsWithLocations.filter(v => v.paymentsEnabled);
+    return allVendors.map((vendor, index) => ({
+        ...vendor,
+        latitude: vendor.latitude || -37.775 + (Math.random() - 0.5) * 0.02,
+        longitude: vendor.longitude || 144.99 + (Math.random() - 0.5) * 0.02,
+      }))
+      .filter(v => v.latitude && v.longitude)
+      .filter(v => showMarketplaceOnly ? v.paymentsEnabled : true)
+      .filter(v => selectedCategory === 'all' ? true : v.category === selectedCategory)
+      .filter(v => (v.averageRating || 0) >= minimumRating);
+
+  }, [allVendors, showMarketplaceOnly, selectedCategory, minimumRating]);
+
+  const handleRatingChange = (rating: number, checked: boolean | 'indeterminate') => {
+    if (checked) {
+      setMinimumRating(rating);
+    } else if (minimumRating === rating) {
+      // If the user unchecks the currently active filter, turn it off.
+      setMinimumRating(0);
     }
-    return vendorsWithLocations;
-  }, [allVendors, showMarketplaceOnly]);
+  };
 
 
   return (
@@ -114,7 +125,7 @@ export default function VendorsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Category</Label>
-                    <Select disabled>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                       <SelectTrigger>
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
@@ -133,13 +144,13 @@ export default function VendorsPage() {
                     <Label>Rating</Label>
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="rating-4" disabled/>
+                        <Checkbox id="rating-4" checked={minimumRating === 4} onCheckedChange={(checked) => handleRatingChange(4, checked)} />
                         <Label htmlFor="rating-4" className="font-normal text-muted-foreground">
                           4 stars & up
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="rating-3" disabled/>
+                        <Checkbox id="rating-3" checked={minimumRating === 3} onCheckedChange={(checked) => handleRatingChange(3, checked)} />
                         <Label htmlFor="rating-3" className="font-normal text-muted-foreground">
                           3 stars & up
                         </Label>
@@ -191,6 +202,7 @@ export default function VendorsPage() {
                   </CardHeader>
                   <CardContent className="p-4 flex-grow flex flex-col">
                       <h3 className="font-bold font-headline text-lg">{vendor.businessName}</h3>
+                      <p className="text-sm text-muted-foreground flex-grow line-clamp-2">{vendor.description || ''}</p>
                       <div className="text-sm text-muted-foreground mt-2 flex-grow">
                           {vendor.website && <p><Link href={vendor.website} target="_blank" className="hover:text-primary underline">Website</Link></p>}
                           {vendor.phone && <p>{vendor.phone}</p>}
@@ -213,11 +225,8 @@ export default function VendorsPage() {
                   <Card className="md:col-span-2 xl:col-span-3 text-center p-8">
                     <CardTitle>No Businesses Found</CardTitle>
                     <CardDescription>
-                      Check back soon or become the first business in the directory!
+                      Try adjusting your filters or check back soon.
                     </CardDescription>
-                    <Button asChild className="mt-4">
-                      <Link href="/dashboard/vendor/register">Register Your Business</Link>
-                    </Button>
                   </Card>
                 )}
             </main>

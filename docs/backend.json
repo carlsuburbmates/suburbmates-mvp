@@ -11,6 +11,14 @@
           "type": "string",
           "description": "The name of the business."
         },
+        "category": {
+          "type": "string",
+          "description": "The primary category of the business (e.g., Cafe, Retail)."
+        },
+        "description": {
+            "type": "string",
+            "description": "A short, public-facing description of the business."
+        },
         "abn": {
           "type": "string",
           "description": "Australian Business Number of the business."
@@ -81,6 +89,8 @@
       },
       "required": [
         "businessName",
+        "category",
+        "description",
         "abn",
         "email",
         "address",
