@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CreditCard, ShoppingCart, LayoutGrid, User, FileQuestion, ShieldAlert } from 'lucide-react';
+import { CreditCard, ShoppingCart, LayoutGrid, User, FileQuestion, ShieldAlert, Gem } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,6 +35,11 @@ const vendorNavItems = [
     href: '/dashboard/vendor/payments',
     icon: <CreditCard className="mr-2 h-4 w-4" />,
   },
+  {
+    title: 'Upgrade',
+    href: '/dashboard/vendor/upgrade',
+    icon: <Gem className="mr-2 h-4 w-4" />,
+  },
 ];
 
 const businessOwnerNavItems = [
@@ -42,7 +47,12 @@ const businessOwnerNavItems = [
         title: 'Business Dashboard',
         href: '/dashboard/vendor',
         icon: <LayoutGrid className="mr-2 h-4 w-4" />,
-    }
+    },
+    {
+        title: 'Upgrade',
+        href: '/dashboard/vendor/upgrade',
+        icon: <Gem className="mr-2 h-4 w-4" />,
+    },
 ]
 
 const residentNavItems = [
@@ -84,7 +94,8 @@ export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: bo
                   size: 'default',
                 }),
                 'justify-start',
-                pathname === item.href && item.title === 'Disputes' ? 'bg-destructive/80 hover:bg-destructive text-destructive-foreground' : ''
+                pathname === item.href && item.title === 'Disputes' ? 'bg-destructive/80 hover:bg-destructive text-destructive-foreground' : '',
+                pathname === item.href && item.title === 'Upgrade' ? 'bg-primary/10 text-primary' : ''
               )}
             >
               {item.icon}
