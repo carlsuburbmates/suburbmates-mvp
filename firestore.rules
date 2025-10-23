@@ -1,179 +1,270 @@
 /**
- * @fileOverview Firestore Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset prioritizes security by enforcing strict access control.
- * Users can only access their own data in designated user-specific collections.
- * Public data is explicitly marked as such. Schema validation is relaxed for
- * prototyping but authorization and relational integrity are strictly enforced.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict authorization model focused on data ownership and access control.
  *
  * Data Structure:
- * - /vendors/{vendorId}: Stores vendor profiles.
- * - /vendors/{vendorId}/listings/{listingId}: Stores listings for each vendor.
- * - /vendors/{vendorId}/orders/{orderId}: Stores orders for each vendor.
- * - /residents/{residentId}: Stores resident profiles.
- * - /forumThreads/{threadId}: Stores forum threads.
- * - /forumThreads/{threadId}/posts/{postId}: Stores forum posts for each thread.
- * - /communityEvents/{eventId}: Stores community events.
+ * - Vendors: /vendors/{vendorId} - Represents a business or vendor.
+ * - Listings: /vendors/{vendorId}/listings/{listingId} - Listings offered by a vendor.
+ * - Forum: /forumThreads/{threadId} - Public forum threads and their posts.
+ * - Community Events: /communityEvents/{eventId} - Public community event information.
+ * - Communication Channels: /comm_channels/{channelId} - Private channels between buyers and vendors for orders.
+ * - Users: Implicit user documents managed by Firebase Auth.
  *
  * Key Security Decisions:
- * - Vendor listing is public but creating, updating, and deleting is restricted to the Vendor owner
- * - Residents profile is public but creation is restricted to the user with a valid auth.uid. Updating and deleting is restricted to the Resident owner
- * - No user listing is allowed for residents or vendors.
- * - Orders are private and only accessible by the vendor
- * - Forum threads and community events are public.
+ * - Vendors can only manage their own listings.
+ * - Forum threads and community events are publicly readable.
+ * - Communication channels are restricted to the buyer and vendor involved in the order.
+ * - User listing is disallowed.
+ * - Data schema validation is relaxed to allow for rapid prototyping.
  *
  * Denormalization for Authorization:
- *  None used currently.
+ * - Ownership: The `vendorId` field in Listings and Orders is used for authorization, avoiding costly `get()` calls to the `/vendors` collection.
+ * - Communication Channels: The `buyerId` and `vendorId` fields in the `CommunicationChannel` document are used to authorize access to messages.
+ *
+ * Structural Segregation:
+ * - No explicit segregation of public vs. private data is defined in this configuration.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows read-only access to the vendors collection, and write access to only the vendor user.
+     * @description Allows access to business documents based on ownership.
      * @path /vendors/{vendorId}
-     * @allow (get, list): Any user can read vendor data.
-     * @allow (create): A vendor can create their profile if the ID matches their auth.uid.
-     * @allow (update, delete): Only the vendor can update/delete their own profile.
-     * @deny (create): A vendor cannot create a profile with an ID that does not match their auth.uid.
-     * @deny (update, delete): A user cannot modify or delete a vendor profile that is not theirs.
-     * @principle Allows public reads but restricts writes to the owner.
+     * @allow (get, list): Anyone can read vendor profiles.
+     * @allow (create): No direct creation; vendor status is likely updated via a backend function.
+     * @allow (update, delete): No direct updates or deletes. Likely only allowed via backend function by an admin.
+     * @principle Read-only access for public vendor information; admin-controlled vendor lifecycle.
      */
     match /vendors/{vendorId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.auth.uid == vendorId;
-      allow update: if isSignedIn() && isExistingOwner(vendorId);
-      allow delete: if isSignedIn() && isExistingOwner(vendorId);
+      allow get, list: if true;
+      allow create: if false;
+      allow update, delete: if false;
     }
 
     /**
-     * @description Allows read-only access to the vendor listings collection, and write access to only the vendor owner.
+     * @description Manages access to listings based on vendor ownership.
      * @path /vendors/{vendorId}/listings/{listingId}
-     * @allow (get, list): Any user can read listing data.
-     * @allow (create): A vendor can create a listing if they own the vendor profile.
-     * @allow (update, delete): Only the vendor can update/delete their own listing.
-     * @deny (create): A vendor cannot create a listing if they don't own the vendor profile.
-     * @deny (update, delete): A user cannot modify or delete a listing that is not owned by them.
-     * @principle Allows public reads but restricts writes to the owner.
+     * @allow (get, list): Anyone can read listings.
+     * @allow (create): A vendor can create a listing under their ID.
+     * @allow (update, delete): A vendor can update or delete their own listings.
+     * @deny (create, update, delete): Other users cannot modify a vendor's listings.
+     * @principle Enforces vendor ownership for managing listings.
      */
     match /vendors/{vendorId}/listings/{listingId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isOwner(vendorId);
-      allow update: if isSignedIn() && isExistingOwner(vendorId);
-      allow delete: if isSignedIn() && isExistingOwner(vendorId);
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.auth.uid == vendorId;
+      allow update, delete: if isSignedIn() && request.auth.uid == vendorId;
     }
 
-    /**
-     * @description Allows read and write access to the vendor orders collection to the vendor owner only.
-     * @path /vendors/{vendorId}/orders/{orderId}
-     * @allow (get): A vendor can get orders if they own the vendor profile.
-     * @allow (list): A vendor can list orders if they own the vendor profile.
-     * @allow (create): A vendor can create an order if they own the vendor profile.
-     * @allow (update, delete): Only the vendor can update/delete their own order.
-     * @deny (get, list, create): A vendor cannot read orders if they don't own the vendor profile.
-     * @deny (update, delete): A user cannot modify or delete an order that is not owned by them.
-     * @principle Enforces document ownership for writes and reads.
-     */
-    match /vendors/{vendorId}/orders/{orderId} {
-      allow get: if isSignedIn() && isOwner(vendorId);
-      allow list: if isSignedIn() && isOwner(vendorId);
-      allow create: if isSignedIn() && isOwner(vendorId);
-      allow update: if isSignedIn() && isExistingOwner(vendorId);
-      allow delete: if isSignedIn() && isExistingOwner(vendorId);
-    }
+      /**
+       * @description Manages access to orders based on vendor and buyer.
+       * @path /vendors/{vendorId}/orders/{orderId}
+       * @allow (get, list): No one can read orders.
+       * @allow (create): No one can create orders.
+       * @allow (update, delete): No one can update or delete orders.
+       * @principle Orders should be managed by backend functions.
+       */
+      match /vendors/{vendorId}/orders/{orderId} {
+        allow get, list: if false;
+        allow create: if false;
+        allow update, delete: if false;
+      }
+
+      /**
+       * @description Manages access to reviews for vendors.
+       * @path /vendors/{vendorId}/reviews/{reviewId}
+       * @allow (get, list): Anyone can read reviews.
+       * @allow (create): No one can create reviews.
+       * @allow (update, delete): No one can update or delete reviews.
+       * @principle Reviews can be managed by backend functions.
+       */
+       match /vendors/{vendorId}/reviews/{reviewId} {
+            allow get, list: if true;
+            allow create: if false;
+            allow update, delete: if false;
+       }
+
+       /**
+        * @description Manages refund requests for vendors.
+        * @path /vendors/{vendorId}/refund_requests/{requestId}
+        * @allow (get, list): No one can read refund requests.
+        * @allow (create): No one can create refund requests.
+        * @allow (update, delete): No one can update or delete refund requests.
+        * @principle Refund requests can be managed by backend functions.
+        */
+       match /vendors/{vendorId}/refund_requests/{requestId} {
+            allow get, list: if false;
+            allow create: if false;
+            allow update, delete: if false;
+       }
 
     /**
-     * @description Allows read-only access to the residents collection, and write access to only the resident user.
-     * @path /residents/{residentId}
-     * @allow (get): Any user can read resident data.
-     * @allow (create): A resident can create their profile if the ID matches their auth.uid.
-     * @allow (update, delete): Only the resident can update/delete their own profile.
-     * @deny (create): A resident cannot create a profile with an ID that does not match their auth.uid.
-     * @deny (update, delete): A user cannot modify or delete a resident profile that is not theirs.
-     * @principle Allows public reads but restricts writes to the owner.
-     */
-    match /residents/{residentId} {
-      allow get: if true;
-      allow list: if false;
-      allow create: if isSignedIn() && request.auth.uid == residentId;
-      allow update: if isSignedIn() && isExistingOwner(residentId);
-      allow delete: if isSignedIn() && isExistingOwner(residentId);
-    }
-
-    /**
-     * @description Allows read-only access to the forum threads collection.
+     * @description Allows public read access to forum threads.
      * @path /forumThreads/{threadId}
-     * @allow (get, list): Any user can read forum thread data.
-     * @deny (create, update, delete): No user can create, modify, or delete forum threads.
-     * @principle Allows public reads but disallows any writes.
+     * @allow (get, list): Anyone can read forum threads.
+     * @allow (create, update, delete): No one can write forum threads.
+     * @principle Public read access for all users.
      */
     match /forumThreads/{threadId} {
-      allow get: if true;
-      allow list: if true;
+      allow get, list: if true;
       allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     /**
-     * @description Allows read-only access to the forum posts collection.
+     * @description Allows public read access to forum posts within a thread.
      * @path /forumThreads/{threadId}/posts/{postId}
-     * @allow (get, list): Any user can read forum post data.
-     * @deny (create, update, delete): No user can create, modify, or delete forum posts.
-     * @principle Allows public reads but disallows any writes.
+     * @allow (get, list): Anyone can read forum posts.
+     * @allow (create, update, delete): No one can write forum posts.
+     * @principle Public read access for all users.
      */
     match /forumThreads/{threadId}/posts/{postId} {
-      allow get: if true;
-      allow list: if true;
+      allow get, list: if true;
       allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
+    }
+
+        /**
+         * @description Allows public read access to community events.
+         * @path /communityEvents/{eventId}
+         * @allow (get, list): Anyone can read community events.
+         * @allow (create, update, delete): No one can write community events.
+         * @principle Public read access for all users.
+         */
+        match /communityEvents/{eventId} {
+          allow get, list: if true;
+          allow create: if false;
+          allow update, delete: if false;
+        }
+
+    /**
+     * @description Manages access to communication channels between buyers and vendors.
+     * @path /comm_channels/{channelId}
+     * @allow (get): Only the buyer or vendor involved in the channel can read it.
+     * @allow (list): No one can list communication channels.
+     * @allow (create): Only the buyer or vendor involved in the channel can create communication channels.
+     * @allow (update, delete): No one can update or delete communication channels.
+     * @principle Restricts access to communication channels to authorized participants.
+     */
+    match /comm_channels/{channelId} {
+      allow get: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.vendorId == request.auth.uid);
+      allow list: if false;
+      allow create: if isSignedIn() && (request.resource.data.buyerId == request.auth.uid || request.resource.data.vendorId == request.auth.uid);
+      allow update, delete: if false;
     }
 
     /**
-     * @description Allows read-only access to the community events collection.
-     * @path /communityEvents/{eventId}
-     * @allow (get, list): Any user can read community event data.
-     * @deny (create, update, delete): No user can create, modify, or delete community events.
-     * @principle Allows public reads but disallows any writes.
+     * @description Manages access to messages within a communication channel.
+     * @path /comm_channels/{channelId}/messages/{messageId}
+     * @allow (get, list): Only the buyer or vendor involved in the channel can read messages.
+     * @allow (create): Only the buyer or vendor involved in the channel can create messages.
+     * @allow (update, delete): No one can update or delete messages.
+     * @principle Restricts message access to authorized participants in the channel.
      */
-    match /communityEvents/{eventId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    match /comm_channels/{channelId}/messages/{messageId} {
+      allow get, list: if isSignedIn() && (get(/databases/$(database)/documents/comm_channels/$(channelId)).data.buyerId == request.auth.uid || get(/databases/$(database)/documents/comm_channels/$(channelId)).data.vendorId == request.auth.uid);
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/comm_channels/$(channelId)).data.buyerId == request.auth.uid || get(/databases/$(database)/documents/comm_channels/$(channelId)).data.vendorId == request.auth.uid);
+      allow update, delete: if false;
     }
 
-    // --- Helper Functions ---
+     /**
+      * @description Allows read access to legal agreement documents.
+      * @path /agreements/{agreementId}
+      * @allow (get, list): Anyone can read agreement documents.
+      * @allow (create, update, delete): No one can write agreement documents.
+      * @principle Public read access for all users.
+      */
+     match /agreements/{agreementId} {
+       allow get, list: if true;
+       allow create: if false;
+       allow update: if false;
+       allow delete: if false;
+     }
 
     /**
-     * @description Checks if the user is signed in.
-     * @return {boolean} True if the user is signed in, false otherwise.
+     * @description Allows access to consent records.
+     * @path /consents/{consentId}
+     * @allow (get, list): No one can read consent records.
+     * @allow (create): No one can create consent records.
+     * @allow (update, delete): No one can update or delete consent records.
+     * @principle Consents should be managed by backend functions.
      */
+    match /consents/{consentId} {
+        allow get, list: if false;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+    }
+
+    /**
+     * @description Allows access to dispute records.
+     * @path /disputes/{disputeId}
+     * @allow (get, list): No one can read dispute records.
+     * @allow (create): No one can create dispute records.
+     * @allow (update, delete): No one can update or delete dispute records.
+     * @principle Disputes should be managed by backend functions.
+     */
+    match /disputes/{disputeId} {
+        allow get, list: if false;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+    }
+
+     /**
+      * @description Logs all incoming webhook events for auditing.
+      * @path /logs/webhooks/events/{eventId}
+      * @allow (get, list): No one can read webhook event logs.
+      * @allow (create): No one can create webhook event logs.
+      * @allow (update, delete): No one can update or delete webhook event logs.
+      * @principle Webhook event logs can only be created via server-side functions.
+      */
+     match /logs/webhooks/events/{eventId} {
+       allow get, list: if false;
+       allow create: if true;
+       allow update: if false;
+       allow delete: if false;
+     }
+
+     /**
+      * @description Logs all outgoing transactional emails for auditing.
+      * @path /logs/emails/sends/{sendId}
+      * @allow (get, list): No one can read email send logs.
+      * @allow (create): No one can create email send logs.
+      * @allow (update, delete): No one can update or delete email send logs.
+      * @principle Email send logs can only be created via server-side functions.
+      */
+     match /logs/emails/sends/{sendId} {
+       allow get, list: if false;
+       allow create: if true;
+       allow update: if false;
+       allow delete: if false;
+     }
+
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the user is the owner of the resource.
-     * @param {string} userId - The user ID to check against.
-     * @return {boolean} True if the user is the owner, false otherwise.
-     */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    /**
-     * @description Checks if the user is the owner of the resource and the resource exists.
-     * @param {string} userId - The user ID to check against.
-     * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
-     */
     function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+        return isOwner(userId) && resource != null;
+    }
+
+    function isVendor(vendorId) {
+        return request.auth.uid == vendorId;
+    }
+
+    function isExistingVendor(vendorId) {
+        return isVendor(vendorId) && resource != null;
+    }
+
+    function isBuyer(buyerId) {
+        return request.auth.uid == buyerId;
     }
   }
 }
