@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -123,15 +122,15 @@ export default function VendorRegistrationPage() {
             email: user.email,
             businessName: values.businessName,
             abn: values.abn,
-            abnVerified: true, // Set the verified badge
+            abnVerified: true,
             address: values.address,
             phone: values.phone || '',
             website: values.website || '',
-            paymentsEnabled: false, // Default to false, awaiting admin approval
+            paymentsEnabled: false,
             consents: [
               {
                 agreementId: 'vendor_tos',
-                version: '1.0', // This would typically be dynamic
+                version: '1.0',
                 timestamp: consentTimestamp,
               },
               {
