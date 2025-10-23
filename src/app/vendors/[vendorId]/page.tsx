@@ -34,7 +34,6 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -530,5 +529,7 @@ export default function VendorProfilePage({
     </div>
   );
 }
+
+    
 
     

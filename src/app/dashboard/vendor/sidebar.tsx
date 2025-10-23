@@ -103,7 +103,7 @@ export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: bo
                     href={item.href}
                     className={cn(
                         buttonVariants({
-                        variant: pathname === item.href ? 'default' : 'ghost',
+                        variant: pathname.startsWith(item.href) ? 'secondary' : 'ghost',
                         size: 'sm',
                         }),
                         'justify-start'
@@ -120,3 +120,5 @@ export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: bo
     </Card>
   );
 }
+
+    
