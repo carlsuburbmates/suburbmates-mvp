@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter }from 'next/navigation';
@@ -14,7 +13,7 @@ import type { Vendor, Dispute, LogEntry } from '@/lib/types';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toggleVendorPayments } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink } from 'lucide-react';
+import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -246,6 +245,7 @@ function DisputesTab() {
                 <TableHead>Reason</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -260,6 +260,30 @@ function DisputesTab() {
                       </Badge>
                   </TableCell>
                   <TableCell className="text-right">${(dispute.amount / 100).toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Dispute Details</DialogTitle>
+                                <DialogDescription>Stripe Dispute ID: {dispute.stripeDisputeId}</DialogDescription>
+                            </DialogHeader>
+                            <pre className="mt-2 w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
+                                {JSON.stringify(dispute, null, 2)}
+                            </pre>
+                            <div className="flex gap-2">
+                                <Button asChild variant="secondary">
+                                    <a href={`https://dashboard.stripe.com/disputes/${dispute.stripeDisputeId}`} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="mr-2 h-4 w-4"/>
+                                        View in Stripe
+                                    </a>
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -303,6 +327,7 @@ function WebhookLogsTab() {
                 <TableHead>Event Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Event ID</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -316,6 +341,22 @@ function WebhookLogsTab() {
                       </Badge>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{log.eventId}</TableCell>
+                  <TableCell className="text-right">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Payload</Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Webhook Event Payload</DialogTitle>
+                                <DialogDescription>ID: {log.eventId}</DialogDescription>
+                            </DialogHeader>
+                            <pre className="mt-2 max-h-[60vh] w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
+                                {JSON.stringify(log.payload, null, 2)}
+                            </pre>
+                        </DialogContent>
+                    </Dialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -359,6 +400,7 @@ function EmailLogsTab() {
                 <TableHead>To</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>Status</TableHead>
+                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -371,6 +413,22 @@ function EmailLogsTab() {
                       <Badge variant={log.status === 'failed' ? 'destructive' : 'secondary'}>
                           {log.status}
                       </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4"/>View Details</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Email Log Details</DialogTitle>
+                                <DialogDescription>Log ID: {log.id}</DialogDescription>
+                            </DialogHeader>
+                            <pre className="mt-2 w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
+                                {JSON.stringify(log, null, 2)}
+                            </pre>
+                        </DialogContent>
+                    </Dialog>
                   </TableCell>
                 </TableRow>
               ))}
@@ -464,7 +522,3 @@ export default function AdminPage() {
     </>
   );
 }
-
-    
-
-    
