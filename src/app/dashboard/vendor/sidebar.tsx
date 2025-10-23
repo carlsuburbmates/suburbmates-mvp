@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CreditCard, ShoppingCart, LayoutGrid, User, FileQuestion } from 'lucide-react';
+import { CreditCard, ShoppingCart, LayoutGrid, User, FileQuestion, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +24,11 @@ const vendorNavItems = [
     title: 'Refunds',
     href: '/dashboard/vendor/refunds',
     icon: <FileQuestion className="mr-2 h-4 w-4" />,
+  },
+   {
+    title: 'Disputes',
+    href: '/dashboard/vendor/disputes',
+    icon: <ShieldAlert className="mr-2 h-4 w-4" />,
   },
   {
     title: 'Payments',
@@ -78,7 +83,8 @@ export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: bo
                   variant: pathname === item.href ? 'default' : 'ghost',
                   size: 'default',
                 }),
-                'justify-start'
+                'justify-start',
+                pathname === item.href && item.title === 'Disputes' ? 'bg-destructive/80 hover:bg-destructive text-destructive-foreground' : ''
               )}
             >
               {item.icon}

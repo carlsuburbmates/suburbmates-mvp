@@ -1,4 +1,5 @@
 
+
 export type NavItem = {
   title: string;
   href: string;
@@ -139,7 +140,7 @@ export type RefundRequest = {
 };
 
 export type Dispute = {
-    id?: string; // Firestore document ID
+    id: string; // Firestore document ID
     stripeDisputeId: string;
     paymentIntentId: string;
     orderId: string;
