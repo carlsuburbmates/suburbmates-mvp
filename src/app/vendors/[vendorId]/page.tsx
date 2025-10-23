@@ -263,8 +263,10 @@ export default function VendorProfilePage({
     notFound();
   }
 
-  const vendorImage = PlaceHolderImages.find((p) => p.id === 'feature-vendors');
-  const userAvatar = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
+  const vendorImage = PlaceHolderImages.find((p) => p.id === 'vendor-cafe');
+  const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
+  const userAvatar2 = PlaceHolderImages.find((p) => p.id === 'user-avatar-2');
+
 
   return (
     <div>
@@ -485,8 +487,8 @@ export default function VendorProfilePage({
                     </Card>
                 )}
                 {areReviewsLoading && <Skeleton className="h-32 w-full" />}
-                {reviews?.map(review => {
-                  const avatar = PlaceHolderImages.find(p => p.id === 'user-avatar-2');
+                {reviews?.map((review, i) => {
+                  const avatar = i % 2 === 0 ? userAvatar1 : userAvatar2;
                   return (
                     <Card key={review.id} className="bg-card/80">
                         <CardHeader className="flex-row items-start gap-4 space-y-0">
@@ -529,7 +531,3 @@ export default function VendorProfilePage({
     </div>
   );
 }
-
-    
-
-    

@@ -150,6 +150,7 @@ export default function Home() {
                 className="object-cover"
                 data-ai-hint={heroImage.imageHint}
                 sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
@@ -310,7 +311,7 @@ export default function Home() {
                 fill
                 className="object-cover"
                 data-ai-hint={featureImage2.imageHint}
-                sizes="(max-width: 768px) 100vw, 50vw"
+                sizes="(maxwidth: 768px) 100vw, 50vw"
               />
             </div>
           )}
