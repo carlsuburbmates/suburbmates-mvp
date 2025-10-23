@@ -33,6 +33,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -54,6 +56,11 @@ export default function VendorProfilePage({
   const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
   const [currentRating, setCurrentRating] = useState(0);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [consent, setConsent] = useState<Record<string, boolean>>({});
+
+  const handleConsentChange = (listingId: string, checked: boolean) => {
+    setConsent(prev => ({...prev, [listingId]: checked}));
+  }
 
   // Display toast based on checkout status
   useEffect(() => {
@@ -344,6 +351,7 @@ export default function VendorProfilePage({
 
                   {listings?.map((listing) => {
                     const isRedirectingToListing = isRedirecting === listing.id;
+                    const isConsentGiven = consent[listing.id];
                     return (
                       <Card key={listing.id}>
                         {listing.imageUrl &&
@@ -367,14 +375,26 @@ export default function VendorProfilePage({
                                 <span>{listing.deliveryMethod}</span>
                             </div>
                           </div>
-
-                          <div className="flex items-center justify-between mt-4">
-                            <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                            <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
-                               {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                               {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
-                            </Button>
-                          </div>
+                            <div className="mt-4 space-y-3">
+                                <div className="items-top flex space-x-2">
+                                    <Checkbox id={`terms-${listing.id}`} onCheckedChange={(checked) => handleConsentChange(listing.id, checked as boolean)}/>
+                                    <div className="grid gap-1.5 leading-none">
+                                        <label
+                                        htmlFor={`terms-${listing.id}`}
+                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                        I agree to the <Link href="/policy" className="underline hover:text-primary">Refund Policy</Link>.
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
+                                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing || !isConsentGiven}>
+                                    {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
+                                    </Button>
+                                </div>
+                           </div>
                         </CardContent>
                       </Card>
                     )
@@ -505,3 +525,5 @@ export default function VendorProfilePage({
     </div>
   );
 }
+
+    
