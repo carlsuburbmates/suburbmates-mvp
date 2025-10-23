@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShieldCheck } from "lucide-react";
+import { Star, ShieldCheck, Search, Loader2 } from "lucide-react";
 import { collection, query, where } from "firebase/firestore";
 
 import { PageHeader } from "@/components/page-header";
@@ -31,14 +31,25 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { VendorMap } from "@/components/vendor-map";
 import { useState, useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { naturalLanguageSearch } from "@/ai/flows/natural-language-search";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function VendorsPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('list');
   const [showMarketplaceOnly, setShowMarketplaceOnly] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [minimumRating, setMinimumRating] = useState(0);
+
+  // State for AI Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiKeywords, setAiKeywords] = useState<string[]>([]);
+  const [aiCategory, setAiCategory] = useState<string | undefined>(undefined);
+
 
   const vendorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -46,6 +57,47 @@ export default function VendorsPage() {
   }, [firestore]);
 
   const { data: allVendors, isLoading } = useCollection<Vendor>(vendorsQuery);
+
+  const handleAiSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery) {
+        // Clear AI filters if search is cleared
+        setAiCategory(undefined);
+        setAiKeywords([]);
+        return;
+    };
+
+    setIsAiSearching(true);
+    try {
+        const result = await naturalLanguageSearch({ query: searchQuery });
+        
+        // Give priority to AI-detected category
+        if (result.category) {
+            setAiCategory(result.category);
+            setSelectedCategory(result.category);
+        } else {
+            setAiCategory(undefined);
+        }
+        
+        setAiKeywords(result.keywords || []);
+        
+        toast({
+            title: "AI Search Applied",
+            description: `Filtering for ${[result.category, ...(result.keywords || [])].filter(Boolean).join(', ')}`,
+        });
+
+    } catch (error) {
+        console.error("AI search failed:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Search Error",
+            description: "Could not process your search query. Please try again.",
+        });
+    } finally {
+        setIsAiSearching(false);
+    }
+  };
+
 
   const vendors = useMemo(() => {
     if (!allVendors) return [];
@@ -58,15 +110,20 @@ export default function VendorsPage() {
       .filter(v => v.latitude && v.longitude)
       .filter(v => showMarketplaceOnly ? v.paymentsEnabled : true)
       .filter(v => selectedCategory === 'all' ? true : v.category === selectedCategory)
-      .filter(v => (v.averageRating || 0) >= minimumRating);
+      .filter(v => (v.averageRating || 0) >= minimumRating)
+      .filter(v => {
+        // AI Keyword Filtering
+        if (aiKeywords.length === 0) return true;
+        const vendorText = `${v.businessName} ${v.description} ${v.category}`.toLowerCase();
+        return aiKeywords.every(keyword => vendorText.includes(keyword.toLowerCase()));
+      });
 
-  }, [allVendors, showMarketplaceOnly, selectedCategory, minimumRating]);
+  }, [allVendors, showMarketplaceOnly, selectedCategory, minimumRating, aiKeywords]);
 
   const handleRatingChange = (rating: number, checked: boolean | 'indeterminate') => {
     if (checked) {
       setMinimumRating(rating);
     } else if (minimumRating === rating) {
-      // If the user unchecks the currently active filter, turn it off.
       setMinimumRating(0);
     }
   };
@@ -108,11 +165,23 @@ export default function VendorsPage() {
               <Card className="sticky top-24">
                 <CardHeader>
                   <CardTitle>Filter Businesses</CardTitle>
-                  <CardDescription>
-                    Refine your search to find the perfect match.
-                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    <form onSubmit={handleAiSearch} className="space-y-2">
+                      <Label htmlFor="ai-search">AI-Powered Search</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="ai-search"
+                          placeholder="e.g., cafe with outdoor seating"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        <Button type="submit" size="icon" disabled={isAiSearching}>
+                          {isAiSearching ? <Loader2 className="animate-spin" /> : <Search />}
+                        </Button>
+                      </div>
+                      <CardDescription>Use natural language to find what you need.</CardDescription>
+                    </form>
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                         <Switch
