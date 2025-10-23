@@ -314,10 +314,10 @@ function WebhookLogsTab() {
   const filteredLogs = useMemo(() => {
     if (!logs) return [];
     if (!searchTerm) return logs;
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return logs.filter(log => {
-      const eventType = (log.payload as any)?.type.toLowerCase();
+      const eventType = (log.payload as any)?.type?.toLowerCase() || '';
       const eventId = log.eventId.toLowerCase();
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
       return eventType.includes(lowerCaseSearchTerm) || eventId.includes(lowerCaseSearchTerm);
     });
   }, [logs, searchTerm]);
@@ -419,10 +419,10 @@ function EmailLogsTab() {
   const filteredLogs = useMemo(() => {
     if (!logs) return [];
     if (!searchTerm) return logs;
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return logs.filter(log => {
-      const to = (log.payload as any)?.to.toLowerCase();
-      const subject = (log.payload as any)?.subject.toLowerCase();
-      const lowerCaseSearchTerm = searchTerm.toLowerCase();
+      const to = (log.payload as any)?.to?.toLowerCase() || '';
+      const subject = (log.payload as any)?.subject?.toLowerCase() || '';
       return to.includes(lowerCaseSearchTerm) || subject.includes(lowerCaseSearchTerm);
     });
   }, [logs, searchTerm]);
