@@ -1,23 +1,25 @@
 
 import { Resend } from 'resend';
 import type { Order, Vendor, RefundRequest, Dispute } from './types';
-import { getFirestore, collection, addDoc } from 'firebase-admin/firestore';
+import { getFirestore, doc, updateDoc } from 'firebase-admin/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'onboarding@resend.dev';
 const db = getFirestore();
 
 async function logEmail(subject: string, to: string, status: 'sent' | 'failed', error?: string) {
-    const logRef = collection(db, 'logs/emails/sends');
-    await addDoc(logRef, {
+    const emailLogId = uuidv4();
+    const logRef = doc(db, 'logs/emails/sends', emailLogId);
+    await updateDoc(logRef, {
         timestamp: new Date().toISOString(),
         type: 'email',
         source: 'resend',
-        eventId: `send-to-${to}-${Date.now()}`,
+        eventId: emailLogId,
         status,
         payload: { to, subject },
         error: error || null,
-    });
+    }, { merge: true });
 }
 
 async function sendEmail(to: string, subject: string, text: string) {
@@ -187,3 +189,5 @@ The Darebin Business Directory Team
         await sendEmail(customerEmail, subject, text);
     }
 }
+
+    

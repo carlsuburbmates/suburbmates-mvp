@@ -7,9 +7,13 @@ export type NavItem = {
 };
 
 export type Consent = {
+  id?: string;
+  userId: string;
   agreementId: 'vendor_tos' | 'refund_policy' | 'buyer_tos';
   version: string;
   timestamp: string;
+  ip: string;
+  ua: string;
 };
 
 export type Vendor = {
@@ -30,7 +34,7 @@ export type Vendor = {
   refundPolicyUrl?: string;
   supportEmail?: string;
   fulfilmentTerms?: string;
-  consents?: Consent[];
+  consents?: Omit<Consent, 'id' | 'userId'>[];
 };
 
 export type Listing = {
@@ -164,3 +168,5 @@ export type LogEntry = {
     payload: object;
     error?: string;
 }
+
+    

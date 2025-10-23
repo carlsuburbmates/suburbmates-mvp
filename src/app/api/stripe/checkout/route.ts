@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { v4 as uuidv4 } from 'uuid';
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -43,6 +45,8 @@ export async function POST(request: Request) {
 
     const userRecord = await auth.getUser(userId);
 
+    const consentId = uuidv4();
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -73,6 +77,7 @@ export async function POST(request: Request) {
             listingName: listing.listingName,
             customerId: userId,
             customerName: userRecord.displayName || userRecord.email,
+            consentId: consentId, // Pass consent ID for webhook processing
         }
       },
        payment_method_options: {
@@ -81,6 +86,9 @@ export async function POST(request: Request) {
         },
       },
       customer_email: userRecord.email, // Pre-fill customer email
+      metadata: {
+        consentId: consentId, // Also add to session metadata for easier access
+      }
     });
 
     if (!session.url) {
@@ -93,3 +101,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+    

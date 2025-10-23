@@ -6,7 +6,7 @@ import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { headers } from 'next/headers';
 import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail, sendDisputeCreatedVendorNotification, sendDisputeCreatedBuyerNotification, sendDisputeClosedNotification } from '@/lib/email';
-import type { Vendor, Order, Dispute } from '@/lib/types';
+import type { Vendor, Order, Dispute, Consent } from '@/lib/types';
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -30,8 +30,8 @@ const auth = getAuth(app);
 
 
 async function logWebhook(event: Stripe.Event, status: 'received' | 'processed' | 'failed', error?: string) {
-    const logRef = collection(db, 'logs/webhooks/events');
-    await addDoc(logRef, {
+    const logRef = doc(db, 'logs/webhooks/events', event.id);
+    await updateDoc(logRef, {
         timestamp: new Date().toISOString(),
         type: 'webhook',
         source: 'stripe',
@@ -39,7 +39,7 @@ async function logWebhook(event: Stripe.Event, status: 'received' | 'processed' 
         status,
         payload: event,
         error: error || null,
-    });
+    }, { merge: true });
 }
 
 
@@ -88,10 +88,10 @@ export async function POST(request: Request) {
 
       case 'checkout.session.completed':
           const session = event.data.object as Stripe.Checkout.Session;
-          const metadata = session.metadata;
-          const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+          const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
+          const metadata = paymentIntent.metadata;
 
-          if (session.payment_status === 'paid' && metadata?.vendorId && metadata.customerId && paymentIntentId) {
+          if (session.payment_status === 'paid' && metadata?.vendorId && metadata.customerId) {
               console.log('Checkout session completed, creating order...');
               
                   const customer = await auth.getUser(metadata.customerId);
@@ -113,17 +113,32 @@ export async function POST(request: Request) {
                       date: new Date().toISOString(),
                       amount: (session.amount_total || 0) / 100,
                       status: 'Completed' as const,
-                      paymentIntentId: paymentIntentId,
+                      paymentIntentId: paymentIntent.id,
                   };
                   
-                  await addDoc(ordersCollectionRef, orderData);
+                  const orderDocRef = await addDoc(ordersCollectionRef, orderData);
 
-                  console.log(`Successfully created order for vendor ${metadata.vendorId}`);
+                  // Create consent record
+                  if (metadata.consentId) {
+                      const consentRef = doc(db, 'consents', metadata.consentId);
+                      const consentData: Consent = {
+                          userId: metadata.customerId,
+                          agreementId: 'buyer_tos',
+                          version: '1.0', // This should be dynamic in a real app
+                          timestamp: new Date().toISOString(),
+                          ip: headers().get('x-forwarded-for') || 'N/A',
+                          ua: headers().get('user-agent') || 'N/A',
+                      };
+                      await updateDoc(consentRef, consentData, { merge: true });
+                  }
+
+
+                  console.log(`Successfully created order ${orderDocRef.id} for vendor ${metadata.vendorId}`);
 
                   if (customer.email) {
-                    await sendOrderConfirmationEmail(orderData as any, vendor, customer.email);
+                    await sendOrderConfirmationEmail({...orderData, id: orderDocRef.id} as Order, vendor, customer.email);
                   }
-                  await sendNewOrderNotification(orderData as any, vendor);
+                  await sendNewOrderNotification({...orderData, id: orderDocRef.id} as Order, vendor);
           }
           break;
       
@@ -240,7 +255,7 @@ async function handleDisputeChange(dispute: Stripe.Dispute, orderStatus: Order['
         reason: dispute.reason,
         status: dispute.status,
         createdAt: new Date(dispute.created * 1000).toISOString(),
-        evidenceDueBy: new Date(dispute.evidence_details.due_by * 1000).toISOString(),
+        evidenceDueBy: dispute.evidence_details.due_by ? new Date(dispute.evidence_details.due_by * 1000).toISOString() : 'N/A',
     };
     await updateDoc(disputeRef, disputeData, { merge: true });
 
@@ -261,3 +276,5 @@ async function handleDisputeChange(dispute: Stripe.Dispute, orderStatus: Order['
         await sendDisputeClosedNotification(vendor, buyer.email || '', order, disputeData);
     }
 }
+
+    

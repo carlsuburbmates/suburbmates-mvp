@@ -322,10 +322,15 @@ export default function VendorProfilePage({
                           {vendor.reviewCount ? ` (${vendor.reviewCount} reviews)` : ''}
                         </span>
                     </div>
-                     {vendor.refundPolicyUrl && (
+                     {vendor.refundPolicyUrl ? (
                         <p className="flex items-center gap-2">
                             <FileText className="h-4 w-4"/>
                             <a href={vendor.refundPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">Refund Policy</a>
+                        </p>
+                    ) : (
+                         <p className="flex items-center gap-2">
+                            <FileText className="h-4 w-4"/>
+                            <Link href="/policy" className="hover:text-primary underline">Platform Refund Policy</Link>
                         </p>
                     )}
                 </div>
@@ -383,7 +388,7 @@ export default function VendorProfilePage({
                                         htmlFor={`terms-${listing.id}`}
                                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                         >
-                                        I agree to the <Link href="/policy" className="underline hover:text-primary">Refund Policy</Link>.
+                                        I agree to the <Link href="/policy" className="underline hover:text-primary" target="_blank">Refund & Dispute Policy</Link>.
                                         </label>
                                     </div>
                                 </div>
@@ -525,9 +530,5 @@ export default function VendorProfilePage({
     </div>
   );
 }
-
-    
-
-    
 
     
