@@ -21,7 +21,7 @@ export default function PolicyPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground">
             <p>
-              The Darebin Business Directory platform facilitates transactions between local Residents (Buyers) and Vendors. While each Vendor may have their own refund policy (which should be linked on their profile), this document outlines the platform-level rules and procedures that govern all transactions.
+              The Suburbmates platform facilitates transactions between local Residents (Buyers) and Vendors. While each Vendor may have their own refund policy (which should be linked on their profile), this document outlines the platform-level rules and procedures that govern all transactions.
             </p>
 
             <div className="space-y-2">
@@ -68,7 +68,7 @@ export default function PolicyPage() {
                 4. Platform Role & Automation
               </h3>
               <p>
-                The Darebin Business Directory acts as a facilitator and provides the tools for managing these processes. We do not hold funds or issue refunds directly. If a Vendor fails to respond to a refund request within the 72-hour window, the request may be automatically escalated for administrative review. Vendors who consistently fail to respond to requests or fairly engage in the dispute process may have their selling privileges suspended.
+                Suburbmates acts as a facilitator and provides the tools for managing these processes. We do not hold funds or issue refunds directly. If a Vendor fails to respond to a refund request within the 72-hour window, the request may be automatically escalated for administrative review. Vendors who consistently fail to respond to requests or fairly engage in the dispute process may have their selling privileges suspended.
               </p>
             </div>
              <div className="space-y-2">

@@ -72,7 +72,7 @@ Order Details:
 Please contact the customer to arrange fulfillment.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
   await sendEmail(vendor.email, subject, text);
 }
@@ -89,7 +89,7 @@ export async function sendStripeActionRequiredEmail(vendor: Vendor, message: str
   Please log in to your Stripe dashboard to resolve this issue and ensure your payouts are not interrupted.
   
   Regards,
-  The Darebin Business Directory Team
+  The Suburbmates Team
   `;
     await sendEmail(vendor.email, subject, text);
   }
@@ -108,7 +108,7 @@ Vendor's Decision: ${request.decision || (isApproved ? 'The vendor has approved 
 If you have further questions, please contact the vendor directly at ${vendor.supportEmail || vendor.email}.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
 
   await sendEmail(customerEmail, subject, text);
@@ -126,7 +126,7 @@ Reason: ${request.reason}
 You can approve or reject this request from the "Refunds" section of your dashboard.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
   await sendEmail(vendor.email, subject, text);
 }
@@ -147,7 +147,7 @@ ACTION REQUIRED: You must submit evidence by the due date to challenge this disp
 Failing to respond will result in a loss of the dispute, and the funds will be returned to the customer.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
     await sendEmail(vendor.email, subject, text);
 }
@@ -167,7 +167,7 @@ Dispute Details:
 No further action is required from you at this time.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
     await sendEmail(customerEmail, subject, text);
 }
@@ -181,7 +181,7 @@ The final status is: ${dispute.status}.
 Please check your Stripe dashboard or bank statements for details on the outcome.
 
 Regards,
-The Darebin Business Directory Team
+The Suburbmates Team
 `;
     // Notify both vendor and buyer
     await sendEmail(vendor.email, subject, text);

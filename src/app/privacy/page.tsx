@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-muted-foreground">
             <p>
-              Welcome to the Darebin Business Directory. We are committed to protecting your
+              Welcome to Suburbmates. We are committed to protecting your
               personal information and your right to privacy. If you have any
               questions or concerns about this privacy notice, or our practices
               with regards to your personal information, please contact us.
@@ -32,9 +32,9 @@ export default function PrivacyPage() {
               </h3>
               <p>
                 We collect personal information that you voluntarily provide to
-                us when you register on the Darebin Business Directory, express an interest in
+                us when you register on Suburbmates, express an interest in
                 obtaining information about us or our products and services,
-                when you participate in activities on the Darebin Business Directory (such as
+                when you participate in activities on Suburbmates (such as
                 posting messages in our online forums or entering competitions,
                 contests or giveaways) or otherwise when you contact us.
               </p>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
                 2. How We Use Your Information
               </h3>
               <p>
-                We use personal information collected via our Darebin Business Directory for a
+                We use personal information collected via our Suburbmates for a
                 variety of business purposes described below. We process your
                 personal information for these purposes in reliance on our
                 legitimate business interests, in order to enter into or perform

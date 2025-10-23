@@ -75,7 +75,7 @@ export default function VendorsPage() {
   return (
     <div>
       <PageHeader
-        title="Darebin Business Directory"
+        title="Business Directory"
         description="Find trusted local professionals and businesses in your community."
       />
       <div className="container mx-auto px-4 pb-16">

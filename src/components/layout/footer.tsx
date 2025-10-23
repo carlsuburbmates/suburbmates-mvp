@@ -12,7 +12,7 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <Logo className="h-6 w-6 text-primary" />
             <p className="text-sm font-semibold">
-              Darebin Business Directory &copy; {currentYear}
+              Suburbmates &copy; {currentYear}
             </p>
           </div>
           <nav className="flex gap-4 text-sm text-muted-foreground flex-wrap justify-center">

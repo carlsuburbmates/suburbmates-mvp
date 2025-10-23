@@ -1,7 +1,7 @@
 
 # Single Source of Truth (SSOT) - Core Terminology
 
-This document defines the canonical terminology for the Darebin Business Directory application. All user-facing text, documentation, and code comments should adhere to these definitions to ensure clarity and consistency.
+This document defines the canonical terminology for the Suburbmates application. All user-facing text, documentation, and code comments should adhere to these definitions to ensure clarity and consistency.
 
 ---
 

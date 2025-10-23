@@ -9,7 +9,7 @@ import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { Analytics } from "@vercel/analytics/react"
 
 export const metadata: Metadata = {
-  title: "Darebin Business Directory",
+  title: "Suburbmates",
   description: "Your local community hub for vendors and discussions.",
 };
 
