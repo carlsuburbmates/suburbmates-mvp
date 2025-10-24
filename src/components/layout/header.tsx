@@ -4,9 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, LogOut, Shield, User, ShoppingCart } from 'lucide-react';
-import { signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
-import Image from 'next/image';
-
+import { signOut } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/lib/types';
@@ -50,43 +48,6 @@ export function Header() {
       setIsAdmin(false);
     }
   }, [user]);
-
-  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
-    try {
-      await signInWithPopup(auth, provider);
-      toast({
-        title: "Logged In",
-        description: "Welcome to the community!",
-      });
-      return true;
-    } catch (error: any) {
-      console.error("Social login error", error);
-      // Handle specific errors like account-exists-with-different-credential
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: error.code === 'auth/account-exists-with-different-credential' 
-            ? 'An account already exists with this email address. Please sign in with the original method.'
-            : 'Could not log you in. Please try again.',
-      });
-      return false;
-    }
-  };
-
-  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
-  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
-
-  const handleBecomeVendor = async () => {
-    if (user) {
-      router.push('/dashboard/vendor/register');
-      return;
-    }
-    const loggedIn = await handleGoogleLogin();
-    if (loggedIn) {
-        router.push('/dashboard/vendor/register');
-    }
-  };
-
 
   const handleLogout = async () => {
     try {
@@ -188,26 +149,12 @@ export function Header() {
 
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost">Sign in</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleGoogleLogin}>
-                             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                                <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                            </svg>
-                            Sign in with Google
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleFacebookLogin}>
-                             <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="facebook" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                <path fill="currentColor" d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"></path>
-                            </svg>
-                            Sign in with Facebook
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <Button onClick={handleBecomeVendor}>Become a Vendor</Button>
+                 <Button asChild variant="ghost">
+                    <Link href="/login">Sign in</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/dashboard/vendor/register">Become a Vendor</Link>
+                </Button>
               </div>
             ))}
 
@@ -219,7 +166,7 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <div className="flex flex-col p-6">
+              <div className="flex flex-col p-6 h-full">
                 <div className="mb-8 flex items-center">
                   <Logo className="h-6 w-6 text-primary" />
                   <Link
@@ -267,19 +214,12 @@ export function Header() {
                       </Button>
                   ) : (
                     <>
-                      <Button onClick={handleGoogleLogin} variant="secondary">
-                        <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                            <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-                        </svg>
-                        Sign in with Google
+                      <Button asChild>
+                        <Link href="/login">Sign in / Sign up</Link>
                       </Button>
-                       <Button onClick={handleFacebookLogin} style={{ backgroundColor: '#1877F2', color: 'white' }} >
-                         <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="facebook" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                            <path fill="currentColor" d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"></path>
-                        </svg>
-                        Sign in with Facebook
+                      <Button asChild variant="secondary">
+                        <Link href="/dashboard/vendor/register">Become a Vendor</Link>
                       </Button>
-                      <Button onClick={handleBecomeVendor}>Become a Vendor</Button>
                     </>
                   )}
                 </div>
@@ -291,5 +231,3 @@ export function Header() {
     </header>
   );
 }
-
-    
