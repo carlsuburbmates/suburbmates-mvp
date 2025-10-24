@@ -3,49 +3,49 @@
     {
       "id": "hero-community",
       "description": "A beautiful, wide-angle shot of a lush, green suburban street bathed in warm morning sunlight.",
-      "imageUrl": "https://images.unsplash.com/photo-1593361664188-a472c9545b73?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb2RZXJuJTIwc3VidXJiaWElMjBzdHJlZXR8ZW58MHx8fHwxNzEwOTk3NjAxfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1702281957983-230aa3381f20?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzdWJ1cmJhbiUyMHN0cmVldHxlbnwwfHx8fDE3NjEzMzE5NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "suburban street"
     },
     {
       "id": "feature-vendors",
       "description": "A close-up shot of a local artisan's hands carefully crafting a piece of pottery on a wheel.",
-      "imageUrl": "https://images.unsplash.com/photo-1547496614-54332a7a4025?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhcnRpc2FuJTIwcG90dGVyeXxlbnwwfHx8fDE3MjEwNzU4Mjd8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1699371829505-e9fdde74e869?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxhcnRpc2FuJTIwcG90dGVyeXxlbnwwfHx8fDE3NjEzMzE5NTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "artisan pottery"
     },
     {
       "id": "feature-forums",
       "description": "A warm, inviting shot of a local library's reading nook, with comfortable chairs and sunlight streaming in.",
-      "imageUrl": "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb3p5JTIwbGlicmFyeXxlbnwwfHx8fDE3MjEwNzU4NTN8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1602990721338-9cbb5b983c4d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb3p5JTIwbGlicmFyeXxlbnwwfHx8fDE3NjEyNzU0OTZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "cozy library"
     },
     {
       "id": "vendor-cafe",
       "description": "The minimalist interior of a modern cafe with wooden furniture and lots of natural light from large windows.",
-      "imageUrl": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBjYWZlJTIwaW50ZXJpb3J8ZW58MHx8fHwxNzIxMDc1ODgzfDA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1724589511191-1ced6d014934?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtb2Rlcm4lMjBjYWZlfGVufDB8fHx8MTc2MTI4NzY1NXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "modern cafe"
     },
     {
       "id": "event-market",
       "description": "A vibrant, sunny day at an outdoor artisan market, with white tents and people browsing stalls.",
-      "imageUrl": "https://images.unsplash.com/photo-1563291885-cfB3654e58a2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhcnRpc2FuJTIwbWFya2V0fGVufDB8fHx8fDE3MjEwNzU5MDl8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1560166444-441876015a70?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhcnRpc2FuJTIwbWFya2V0fGVufDB8fHx8MTc2MTMzMTk1N3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "artisan market"
     },
     {
       "id": "event-cleanup",
       "description": "A group of smiling volunteers in a green park, holding bags and working together on a sunny day.",
-      "imageUrl": "https://images.unsplash.com/photo-1618479122302-ad5f59395a00?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjBjbGVhbnVwfGVufDB8fHx8fDE3MjEwNzU5MzR8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1758599668949-5118d71838fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjb21tdW5pdHklMjBjbGVhbnVwfGVufDB8fHx8MTc2MTI2MjQ4NXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "community cleanup"
     },
     {
       "id": "user-avatar-1",
       "description": "A profile shot of a woman with a natural, friendly smile.",
-      "imageUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwcm9maWxlJTIwc2hvdCUyMHdvbWFufGVufDB8fHx8fDE3MjEwNzYwMDV8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1529995049601-ef63465a463f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHByb2ZpbGV8ZW58MHx8fHwxNzYxMjg2NjY4fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman profile"
     },
     {
       "id": "user-avatar-2",
       "description": "A profile shot of a man in his 30s with a short beard and a gentle smile.",
-      "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwcm9maWxlJTIwc2hvdCUyMG1hbnxlbnwwfHx8fDE3MjEwNzYwMDV8MA&ixlib=rb-4.0.3&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtYW4lMjBwcm9maWxlfGVufDB8fHx8MTc2MTIzODYwMHww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "man profile"
     }
   ]

@@ -279,7 +279,7 @@ export default function Home() {
             </p>
             <div className="mt-4">
               <Button asChild>
-                <Link href="/dashboard/vendor">Become a Vendor</Link>
+                <Link href="/dashboard/vendor/register">Become a Vendor</Link>
               </Button>
             </div>
           </div>

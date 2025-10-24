@@ -365,7 +365,7 @@ export default function VendorProfilePage({
                   {listings?.map((listing) => {
                     const isRedirectingToListing = isRedirecting === listing.id;
                     return (
-                      <Card key={listing.id}>
+                      <Card key={listing.id} className='flex flex-col'>
                         {listing.imageUrl &&
                             <CardHeader className="p-0">
                                 <div className="relative h-48 w-full">
@@ -373,9 +373,9 @@ export default function VendorProfilePage({
                                 </div>
                             </CardHeader>
                         }
-                        <CardContent className="p-4">
+                        <CardContent className="p-4 flex-grow flex flex-col">
                           <h3 className="font-bold font-headline text-lg">{listing.listingName}</h3>
-                          <p className="text-muted-foreground text-sm mt-1 flex-grow">{listing.description}</p>
+                          <p className="text-muted-foreground text-sm mt-1 flex-grow line-clamp-3">{listing.description}</p>
                           
                           <div className="mt-4 space-y-2 text-sm">
                              <div className="flex items-center gap-2">
@@ -387,14 +387,14 @@ export default function VendorProfilePage({
                                 <span>{listing.deliveryMethod}</span>
                             </div>
                           </div>
-                            <div className="mt-4 flex items-center justify-between">
-                                <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                                <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
-                                {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
-                                </Button>
-                            </div>
                         </CardContent>
+                        <div className="p-4 pt-0 mt-auto flex items-center justify-between">
+                            <p className="text-xl font-bold text-primary">${listing.price.toFixed(2)}</p>
+                            <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
+                            {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
+                            </Button>
+                        </div>
                       </Card>
                     )
                   })}

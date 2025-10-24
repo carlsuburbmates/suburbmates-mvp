@@ -32,6 +32,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import type { CommunityEvent, ForumThread } from "@/lib/types";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function ForumsPage() {
   const firestore = useFirestore();
@@ -49,7 +50,8 @@ export default function ForumsPage() {
   );
   const { data: communityEvents, isLoading: areEventsLoading } =
     useCollection<CommunityEvent>(eventsQuery);
-
+  
+  const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
 
   return (
     <div>
@@ -98,7 +100,7 @@ export default function ForumsPage() {
                         </Avatar>
                         <span>
                           {thread.authorName} started this discussion on{" "}
-                          {thread.timestamp}.
+                          {new Date(thread.timestamp).toLocaleDateString()}.
                         </span>
                       </CardDescription>
                     </CardHeader>
@@ -145,38 +147,42 @@ export default function ForumsPage() {
                   </CardContent>
                 </Card>
               ))}
-              {communityEvents?.map((event) => (
-                <Card key={event.id} className="flex flex-col">
-                  {event.imageId && (
-                    <div className="relative h-56 w-full">
-                       <Image
-                        src={`https://picsum.photos/seed/${event.imageId}/600/400`}
-                        alt={event.title}
-                        fill
-                        className="object-cover rounded-t-lg"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="font-headline">{event.title}</CardTitle>
-                    <CardDescription>{event.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="w-4 h-4"/>
-                        <span>{event.date}</span>
-                    </div>
-                     <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="w-4 h-4"/>
-                        <span>{event.location}</span>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <EventSummary eventDetails={event.details} />
-                  </CardFooter>
-                </Card>
-              ))}
+              {communityEvents?.map((event) => {
+                const eventImage = PlaceHolderImages.find(p => p.id === event.imageId);
+                return (
+                  <Card key={event.id} className="flex flex-col">
+                    {eventImage && (
+                      <div className="relative h-56 w-full">
+                         <Image
+                          src={eventImage.imageUrl}
+                          alt={event.title}
+                          fill
+                          className="object-cover rounded-t-lg"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          data-ai-hint={eventImage.imageHint}
+                        />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <CardTitle className="font-headline">{event.title}</CardTitle>
+                      <CardDescription>{event.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                          <CalendarDays className="w-4 h-4"/>
+                          <span>{event.date}</span>
+                      </div>
+                       <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="w-4 h-4"/>
+                          <span>{event.location}</span>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <EventSummary eventDetails={event.details} />
+                    </CardFooter>
+                  </Card>
+                )
+              })}
                {!areEventsLoading && communityEvents?.length === 0 && (
                 <Card className="md:col-span-2 lg:col-span-3 text-center p-8">
                   <CardTitle>No Upcoming Events</CardTitle>

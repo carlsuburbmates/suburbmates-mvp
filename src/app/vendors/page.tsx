@@ -272,15 +272,11 @@ export default function VendorsPage() {
                   <CardContent className="p-4 flex-grow flex flex-col">
                       <h3 className="font-bold font-headline text-lg">{vendor.businessName}</h3>
                       <p className="text-sm text-muted-foreground flex-grow line-clamp-2">{vendor.description || ''}</p>
-                      <div className="text-sm text-muted-foreground mt-2 flex-grow">
-                          {vendor.website && <p><Link href={vendor.website} target="_blank" className="hover:text-primary underline">Website</Link></p>}
-                          {vendor.phone && <p>{vendor.phone}</p>}
-                      </div>
                       <div className="flex items-center justify-between mt-4 text-sm">
                           <div className="flex items-center gap-1">
                               <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                               <span className="font-bold">{vendor.averageRating ? vendor.averageRating.toFixed(1) : 'N/A'}</span>
-                              <span className="text-muted-foreground">({vendor.reviewCount || 0} reviews)</span>
+                              <span className="text-muted-foreground">({vendor.reviewCount || 0})</span>
                           </div>
                           <Button variant="secondary" size="sm" asChild>
                               <Link href={`/vendors/${vendor.id}`}>View Profile</Link>

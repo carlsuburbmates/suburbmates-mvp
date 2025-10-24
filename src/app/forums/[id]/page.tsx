@@ -19,6 +19,7 @@ import { useDoc, useCollection, useFirestore, useMemoFirebase } from "@/firebase
 import type { ForumThread, ForumPost } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ForumReplyForm } from "./forum-reply-form";
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function ForumThreadPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
@@ -60,6 +61,9 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
   const fullDiscussionText = posts
     ?.map((p) => `${p.authorName}: ${p.content}`)
     .join("\n\n");
+  
+  const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
+  const userAvatar2 = PlaceHolderImages.find((p) => p.id === 'user-avatar-2');
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
@@ -102,6 +106,8 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
         ))}
         {posts?.map((post, index) => {
           const isFirstPost = index === 0;
+          const avatarUrl = isFirstPost ? thread.authorAvatarUrl : (index % 2 === 0 ? userAvatar2?.imageUrl : userAvatar1?.imageUrl);
+          const avatarHint = index % 2 === 0 ? userAvatar2?.imageHint : userAvatar1?.imageHint;
           return (
             <Card
               key={post.id}
@@ -109,7 +115,7 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
             >
               <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={post.authorAvatarUrl} alt={post.authorName} />
+                  <AvatarImage src={avatarUrl || undefined} alt={post.authorName} data-ai-hint={avatarHint} />
                   <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
