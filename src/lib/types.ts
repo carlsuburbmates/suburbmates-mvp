@@ -171,6 +171,3 @@ export type LogEntry = {
     payload: object;
     error?: string;
 }
-
-    
-    
