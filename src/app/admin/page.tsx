@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import type { Vendor, Dispute, LogEntry } from '@/lib/types';
+import type { Vendor, Dispute, LogEntry, VerificationSummary } from '@/lib/types';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toggleVendorPayments } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye, Search } from 'lucide-react';
+import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye, Search, CheckCircle2, AlertTriangle, XCircle, Sparkles } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -28,6 +28,19 @@ import {
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+
+const AiRecommendationBadge = ({ rec }: { rec: VerificationSummary['overallRecommendation'] }) => {
+    switch (rec) {
+        case 'AUTO_APPROVE':
+            return <Badge variant="default" className="bg-green-600 hover:bg-green-700"><CheckCircle2 className="mr-1.5 h-3 w-3" />Approve</Badge>;
+        case 'NEEDS_REVIEW':
+            return <Badge variant="secondary" className="bg-amber-500 hover:bg-amber-600"><AlertTriangle className="mr-1.5 h-3 w-3" />Review</Badge>;
+        case 'AUTO_REJECT':
+            return <Badge variant="destructive"><XCircle className="mr-1.5 h-3 w-3" />Reject</Badge>;
+        default:
+            return <Badge variant="outline">N/A</Badge>;
+    }
+};
 
 function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
   const firestore = useFirestore();
@@ -44,10 +57,18 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
   
   const vendors = useMemo(() => {
     if (!allVendors) return [];
+    let filteredVendors = allVendors;
     if (showPendingOnly) {
-      return allVendors.filter(v => v.stripeAccountId && !v.paymentsEnabled);
+      filteredVendors = allVendors.filter(v => v.stripeAccountId && !v.paymentsEnabled);
     }
-    return allVendors;
+    
+    // Sort to bring 'NEEDS_REVIEW' and 'AUTO_REJECT' to the top
+    return filteredVendors.sort((a, b) => {
+        const aRec = a.verificationSummary?.overallRecommendation;
+        const bRec = b.verificationSummary?.overallRecommendation;
+        const priority = { 'AUTO_REJECT': 3, 'NEEDS_REVIEW': 2, 'AUTO_APPROVE': 1 };
+        return (priority[bRec as keyof typeof priority] || 0) - (priority[aRec as keyof typeof priority] || 0);
+    });
   }, [allVendors, showPendingOnly]);
 
 
@@ -102,7 +123,7 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
       <CardHeader>
         <CardTitle>Vendor Management</CardTitle>
         <CardDescription>
-          Approve new vendors and manage their payment status. Payments should only be enabled for verified businesses.
+          Approve new vendors and manage their payment status. Vendors are sorted by AI recommendation priority.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -118,8 +139,8 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
           <TableHeader>
             <TableRow>
               <TableHead>Business Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Stripe Account ID</TableHead>
+              <TableHead>AI Recommendation</TableHead>
+              <TableHead>Stripe Status</TableHead>
               <TableHead>Payments Enabled</TableHead>
               <TableHead>Details</TableHead>
             </TableRow>
@@ -128,7 +149,7 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
             {areVendorsLoading && Array.from({length:3}).map((_, i) => (
                 <TableRow key={i}>
                     <TableCell><Skeleton className="h-5 w-32"/></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40"/></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24"/></TableCell>
                     <TableCell><Skeleton className="h-5 w-24"/></TableCell>
                     <TableCell><Skeleton className="h-5 w-20"/></TableCell>
                     <TableCell><Skeleton className="h-8 w-20"/></TableCell>
@@ -137,7 +158,13 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
             {vendors?.map((vendor) => (
               <TableRow key={vendor.id}>
                 <TableCell className="font-medium">{vendor.businessName}</TableCell>
-                <TableCell>{vendor.email}</TableCell>
+                <TableCell>
+                  {vendor.verificationSummary ? (
+                    <AiRecommendationBadge rec={vendor.verificationSummary.overallRecommendation} />
+                  ) : (
+                    <Badge variant="outline">N/A</Badge>
+                  )}
+                </TableCell>
                 <TableCell>
                     <Badge variant={vendor.stripeAccountId ? 'secondary' : 'outline'}>
                         {vendor.stripeAccountId ? 'Connected' : 'Not Connected'}
@@ -165,29 +192,61 @@ function VendorManagementTab({ isAdmin }: { isAdmin: boolean }) {
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">View Details</Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-2xl">
                             <DialogHeader>
                                 <DialogTitle>{vendor.businessName}</DialogTitle>
                                 <DialogDescription>
-                                    Review vendor details before enabling payments.
+                                    Review vendor details and AI analysis before enabling payments.
                                 </DialogDescription>
                             </DialogHeader>
-                            <div className="grid gap-4 py-4 text-sm">
-                                <div className="grid grid-cols-[100px_1fr] items-center gap-4">
-                                    <span className="text-muted-foreground">ABN</span>
-                                    <span className="font-mono">{vendor.abn} <Badge variant={vendor.abnVerified ? 'secondary' : 'destructive'}>{vendor.abnVerified ? 'Verified' : 'Not Verified'}</Badge></span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 text-sm">
+                                <div className="space-y-4">
+                                     <h4 className="font-semibold text-base">Business Details</h4>
+                                    <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                        <span className="text-muted-foreground">ABN</span>
+                                        <span className="font-mono">{vendor.abn} <Badge variant={vendor.abnVerified ? 'secondary' : 'destructive'}>{vendor.abnVerified ? 'Verified' : 'Not Verified'}</Badge></span>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                        <span className="text-muted-foreground">Address</span>
+                                        <span>{vendor.address}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                        <span className="text-muted-foreground">Phone</span>
+                                        <span>{vendor.phone || 'N/A'}</span>
+                                    </div>
+                                    <div className="grid grid-cols-[100px_1fr] items-center gap-4">
+                                        <span className="text-muted-foreground">Website</span>
+                                        <span>{vendor.website ? <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{vendor.website}</a> : 'N/A'}</span>
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-[100px_1fr] items-center gap-4">
-                                    <span className="text-muted-foreground">Address</span>
-                                    <span>{vendor.address}</span>
-                                </div>
-                                 <div className="grid grid-cols-[100px_1fr] items-center gap-4">
-                                    <span className="text-muted-foreground">Phone</span>
-                                    <span>{vendor.phone || 'N/A'}</span>
-                                </div>
-                                 <div className="grid grid-cols-[100px_1fr] items-center gap-4">
-                                    <span className="text-muted-foreground">Website</span>
-                                    <span>{vendor.website ? <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{vendor.website}</a> : 'N/A'}</span>
+                                <div className="space-y-4 rounded-lg border bg-muted/50 p-4">
+                                    <h4 className="font-semibold text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary"/>AI Analysis</h4>
+                                    {vendor.verificationSummary ? (
+                                        <>
+                                            <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                                                <span className="text-muted-foreground">Recommendation</span>
+                                                <div className='flex items-center gap-2'><AiRecommendationBadge rec={vendor.verificationSummary.overallRecommendation} /></div>
+                                            </div>
+                                            <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                                                <span className="text-muted-foreground">Reason</span>
+                                                <span>{vendor.verificationSummary.recommendationReason}</span>
+                                            </div>
+                                             <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                                                <span className="text-muted-foreground">Desc. Quality</span>
+                                                <span>{vendor.verificationSummary.descriptionQuality.score}/10</span>
+                                            </div>
+                                             <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                                                <span className="text-muted-foreground">Category Match</span>
+                                                <span>{vendor.verificationSummary.categoryVerification.isMatch ? 'Yes' : `No (Suggests: ${vendor.verificationSummary.categoryVerification.suggestion})`}</span>
+                                            </div>
+                                            <div className="grid grid-cols-[120px_1fr] items-start gap-2">
+                                                <span className="text-muted-foreground">Safety Rating</span>
+                                                 <Badge variant={vendor.verificationSummary.safetyAnalysis.rating === 'SAFE' ? 'secondary' : 'destructive'}>{vendor.verificationSummary.safetyAnalysis.rating}</Badge>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className='text-muted-foreground'>No AI analysis available.</p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -482,7 +541,7 @@ function EmailLogsTab() {
                                     <DialogDescription>Log ID: {log.id}</DialogDescription>
                                 </DialogHeader>
                                 <pre className="mt-2 w-full overflow-x-auto rounded-lg bg-muted p-4 font-mono text-xs">
-                                    {JSON.stringify(log, null, 2)}
+                                    {JSON.stringify(log.payload, null, 2)}
                                 </pre>
                             </DialogContent>
                         </Dialog>

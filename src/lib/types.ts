@@ -1,5 +1,4 @@
 
-
 export type NavItem = {
   title: string;
   href: string;
@@ -14,6 +13,28 @@ export type Consent = {
   timestamp: string;
   ip: string;
   ua: string;
+};
+
+export type VerificationSummary = {
+  overallRecommendation: 'AUTO_APPROVE' | 'NEEDS_REVIEW' | 'AUTO_REJECT';
+  recommendationReason: string;
+  safetyAnalysis: {
+    rating: 'SAFE' | 'NEEDS_REVIEW';
+    reason: string;
+    piiDetected: boolean;
+  };
+  descriptionQuality: {
+    score: number;
+    confidence: number;
+    reason: string;
+  };
+  categoryVerification: {
+    isMatch: boolean;
+    confidence: number;
+    suggestion: string;
+    reason: string;
+  };
+  promptVersion: string;
 };
 
 export type Vendor = {
@@ -38,6 +59,7 @@ export type Vendor = {
   fulfilmentTerms?: string;
   consents?: Omit<Consent, 'id' | 'userId'>[];
   isPremium?: boolean;
+  verificationSummary?: VerificationSummary;
 };
 
 export type Listing = {

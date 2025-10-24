@@ -34,6 +34,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { validateAbn } from '@/ai/flows/validate-abn';
+import { verifyVendorQuality, type VerificationSummary } from '@/ai/flows/verify-vendor-quality';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -67,7 +68,6 @@ export default function VendorRegistrationPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   
-  const [isAbnLoading, setIsAbnLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // If user is not logged in, redirect them away.
@@ -100,7 +100,6 @@ export default function VendorRegistrationPage() {
 
   async function handleVendorRegistration(values: z.infer<typeof vendorRegistrationSchema>) {
     setIsSubmitting(true);
-    setIsAbnLoading(true);
 
     if (!user) {
         toast({ variant: 'destructive', title: 'Authentication Error', description: "You must be logged in to register." });
@@ -110,17 +109,40 @@ export default function VendorRegistrationPage() {
 
     try {
         // Step 1: Validate ABN
+        toast({ title: 'Step 1 of 3: Validating ABN...', description: 'Please wait.' });
         const validationResult = await validateAbn({ abn: values.abn, businessName: values.businessName });
         if (!validationResult.isValid) {
             toast({ variant: 'destructive', title: 'ABN Validation Failed', description: validationResult.message });
-            setIsAbnLoading(false);
             setIsSubmitting(false);
             return;
         }
         toast({ title: 'ABN Validated!', description: validationResult.message });
-        setIsAbnLoading(false);
         
-        // Step 2: Create Vendor Document in Firestore
+        // Step 2: Run Quality & Safety AI Agent
+        toast({ title: 'Step 2 of 3: Analyzing profile quality...', description: 'Our AI is reviewing your details.' });
+        let verificationSummary: VerificationSummary;
+        try {
+            verificationSummary = await verifyVendorQuality({
+                businessName: values.businessName,
+                description: values.description,
+                category: values.category,
+            });
+        } catch (aiError) {
+             console.error("VOQ Agent Error:", aiError);
+             toast({ variant: 'destructive', title: 'AI Analysis Failed', description: 'Could not analyze profile. Defaulting to manual review.' });
+            // Fallback gracefully: create a summary that ensures manual review.
+            verificationSummary = {
+                overallRecommendation: 'NEEDS_REVIEW',
+                recommendationReason: 'AI agent failed to process. Manual review required.',
+                safetyAnalysis: { rating: 'NEEDS_REVIEW', reason: 'AI agent failed.', piiDetected: false },
+                descriptionQuality: { score: 0, confidence: 0, reason: 'AI agent failed.' },
+                categoryVerification: { isMatch: false, confidence: 0, suggestion: '', reason: 'AI agent failed.' },
+                promptVersion: 'fallback'
+            }
+        }
+        
+        // Step 3: Create Vendor Document in Firestore
+        toast({ title: 'Step 3 of 3: Creating business profile...', description: 'Finalizing your registration.' });
         const vendorRef = doc(firestore, 'vendors', user.uid);
         const consentTimestamp = new Date().toISOString();
 
@@ -147,14 +169,15 @@ export default function VendorRegistrationPage() {
                 version: '1.0',
                 timestamp: consentTimestamp,
               },
-            ]
+            ],
+            verificationSummary, // Add the AI agent's summary
         };
 
         setDocumentNonBlocking(vendorRef, vendorData, { merge: true });
 
         toast({
-            title: 'Business Account Created',
-            description: 'Your business details have been validated and saved.',
+            title: 'Business Account Created!',
+            description: "Your business details have been saved and are pending admin review.",
         });
         
         // Redirect to dashboard to continue to Stripe onboarding
@@ -167,7 +190,6 @@ export default function VendorRegistrationPage() {
         title: 'Uh oh! Something went wrong.',
         description: 'Could not save business details. Please try again.',
       });
-      setIsAbnLoading(false);
       setIsSubmitting(false);
     }
   }
@@ -318,7 +340,7 @@ export default function VendorRegistrationPage() {
                           <FormLabel>Acknowledge Refund Policy</FormLabel>
                           <FormDescription>
                               I have read and agree to adhere to the platform's{' '}
-                              <Link href="/policy" className="underline hover:text-primary" target="_blank">Refund & Dispute Policy</Link>.
+                              <Link href="/policy" className="underline hover:text-primary" target="_blank">Refund &amp; Dispute Policy</Link>.
                           </FormDescription>
                           <FormMessage />
                           </div>
@@ -327,9 +349,9 @@ export default function VendorRegistrationPage() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full md:w-auto" disabled={isAbnLoading || isSubmitting}>
-                        {(isAbnLoading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isAbnLoading ? 'Validating ABN...' : 'Create Business Profile'}
+                <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSubmitting ? 'Processing...' : 'Create Business Profile'}
                 </Button>
                 </form>
             </Form>
