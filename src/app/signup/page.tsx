@@ -11,6 +11,9 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   updateProfile,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +37,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@/firebase';
+import { Separator } from '@/components/ui/separator';
 
 const signupFormSchema = z
   .object({
@@ -83,12 +87,10 @@ export default function SignupPage() {
         values.password
       );
       
-      // Update profile with display name
       await updateProfile(userCredential.user, {
         displayName: values.displayName,
       });
 
-      // Send verification email
       await sendEmailVerification(userCredential.user);
 
       toast({
@@ -97,7 +99,7 @@ export default function SignupPage() {
           'A verification email has been sent. Please check your inbox.',
       });
 
-      router.push('/login'); // Redirect to login page after signup
+      router.push('/login');
     } catch (error: any) {
       console.error('Signup Error:', error);
       let description = 'Could not create your account. Please try again.';
@@ -113,6 +115,30 @@ export default function SignupPage() {
       setIsSubmitting(false);
     }
   }
+
+  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
+    setIsSubmitting(true);
+    try {
+      await signInWithPopup(auth, provider);
+      toast({ title: 'Sign-up Successful', description: 'Welcome!' });
+      router.push('/dashboard/vendor');
+    } catch (error: any) {
+      console.error('Social login error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign-up Failed',
+        description:
+          error.code === 'auth/account-exists-with-different-credential'
+            ? 'An account already exists with this email address. Please sign in with the original method.'
+            : 'Could not sign you up. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
+  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
 
   return (
     <>
@@ -131,6 +157,58 @@ export default function SignupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="space-y-4">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleLogin}
+                disabled={isSubmitting}
+              >
+                 <svg
+                  className="mr-2 h-4 w-4"
+                  aria-hidden="true"
+                  focusable="false"
+                  data-prefix="fab"
+                  data-icon="google"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 488 512"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
+                  ></path>
+                </svg>
+                Sign up with Google
+              </Button>
+               <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleFacebookLogin}
+                disabled={isSubmitting}
+                style={{ backgroundColor: '#1877F2', color: 'white', borderColor: '#1877F2' }}
+              >
+                <svg
+                  className="mr-2 h-4 w-4"
+                  aria-hidden="true"
+                  focusable="false"
+                  data-prefix="fab"
+                  data-icon="facebook"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"
+                  ></path>
+                </svg>
+                Sign up with Facebook
+              </Button>
+            </div>
+
+            <Separator className="my-6" />
+
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(handleEmailSignup)}

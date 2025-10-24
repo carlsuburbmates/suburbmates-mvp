@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, LogOut, Shield } from 'lucide-react';
-import { signOut, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
+import { signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
 import type { NavItem } from '@/lib/types';
@@ -13,7 +13,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/icons';
 import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { initiateSocialLogin } from '@/firebase/non-blocking-login';
 import { useState, useEffect } from 'react';
 
 const navItems: NavItem[] = [
@@ -40,13 +39,32 @@ export function SheetMobileMenu() {
     }
   }, [user]);
 
-  const handleGoogleLogin = () => {
-    initiateSocialLogin(auth, new GoogleAuthProvider());
+  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider, callback?: () => void) => {
+    try {
+        await signInWithPopup(auth, provider);
+        toast({
+            title: "Logged In",
+            description: "Welcome!",
+        });
+        if (callback) {
+            callback();
+        } else {
+            router.push('/dashboard/vendor');
+        }
+    } catch (error: any) {
+        console.error("Social login error", error);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: error.code === 'auth/account-exists-with-different-credential' 
+                ? 'An account already exists with this email address. Please sign in with the original method.'
+                : 'Could not log you in. Please try again.',
+        });
+    }
   };
-  
-  const handleFacebookLogin = () => {
-    initiateSocialLogin(auth, new FacebookAuthProvider());
-  };
+
+  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
+  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
 
   const handleBecomeVendor = () => {
     if (user) {
@@ -54,7 +72,7 @@ export function SheetMobileMenu() {
       return;
     }
     // If not logged in, start the login process, and then redirect.
-    initiateSocialLogin(auth, new GoogleAuthProvider(), () => {
+    handleSocialLogin(new GoogleAuthProvider(), () => {
        router.push('/dashboard/vendor/register');
     });
   };

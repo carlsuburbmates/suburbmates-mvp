@@ -99,7 +99,7 @@ export function DashboardSidebar({ isBusiness, isMarketplaceVendor }: { isBusine
                 }),
                 'justify-start',
                 pathname === item.href && item.title === 'Disputes' ? 'bg-destructive/80 hover:bg-destructive text-destructive-foreground' : '',
-                pathname === item.href && item.title === 'Upgrade' ? 'bg-primary/10 text-primary' : ''
+                pathname === item.href && item.title === 'Upgrade' ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary' : ''
               )}
             >
               {item.icon}

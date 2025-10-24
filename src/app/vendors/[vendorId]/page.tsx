@@ -33,7 +33,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const reviewSchema = z.object({
   rating: z.coerce.number().min(1, "Rating is required.").max(5),
@@ -55,11 +54,6 @@ export default function VendorProfilePage({
   const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
   const [currentRating, setCurrentRating] = useState(0);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [consent, setConsent] = useState<Record<string, boolean>>({});
-
-  const handleConsentChange = (listingId: string, checked: boolean) => {
-    setConsent(prev => ({...prev, [listingId]: checked}));
-  }
 
   // Display toast based on checkout status
   useEffect(() => {
@@ -276,7 +270,7 @@ export default function VendorProfilePage({
     <div>
       <PageHeader
         title={vendor.businessName}
-        description={`Your trusted local business.`}
+        description={`${vendor.category} in your local community.`}
       />
       
       <div className="container mx-auto px-4 pb-16">
@@ -295,30 +289,32 @@ export default function VendorProfilePage({
                     </Badge>
                   )}
                 </div>
-                <div className="mt-4 flex flex-col gap-3 text-muted-foreground">
+                 <p className="text-muted-foreground mt-2">{vendor.description}</p>
+
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-muted-foreground">
                     {vendor.website && (
-                         <p className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                             <Link2 className="h-4 w-4"/>
                             <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">Visit Website</a>
-                        </p>
+                        </div>
                     )}
                     {vendor.phone && (
-                        <p className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                            <Phone className="h-4 w-4"/>
                            <span>{vendor.phone}</span>
-                        </p>
+                        </div>
                     )}
                     {vendor.address && (
-                        <p className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                            <MapPin className="h-4 w-4"/>
                            <span>{vendor.address}</span>
-                        </p>
+                        </div>
                     )}
                      {vendor.supportEmail && (
-                        <p className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                            <Mail className="h-4 w-4"/>
                            <a href={`mailto:${vendor.supportEmail}`} className="hover:text-primary underline">{vendor.supportEmail}</a>
-                        </p>
+                        </div>
                     )}
                     <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -328,15 +324,15 @@ export default function VendorProfilePage({
                         </span>
                     </div>
                      {vendor.refundPolicyUrl ? (
-                        <p className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4"/>
-                            <a href={vendor.refundPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">Refund Policy</a>
-                        </p>
+                            <a href={vendor.refundPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-primary underline">Vendor Refund Policy</a>
+                        </div>
                     ) : (
-                         <p className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4"/>
                             <Link href="/policy" className="hover:text-primary underline">Platform Refund Policy</Link>
-                        </p>
+                        </div>
                     )}
                 </div>
                  {vendor.fulfilmentTerms && (
@@ -354,6 +350,13 @@ export default function VendorProfilePage({
         {vendor.paymentsEnabled && (
             <>
                 <h2 className="text-2xl font-bold font-headline mb-6">Our Offerings</h2>
+                <Alert className="mb-6">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Heads up!</AlertTitle>
+                    <AlertDescription>
+                        All purchases are subject to the platform's <Link href="/policy" className="underline font-semibold">Refund & Dispute Policy</Link>.
+                    </AlertDescription>
+                </Alert>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {areListingsLoading && Array.from({ length: 3 }).map((_, i) => (
                      <Card key={i}><CardHeader className="p-0"><Skeleton className="h-48 w-full rounded-t-lg" /></CardHeader><CardContent className="pt-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-4 w-1/2 mt-2" /></CardContent></Card>
@@ -361,7 +364,6 @@ export default function VendorProfilePage({
 
                   {listings?.map((listing) => {
                     const isRedirectingToListing = isRedirecting === listing.id;
-                    const isConsentGiven = consent[listing.id];
                     return (
                       <Card key={listing.id}>
                         {listing.imageUrl &&
@@ -385,26 +387,13 @@ export default function VendorProfilePage({
                                 <span>{listing.deliveryMethod}</span>
                             </div>
                           </div>
-                            <div className="mt-4 space-y-3">
-                                <div className="items-top flex space-x-2">
-                                    <Checkbox id={`terms-${listing.id}`} onCheckedChange={(checked) => handleConsentChange(listing.id, checked as boolean)}/>
-                                    <div className="grid gap-1.5 leading-none">
-                                        <label
-                                        htmlFor={`terms-${listing.id}`}
-                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                        I agree to the <Link href="/policy" className="underline hover:text-primary" target="_blank">Refund & Dispute Policy</Link>.
-                                        </label>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
-                                    <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing || !isConsentGiven}>
-                                    {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
-                                    </Button>
-                                </div>
-                           </div>
+                            <div className="mt-4 flex items-center justify-between">
+                                <p className="text-lg font-bold text-primary">${listing.price.toFixed(2)}</p>
+                                <Button onClick={() => handlePurchase(listing)} disabled={!vendor.paymentsEnabled || isRedirectingToListing}>
+                                {isRedirectingToListing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isRedirectingToListing ? 'Redirecting...' : 'Buy Now'}
+                                </Button>
+                            </div>
                         </CardContent>
                       </Card>
                     )
@@ -543,5 +532,3 @@ export default function VendorProfilePage({
     </div>
   );
 }
-
-    
