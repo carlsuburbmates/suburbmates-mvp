@@ -19,7 +19,7 @@ This document provides a technical and operational overview of the AI agents int
 | --------------------------------------- | ---------------------------------------- | --------------------------------------------------- | ----------- |
 | **Vendor Onboarding & Quality (VOQ)**   | New Business Registration                | Verification, Quality Scoring, & Content Moderation | `ACTIVE`    |
 | **Dispute Summarizer**                  | Stripe Webhook (`charge.dispute.created`) | Summarizes Dispute Reasons for Fast Auditing        | `ACTIVE`    |
-| **Forum Content Moderator**             | New Forum Post                           | Flags Inappropriate Content for Review              | `PLANNED`   |
+| **Forum Content Moderator**             | New Forum Post                           | Blocks Inappropriate Content Before Publication     | `ACTIVE`    |
 
 ---
 
@@ -127,3 +127,38 @@ The `disputeSummary` is used in both the Admin and Vendor dashboards to improve 
 - **Deeper Context:** Both dashboards provide a way to view the AI's `recommendedAction` and the original raw `reason` from Stripe for complete context.
 
 ---
+
+## 5. Detailed Breakdown: Forum Content Moderator
+
+### 5.1. Purpose & Trigger
+
+The Forum Content Moderator acts as a real-time safety net for the Civic Hub, preventing harmful content from being published.
+
+- **Trigger:** This agent is automatically invoked within the `ForumReplyForm` component (`src/app/forums/[id]/forum-reply-form.tsx`) every time a user attempts to submit a new post.
+
+### 5.2. Analysis Performed
+
+The agent leverages the built-in safety features of the underlying AI model (Vertex AI's Gemini).
+
+1.  **Content Analysis:** It analyzes the text of the user's post for sensitive content across several categories: Hate Speech, Harassment, Dangerous Content, and Sexually Explicit Content.
+2.  **Blocking Decision:** Based on pre-configured thresholds (e.g., `BLOCK_MEDIUM_AND_ABOVE`), the model determines if the content violates community standards. The flow does not save the post to the database if it is blocked.
+
+### 5.3. Structured Output & User Feedback
+
+The agent's output is simple and immediate, designed for real-time user interaction.
+
+**Output Schema:**
+```typescript
+{
+  "isSafe": boolean,
+  "reason": string | undefined // A user-facing explanation if the post is blocked
+}
+```
+
+### 5.4. Integration with Forum UI
+
+The agent is tightly integrated into the user experience:
+
+-   **Pre-emptive Blocking:** Unlike a traditional moderation queue, this agent stops harmful content *before* it is ever saved to Firestore or displayed to other users.
+-   **Immediate Feedback:** If a post is blocked, the user is immediately shown a toast notification explaining why (e.g., "This post was blocked for containing content related to: Harassment."). This provides instant feedback and helps educate users on community standards.
+-   **Safe-Path-Only Persistence:** Only posts that are deemed `isSafe: true` are persisted to the database.
