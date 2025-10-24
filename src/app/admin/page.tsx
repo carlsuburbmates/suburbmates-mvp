@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter }from 'next/navigation';
@@ -530,7 +531,7 @@ export default function AdminPage() {
           }
         });
       } else {
-        router.replace('/vendors/onboard'); // Redirect unauthenticated users
+        router.replace('/login'); // Redirect unauthenticated users
       }
     }
   }, [user, isUserLoading, router]);
