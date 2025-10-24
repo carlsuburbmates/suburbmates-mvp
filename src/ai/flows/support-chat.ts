@@ -6,7 +6,7 @@
  * - supportChat - The main flow that takes a user query and returns a grounded answer.
  */
 import { ai } from '@/ai/genkit';
-import { defineIndexer, DirectorySourceReader, find, index } from 'genkit/indexing';
+import { DirectorySource, defineIndexer, find, index } from '@genkit-ai/ai/retriever';
 import { z } from 'zod';
 import { geminiPro, googleAI } from '@genkit-ai/google-genai';
 
@@ -20,11 +20,11 @@ const knowledgeBase = defineIndexer(
     // We are using a simplified text-based reader for .tsx files.
     // In a production scenario, you might want a more sophisticated parser
     // to extract only the relevant text content.
-    const docReader = new DirectorySourceReader({
+    const docReader = DirectorySource({
       path: './docs',
       glob: '**/*.md', // Read all markdown files in the docs directory
     });
-    const contentReader = new DirectorySourceReader({
+    const contentReader = DirectorySource({
       path: './src/app',
       glob: '**/@(policy|terms|privacy|accessibility)/page.tsx', // Read key policy pages
     });
