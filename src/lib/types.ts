@@ -168,6 +168,12 @@ export type RefundRequest = {
   decisionAt?: string;
 };
 
+export type DisputeSummary = {
+  summary: string;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  recommendedAction: string;
+};
+
 export type Dispute = {
     id: string; // Firestore document ID
     stripeDisputeId: string;
@@ -181,6 +187,7 @@ export type Dispute = {
     status: string;
     createdAt: string;
     evidenceDueBy: string;
+    disputeSummary?: DisputeSummary;
 }
 
 export type LogEntry = {

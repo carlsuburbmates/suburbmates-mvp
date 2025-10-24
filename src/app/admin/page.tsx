@@ -14,7 +14,7 @@ import type { Vendor, Dispute, LogEntry, VerificationSummary } from '@/lib/types
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { toggleVendorPayments } from './actions';
 import { useToast } from '@/hooks/use-toast';
-import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye, Search, CheckCircle2, AlertTriangle, XCircle, Sparkles } from 'lucide-react';
+import { ShieldAlert, Loader2, Server, Mail, GanttChartSquare, Info, ExternalLink, Eye, Search, CheckCircle2, AlertTriangle, XCircle, Sparkles, MessageCircleQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import {
@@ -287,12 +287,21 @@ function DisputesTab() {
   );
   const { data: disputes, isLoading } = useCollection<Dispute>(disputesQuery);
 
+  const getRiskVariant = (level: 'LOW' | 'MEDIUM' | 'HIGH' | undefined): "default" | "secondary" | "destructive" => {
+    switch (level) {
+        case 'HIGH': return 'destructive';
+        case 'MEDIUM': return 'secondary';
+        case 'LOW': return 'default';
+        default: return 'outline' as any;
+    }
+  }
+
   return (
      <Card>
       <CardHeader>
         <CardTitle>Platform Disputes</CardTitle>
         <CardDescription>
-          A log of all payment disputes across the platform.
+          A log of all payment disputes across the platform, summarized by AI.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -302,8 +311,9 @@ function DisputesTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Vendor ID</TableHead>
-                <TableHead>Reason</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead>Summary</TableHead>
+                <TableHead>Risk</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -314,7 +324,36 @@ function DisputesTab() {
                 <TableRow key={dispute.id}>
                   <TableCell>{format(new Date(dispute.createdAt), 'dd/MM/yyyy')}</TableCell>
                   <TableCell className="font-mono text-xs">{dispute.vendorId}</TableCell>
-                  <TableCell>{dispute.reason}</TableCell>
+                  <TableCell className='text-sm'>
+                    {dispute.disputeSummary?.summary || dispute.reason}
+                    {dispute.disputeSummary && (
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="link" size="sm" className="p-1 h-auto ml-1"><MessageCircleQuestion /></Button>
+                            </DialogTrigger>
+                             <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle className='flex items-center gap-2'><Sparkles className="h-4 w-4 text-primary"/>AI Dispute Analysis</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4 text-sm">
+                                    <div>
+                                        <h4 className="font-semibold">Recommended Action</h4>
+                                        <p className="text-muted-foreground">{dispute.disputeSummary.recommendedAction}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold">Raw Stripe Reason</h4>
+                                        <p className="text-muted-foreground font-mono text-xs">{dispute.reason}</p>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                      <Badge variant={getRiskVariant(dispute.disputeSummary?.riskLevel)}>
+                          {dispute.disputeSummary?.riskLevel || 'N/A'}
+                      </Badge>
+                  </TableCell>
                   <TableCell>
                       <Badge variant={dispute.status === 'warning_needs_response' ? 'destructive' : 'secondary'}>
                           {dispute.status}

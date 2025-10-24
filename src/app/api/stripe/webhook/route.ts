@@ -6,8 +6,9 @@ import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { headers } from 'next/headers';
 import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail, sendDisputeCreatedVendorNotification, sendDisputeCreatedBuyerNotification, sendDisputeClosedNotification } from '@/lib/email';
-import type { Order, Vendor, Dispute } from '@/lib/types';
+import type { Order, Vendor, Dispute, DisputeSummary } from '@/lib/types';
 import serviceAccount from '@/../service-account.json';
+import { summarizeDispute } from '@/ai/flows/summarize-dispute';
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -186,6 +187,20 @@ export async function POST(request: Request) {
             const orderForDispute = await findOrderAndVendorByPaymentIntent(disputeCreated.payment_intent as string);
             if (orderForDispute) {
                 const { order, vendor, customer } = orderForDispute;
+                
+                // Call AI Agent to summarize the dispute
+                let disputeSummary: DisputeSummary | undefined;
+                try {
+                    disputeSummary = await summarizeDispute({
+                        disputeReason: disputeCreated.reason,
+                        productName: order.listingName,
+                        amount: order.amount,
+                    });
+                } catch(aiError) {
+                    console.error("Dispute Summarizer Agent failed:", aiError);
+                    // Continue without AI summary if it fails
+                }
+
                 const disputeData: Dispute = {
                     id: '', // Firestore will generate
                     stripeDisputeId: disputeCreated.id,
@@ -199,6 +214,7 @@ export async function POST(request: Request) {
                     status: disputeCreated.status,
                     createdAt: new Date(disputeCreated.created * 1000).toISOString(),
                     evidenceDueBy: new Date(disputeCreated.evidence_details.due_by * 1000).toISOString(),
+                    disputeSummary, // Add the AI summary here
                 };
                 
                 await addDoc(collection(db, 'disputes'), disputeData);
