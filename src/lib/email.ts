@@ -12,7 +12,7 @@ async function logEmail(subject: string, to: string, status: 'sent' | 'failed', 
     const emailLogId = uuidv4();
     const logRef = collection(db, 'logs/emails/sends');
     await addDoc(logRef, {
-        timestamp: serverTimestamp(),
+        timestamp: new Date().toISOString(),
         type: 'email',
         source: 'resend',
         eventId: emailLogId,

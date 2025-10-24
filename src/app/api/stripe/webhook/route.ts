@@ -5,8 +5,8 @@ import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs
 import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { headers } from 'next/headers';
-import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail } from '@/lib/email';
-import type { Vendor } from '@/lib/types';
+import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail, sendDisputeCreatedVendorNotification, sendDisputeCreatedBuyerNotification, sendDisputeClosedNotification } from '@/lib/email';
+import type { Order, Vendor, Dispute } from '@/lib/types';
 import serviceAccount from '@/../service-account.json';
 
 
@@ -31,6 +31,29 @@ const auth = getAuth(app);
 // Idempotency check
 const processedEvents = new Set();
 
+async function logWebhookEvent(event: Stripe.Event, status: 'received' | 'processed' | 'failed', error?: string) {
+    const logRef = collection(db, 'logs/webhooks/events');
+    const existingLogQuery = query(logRef, where('eventId', '==', event.id));
+    const snapshot = await getDocs(existingLogQuery);
+    
+    if (snapshot.empty) {
+        await addDoc(logRef, {
+            timestamp: new Date(event.created * 1000).toISOString(),
+            type: 'webhook',
+            source: 'stripe',
+            eventId: event.id,
+            status,
+            payload: event,
+            error: error || null,
+        });
+    } else {
+        await updateDoc(snapshot.docs[0].ref, {
+             status,
+             error: error || null,
+        });
+    }
+}
+
 
 export async function POST(request: Request) {
   const sig = headers().get('stripe-signature');
@@ -44,9 +67,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Webhook secret not configured.' }, { status: 400 });
     }
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    await logWebhookEvent(event, 'received');
 
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
+    if (err.type === 'StripeSignatureVerificationError' && err.raw) {
+       // Log the failed event for auditing without marking it as processed
+       await logWebhookEvent(err.raw, 'failed', err.message);
+    }
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
@@ -55,45 +83,38 @@ export async function POST(request: Request) {
       console.log(`[IDEMPOTENCY] Already processed event: ${event.id}`);
       return NextResponse.json({ received: true, message: 'Event already processed.' });
   }
-  processedEvents.add(event.id);
+  
+  try {
+      // Handle the event
+      switch (event.type) {
+        case 'account.updated':
+          const account = event.data.object as Stripe.Account;
+          const firebaseUid = account.metadata?.firebase_uid;
 
+          if (firebaseUid) {
+            console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
+            const vendorRef = doc(db, 'vendors', firebaseUid);
+            await updateDoc(vendorRef, {
+              stripeAccountId: account.id,
+            });
+            console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID.`);
+            if (!account.charges_enabled) {
+                const vendorSnap = await getDoc(vendorRef);
+                if (vendorSnap.exists()) {
+                  await sendStripeActionRequiredEmail(vendorSnap.data() as Vendor, 'Your Stripe account needs attention. Payouts may be disabled.');
+                }
+            }
+          }
+          break;
 
-  // Handle the event
-  switch (event.type) {
-    case 'account.updated':
-      const account = event.data.object as Stripe.Account;
-      const firebaseUid = account.metadata?.firebase_uid;
+        case 'checkout.session.completed':
+            const session = event.data.object as Stripe.Checkout.Session;
+            const metadata = session.metadata;
+            const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
 
-      if (firebaseUid) {
-        console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
-        try {
-          const vendorRef = doc(db, 'vendors', firebaseUid);
-          await updateDoc(vendorRef, {
-            stripeAccountId: account.id,
-            // Payouts are disabled/enabled by the admin, but we can track account health.
-            // paymentsEnabled: account.charges_enabled && account.details_submitted,
-          });
-          console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID and status.`);
-           if (!account.charges_enabled) {
-              const vendorSnap = await getDoc(vendorRef);
-              if (vendorSnap.exists()) {
-                await sendStripeActionRequiredEmail(vendorSnap.data() as Vendor, 'Your Stripe account needs attention. Payouts may be disabled.');
-              }
-           }
-        } catch (error) {
-            console.error(`Failed to update vendor document for user ${firebaseUid}:`, error);
-        }
-      }
-      break;
-
-    case 'checkout.session.completed':
-        const session = event.data.object as Stripe.Checkout.Session;
-        const metadata = session.metadata;
-        const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
-
-        if (session.payment_status === 'paid' && metadata?.vendorId && metadata.customerId && paymentIntentId) {
-            console.log('Checkout session completed, creating order...');
-            try {
+            if (session.payment_status === 'paid' && metadata?.vendorId && metadata.customerId && paymentIntentId) {
+                console.log('Checkout session completed, creating order...');
+                
                 const customer = await auth.getUser(metadata.customerId);
                 const vendorRef = doc(db, 'vendors', metadata.vendorId);
                 const vendorSnap = await getDoc(vendorRef);
@@ -120,36 +141,25 @@ export async function POST(request: Request) {
 
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
 
-                // Emit Notifications (Transactional Email)
                 await sendOrderConfirmationEmail(orderData as any, vendor, customer.email!);
                 await sendNewOrderNotification(orderData as any, vendor);
-
-            } catch (error) {
-                console.error('Failed to create order in Firestore:', error);
-                 return NextResponse.json({ error: 'Failed to create order.' }, { status: 500 });
             }
-        }
-        break;
-    
-    case 'payment_intent.canceled':
-        const paymentIntentCanceled = event.data.object as Stripe.PaymentIntent;
-        console.log(`Payment intent canceled: ${paymentIntentCanceled.id}`);
-        // Find the order and update its status
-        await updateOrderStatusByPaymentIntent(paymentIntentCanceled.id, 'FAILED_PAYMENT');
-        // You could also notify the buyer here.
-        break;
-
-
-    case 'charge.refunded':
-        const charge = event.data.object as Stripe.Charge;
-        const chargePaymentIntentId = charge.payment_intent;
-
-        if (typeof chargePaymentIntentId !== 'string') {
-            console.log('Charge refunded but no payment_intent ID found.');
             break;
-        }
+        
+        case 'payment_intent.canceled':
+            const paymentIntentCanceled = event.data.object as Stripe.PaymentIntent;
+            console.log(`Payment intent canceled: ${paymentIntentCanceled.id}`);
+            await updateOrderStatusByPaymentIntent(paymentIntentCanceled.id, 'FAILED_PAYMENT');
+            break;
 
-        try {
+        case 'charge.refunded':
+            const charge = event.data.object as Stripe.Charge;
+            const chargePaymentIntentId = charge.payment_intent;
+
+            if (typeof chargePaymentIntentId !== 'string') {
+                console.log('Charge refunded but no payment_intent ID found.');
+                break;
+            }
             console.log(`Processing refund for payment intent: ${chargePaymentIntentId}`);
             const orderUpdated = await updateOrderStatusByPaymentIntent(chargePaymentIntentId, 'Refunded');
             
@@ -167,33 +177,88 @@ export async function POST(request: Request) {
             } else {
                  console.warn(`Could not find an order with paymentIntentId: ${chargePaymentIntentId} to mark as refunded.`);
             }
+            break;
+        
+        case 'charge.dispute.created':
+            const disputeCreated = event.data.object as Stripe.Dispute;
+            console.log(`Dispute created: ${disputeCreated.id}`);
+            
+            const orderForDispute = await findOrderAndVendorByPaymentIntent(disputeCreated.payment_intent as string);
+            if (orderForDispute) {
+                const { order, vendor, customer } = orderForDispute;
+                const disputeData: Dispute = {
+                    id: '', // Firestore will generate
+                    stripeDisputeId: disputeCreated.id,
+                    paymentIntentId: disputeCreated.payment_intent as string,
+                    orderId: order.id,
+                    vendorId: vendor.id,
+                    buyerId: order.buyerId,
+                    amount: disputeCreated.amount,
+                    currency: disputeCreated.currency,
+                    reason: disputeCreated.reason,
+                    status: disputeCreated.status,
+                    createdAt: new Date(disputeCreated.created * 1000).toISOString(),
+                    evidenceDueBy: new Date(disputeCreated.evidence_details.due_by * 1000).toISOString(),
+                };
+                
+                await addDoc(collection(db, 'disputes'), disputeData);
+                await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'DISPUTED' });
 
-        } catch (error) {
-            console.error(`Failed to process refund for payment intent ${chargePaymentIntentId}:`, error);
-            return NextResponse.json({ error: 'Failed to update order for refund.' }, { status: 500 });
-        }
-        break;
-    
-    case 'payout.failed':
-        const payoutFailed = event.data.object as Stripe.Payout;
-        const failedAccountId = payoutFailed.destination as string; // Assuming it's an account ID
-        console.error(`Payout failed for Stripe account: ${failedAccountId}`);
-        // Find vendor by stripeAccountId and notify them
-        // This is a critical event requiring immediate vendor notification.
-        break;
+                await sendDisputeCreatedVendorNotification(vendor, order, disputeData);
+                if (customer?.email) {
+                    await sendDisputeCreatedBuyerNotification(customer.email, order, disputeData);
+                }
+            }
+            break;
 
-    default:
-      console.log(`[INFO] Unhandled event type ${event.type}`);
-  }
+        case 'charge.dispute.closed':
+            const disputeClosed = event.data.object as Stripe.Dispute;
+            console.log(`Dispute closed: ${disputeClosed.id}`);
+            const disputeQuery = query(collection(db, 'disputes'), where('stripeDisputeId', '==', disputeClosed.id));
+            const disputeSnapshot = await getDocs(disputeQuery);
 
-  return NextResponse.json({ received: true });
+            if (!disputeSnapshot.empty) {
+                const disputeDoc = disputeSnapshot.docs[0];
+                await updateDoc(disputeDoc.ref, { status: disputeClosed.status });
+
+                const dispute = disputeDoc.data() as Dispute;
+                const { order, vendor, customer } = await findOrderAndVendorByPaymentIntent(dispute.paymentIntentId);
+                
+                if (disputeClosed.status === 'lost') {
+                    await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'Refunded' });
+                } else {
+                     await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'Completed' });
+                }
+                if (customer?.email) {
+                    await sendDisputeClosedNotification(vendor, customer.email, order, dispute);
+                }
+            }
+            break;
+            
+        case 'payout.failed':
+            const payoutFailed = event.data.object as Stripe.Payout;
+            const failedAccountId = payoutFailed.destination as string;
+            console.error(`Payout failed for Stripe account: ${failedAccountId}`);
+            // Future enhancement: Notify vendor.
+            break;
+
+        default:
+          console.log(`[INFO] Unhandled event type ${event.type}`);
+      }
+      
+      processedEvents.add(event.id);
+      await logWebhookEvent(event, 'processed');
+
+      return NextResponse.json({ received: true });
+
+    } catch (error: any) {
+        console.error('Webhook handler error:', error);
+        await logWebhookEvent(event, 'failed', error.message);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
 }
 
-/**
- * Helper function to find and update an order's status based on its paymentIntentId.
- * This is used for both refunds and cancellations.
- */
-async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status: 'Refunded' | 'FAILED_PAYMENT'): Promise<any | null> {
+async function findOrderAndVendorByPaymentIntent(paymentIntentId: string): Promise<{ order: Order, vendor: Vendor, customer: any | null }> {
     const q = query(collection(db, 'vendors'));
     const vendorsSnapshot = await getDocs(q);
 
@@ -204,10 +269,30 @@ async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status:
 
         if (!orderSnapshot.empty) {
             const orderDoc = orderSnapshot.docs[0];
-            await updateDoc(orderDoc.ref, { status });
-            console.log(`Found order ${orderDoc.id} for vendor ${vendorDoc.id}. Marked as ${status}.`);
-            return { ...orderDoc.data(), id: orderDoc.id }; // Return the updated order data
+            const order = { id: orderDoc.id, ...orderDoc.data() } as Order;
+            const vendor = { id: vendorDoc.id, ...vendorDoc.data() } as Vendor;
+            
+            let customer = null;
+            try {
+                customer = await auth.getUser(order.buyerId);
+            } catch (e) {
+                console.error("Could not fetch customer for notification", e);
+            }
+            
+            return { order, vendor, customer };
         }
     }
-    return null; // Return null if no order was found
+    throw new Error(`No order found for paymentIntentId: ${paymentIntentId}`);
+}
+
+async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status: Order['status']): Promise<Order | null> {
+    try {
+        const { order, vendor } = await findOrderAndVendorByPaymentIntent(paymentIntentId);
+        await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status });
+        console.log(`Found order ${order.id} for vendor ${vendor.id}. Marked as ${status}.`);
+        return { ...order, status };
+    } catch (error) {
+        console.warn(`Could not find an order with paymentIntentId: ${paymentIntentId} to mark as ${status}.`);
+        return null;
+    }
 }
