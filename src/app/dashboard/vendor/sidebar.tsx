@@ -69,20 +69,20 @@ const residentNavItems = [
     }
 ]
 
-export function DashboardSidebar({ isVendor, isMarketplaceVendor }: { isVendor: boolean, isMarketplaceVendor: boolean }) {
+export function DashboardSidebar({ isBusiness, isMarketplaceVendor }: { isBusiness: boolean, isMarketplaceVendor: boolean }) {
   const pathname = usePathname();
   
   let primaryNavItems;
   if (isMarketplaceVendor) {
       primaryNavItems = vendorNavItems;
-  } else if (isVendor) {
+  } else if (isBusiness) {
       primaryNavItems = businessNavItems;
   } else {
       primaryNavItems = residentNavItems;
   }
 
-  // A vendor is also a resident, so they should see the resident menu as a secondary option.
-  const secondaryNavItems = isVendor ? residentNavItems : [];
+  // A vendor/business is also a resident, so they should see the resident menu as a secondary option.
+  const secondaryNavItems = isBusiness ? residentNavItems : [];
 
   return (
     <Card className="sticky top-[140px]">

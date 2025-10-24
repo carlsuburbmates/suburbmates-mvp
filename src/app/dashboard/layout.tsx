@@ -41,20 +41,20 @@ export default function DashboardLayout({
   const isLoading = isUserLoading || isClaimLoading || (vendor && isVendorDocLoading);
   
   // Determine role based on claims and data
-  const isVendor = !!vendor; // Has a business profile of any kind
-  const isMarketplaceVendor = hasVendorClaim && !!vendor?.paymentsEnabled; // Approved to sell
+  const isBusiness = !!vendor; // Has a business profile of any kind
+  const isMarketplaceVendor = isBusiness && !!vendor?.paymentsEnabled; // Approved to sell
 
   const getTitle = () => {
     if (isLoading) return "Loading Dashboard...";
     if (isMarketplaceVendor) return vendor?.businessName || "Vendor Dashboard";
-    if (isVendor) return vendor?.businessName || "Business Dashboard";
+    if (isBusiness) return vendor?.businessName || "Business Dashboard";
     return "My Dashboard";
   };
 
   const getDescription = () => {
     if (isLoading) return "Please wait while we load your information.";
     if (isMarketplaceVendor) return "Manage your business profile, marketplace listings, and sales.";
-    if (isVendor) return "Manage your business profile and directory listing.";
+    if (isBusiness) return "Manage your business directory listing and complete onboarding to become a vendor.";
     return "Manage your orders and account settings."
   };
 
@@ -67,7 +67,7 @@ export default function DashboardLayout({
       <div className="container mx-auto px-4 pb-16">
         <div className="grid lg:grid-cols-5 gap-8">
           <aside className="lg:col-span-1">
-            <DashboardSidebar isVendor={isVendor} isMarketplaceVendor={isMarketplaceVendor} />
+            <DashboardSidebar isBusiness={isBusiness} isMarketplaceVendor={isMarketplaceVendor} />
           </aside>
           <main className="lg:col-span-4">{children}</main>
         </div>
