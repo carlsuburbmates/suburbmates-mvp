@@ -270,7 +270,7 @@ export default function VendorProfilePage({
     <div>
       <PageHeader
         title={vendor.businessName}
-        description={`${vendor.category} in your local community.`}
+        description={`A local ${vendor.category} in your community.`}
       />
       
       <div className="container mx-auto px-4 pb-16">
@@ -354,7 +354,7 @@ export default function VendorProfilePage({
                     <Info className="h-4 w-4" />
                     <AlertTitle>Heads up!</AlertTitle>
                     <AlertDescription>
-                        All purchases are subject to the platform's <Link href="/policy" className="underline font-semibold">Refund & Dispute Policy</Link>.
+                        All purchases are subject to the platform's <Link href="/policy" className="underline font-semibold">Refund & Dispute Policy</Link>. By proceeding, you acknowledge you have read these terms.
                     </AlertDescription>
                 </Alert>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
