@@ -31,6 +31,7 @@ import { useFirestore, useUser, useAuth } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useState } from 'react';
+import { moderateForumPost } from '@/ai/flows/moderate-forum-post';
 
 const replyFormSchema = z.object({
   content: z
@@ -114,36 +115,53 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
       return;
     }
     setIsSubmitting(true);
-    const postsCollectionRef = collection(
-      firestore,
-      `forumThreads/${threadId}/posts`
-    );
-
-    const newPost = {
-      authorId: user.uid,
-      authorName: user.displayName || 'Anonymous User',
-      authorAvatarUrl: user.photoURL || null,
-      timestamp: new Date().toISOString(),
-      content: values.content,
-    };
-
+    
     try {
-        await addDocumentNonBlocking(postsCollectionRef, newPost);
+      // Step 1: Moderate content with the AI agent
+      const moderationResult = await moderateForumPost({ postContent: values.content });
 
+      if (!moderationResult.isSafe) {
+        // If not safe, block the post and show a toast to the user
         toast({
+          variant: 'destructive',
+          title: 'Post Blocked',
+          description: moderationResult.reason || 'Your post was blocked for containing inappropriate content.',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Step 2: If safe, save the post to Firestore
+      const postsCollectionRef = collection(
+        firestore,
+        `forumThreads/${threadId}/posts`
+      );
+
+      const newPost = {
+        authorId: user.uid,
+        authorName: user.displayName || 'Anonymous User',
+        authorAvatarUrl: user.photoURL || null,
+        timestamp: new Date().toISOString(),
+        content: values.content,
+      };
+
+      await addDocumentNonBlocking(postsCollectionRef, newPost);
+
+      toast({
         title: 'Reply Posted!',
         description: 'Your reply has been added to the discussion.',
-        });
+      });
 
-        form.reset();
+      form.reset();
     } catch(e) {
-        toast({
-            variant: "destructive",
-            title: "Reply Failed",
-            description: "Could not save your reply. Please try again.",
-        });
+      console.error("Error during post submission:", e);
+      toast({
+        variant: "destructive",
+        title: "Reply Failed",
+        description: "Could not save your reply. Please try again.",
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -198,5 +216,3 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     </Card>
   );
 }
-
-    
