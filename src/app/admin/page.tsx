@@ -313,7 +313,7 @@ function DisputesTab() {
                 <TableHead>Date</TableHead>
                 <TableHead>Vendor</TableHead>
                 <TableHead>Summary</TableHead>
-                <TableHead>Risk</TableHead>
+                <TableHead>AI Risk</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
