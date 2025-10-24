@@ -74,6 +74,14 @@ export default function PrivacyPage() {
                 We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. This includes segregation of sensitive data and maintaining audit logs to track access and changes to your information. However, despite our safeguards and efforts to secure your information, no electronic transmission over the Internet or information storage technology can be guaranteed to be 100% secure.
               </p>
             </div>
+             <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">
+                5. Data Deletion
+              </h3>
+              <p>
+                You have the right to request the deletion of your personal data. If you are a registered vendor, you can delete your entire profile and associated account from the "Edit Profile" page in your vendor dashboard. For all other users, you can request data deletion by sending an email to contact@suburbmates.example.com with the subject line "Data Deletion Request". We will process your request within 30 days.
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
