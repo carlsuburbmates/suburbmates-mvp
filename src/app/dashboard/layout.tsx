@@ -7,6 +7,7 @@ import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import type { Vendor } from "@/lib/types";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function DashboardLayout({
   children,
@@ -17,19 +18,39 @@ export default function DashboardLayout({
   const firestore = useFirestore();
   const pathname = usePathname();
 
-  const isVendorPath = pathname.includes('/dashboard/vendor');
+  const [isVendor, setIsVendor] = useState(false);
+  const [hasActiveListings, setHasActiveListings] = useState(false);
+  const [isClaimLoading, setIsClaimLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      user.getIdTokenResult().then(idTokenResult => {
+        setIsVendor(!!idTokenResult.claims.vendor);
+        setIsClaimLoading(false);
+      });
+    } else if (!isUserLoading) {
+      setIsClaimLoading(false);
+    }
+  }, [user, isUserLoading]);
+
 
   const vendorRef = useMemoFirebase(
     () => (firestore && user ? doc(firestore, "vendors", user.uid) : null),
     [firestore, user]
   );
-  const { data: vendor, isLoading: isVendorLoading } = useDoc<Vendor>(vendorRef);
+  const { data: vendor, isLoading: isVendorDocLoading } = useDoc<Vendor>(vendorRef);
 
-  const isLoading = isUserLoading || (isVendorPath && isVendorLoading);
+  useEffect(() => {
+    if(vendor) {
+        setHasActiveListings(!!vendor.paymentsEnabled);
+    }
+  }, [vendor]);
+
+  const isLoading = isUserLoading || isClaimLoading || (isVendor && isVendorDocLoading);
 
   const getTitle = () => {
     if (isLoading) return "Loading Dashboard...";
-    if (isVendorPath) {
+    if (isVendor) {
       return vendor?.businessName || "Business Dashboard";
     }
     return "My Dashboard";
@@ -37,8 +58,8 @@ export default function DashboardLayout({
 
   const getDescription = () => {
     if (isLoading) return "Please wait while we load your information.";
-    if (isVendorPath) {
-      if (vendor?.paymentsEnabled) {
+    if (isVendor) {
+      if (hasActiveListings) {
         return "Manage your business profile, marketplace listings, and sales.";
       }
       return "Manage your business profile and directory listing."
@@ -55,7 +76,7 @@ export default function DashboardLayout({
       <div className="container mx-auto px-4 pb-16">
         <div className="grid lg:grid-cols-5 gap-8">
           <aside className="lg:col-span-1">
-            <DashboardSidebar isVendor={!!vendor} hasActiveListings={!!vendor?.paymentsEnabled} />
+            <DashboardSidebar isVendor={isVendor} hasActiveListings={hasActiveListings} />
           </aside>
           <main className="lg:col-span-4">{children}</main>
         </div>

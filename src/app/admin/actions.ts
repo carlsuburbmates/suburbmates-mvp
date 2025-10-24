@@ -38,18 +38,26 @@ export async function toggleVendorPayments(vendorId: string, currentState: boole
     await verifyAdmin();
 
     const vendorRef = doc(db, 'vendors', vendorId);
+    const newState = !currentState;
+
+    // 1. Update the Firestore document
     await updateDoc(vendorRef, {
-      paymentsEnabled: !currentState,
+      paymentsEnabled: newState,
     });
 
+    // 2. Set custom claims on the user's auth token
+    const user = await auth.getUser(vendorId);
+    const currentClaims = user.customClaims || {};
+    await auth.setCustomUserClaims(vendorId, { ...currentClaims, vendor: newState });
+
     console.log(
-      `Toggled paymentsEnabled for vendor ${vendorId} to ${!currentState}`
+      `Toggled paymentsEnabled for vendor ${vendorId} to ${newState} and set custom claim 'vendor: ${newState}'`
     );
     
     // Revalidate the path to ensure the UI updates
     revalidatePath('/admin');
     
-    return { success: true, newState: !currentState };
+    return { success: true, newState: newState };
   } catch (error: any) {
     console.error('Error toggling vendor payments:', error);
     return { success: false, error: error.message };

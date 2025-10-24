@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, LogOut, Shield, User, ShoppingCart } from 'lucide-react';
+import { Menu, LogOut, Shield, User, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 
 import { cn } from '@/lib/utils';
@@ -38,14 +38,17 @@ export function Header() {
   const router = useRouter();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isVendor, setIsVendor] = useState(false);
 
   useEffect(() => {
     if (user) {
-      user.getIdTokenResult().then(idTokenResult => {
+      user.getIdTokenResult(true).then(idTokenResult => { // Force refresh of token
         setIsAdmin(!!idTokenResult.claims.admin);
+        setIsVendor(!!idTokenResult.claims.vendor);
       });
     } else {
       setIsAdmin(false);
+      setIsVendor(false);
     }
   }, [user]);
 
@@ -134,11 +137,13 @@ export function Header() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/vendor"><User className="mr-2 h-4 w-4" />Vendor Dashboard</Link>
+                        <Link href={isVendor ? "/dashboard/vendor" : "/dashboard/resident"}><LayoutGrid className="mr-2 h-4 w-4" />Dashboard</Link>
                      </DropdownMenuItem>
-                     <DropdownMenuItem asChild>
-                        <Link href="/dashboard/resident"><ShoppingCart className="mr-2 h-4 w-4" />My Orders</Link>
-                     </DropdownMenuItem>
+                     {isAdmin && (
+                        <DropdownMenuItem asChild>
+                            <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Admin Panel</Link>
+                        </DropdownMenuItem>
+                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
