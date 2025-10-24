@@ -42,7 +42,8 @@ const vendorNavItems = [
   },
 ];
 
-const businessOwnerNavItems = [
+// For businesses that are listed but not yet selling
+const businessNavItems = [
     {
         title: 'Business Dashboard',
         href: '/dashboard/vendor',
@@ -68,16 +69,19 @@ const residentNavItems = [
     }
 ]
 
-export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: boolean, hasActiveListings: boolean }) {
+export function DashboardSidebar({ isVendor, isMarketplaceVendor }: { isVendor: boolean, isMarketplaceVendor: boolean }) {
   const pathname = usePathname();
   
   let primaryNavItems;
-  if (isVendor) {
-      primaryNavItems = hasActiveListings ? vendorNavItems : businessOwnerNavItems;
+  if (isMarketplaceVendor) {
+      primaryNavItems = vendorNavItems;
+  } else if (isVendor) {
+      primaryNavItems = businessNavItems;
   } else {
       primaryNavItems = residentNavItems;
   }
 
+  // A vendor is also a resident, so they should see the resident menu as a secondary option.
   const secondaryNavItems = isVendor ? residentNavItems : [];
 
   return (
@@ -131,5 +135,3 @@ export function DashboardSidebar({ isVendor, hasActiveListings }: { isVendor: bo
     </Card>
   );
 }
-
-    
