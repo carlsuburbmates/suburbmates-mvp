@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,7 +7,7 @@ import { z } from 'zod';
 import { Loader2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { collection } from 'firebase/firestore';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, FacebookAuthProvider } from 'firebase/auth';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -56,42 +57,54 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
       content: '',
     },
   });
-
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+  
+  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
     try {
         await signInWithPopup(auth, provider);
         toast({
             title: "Logged In",
             description: "You can now join the discussion!",
         });
-    } catch (error) {
-        console.error("Google login error", error);
+    } catch (error: any) {
+        console.error("Social login error", error);
         toast({
             variant: "destructive",
             title: "Login Failed",
-            description: "Could not log you in with Google. Please try again.",
+            description: error.code === 'auth/account-exists-with-different-credential' 
+                ? 'An account already exists with this email address. Please sign in with the original method.'
+                : 'Could not log you in. Please try again.',
         });
     }
   };
+
+  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
+  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
 
   if (!user) {
     return (
        <Card className="text-center p-6">
           <CardTitle>Join the conversation</CardTitle>
-          <CardDescription className="mt-2">Sign in with Google to post a reply.</CardDescription>
-          <Button className="mt-4" onClick={handleGoogleLogin}>
-              <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
-                  <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
-              </svg>
-              Sign in with Google
-          </Button>
+          <CardDescription className="mt-2">Sign in to post a reply.</CardDescription>
+          <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={handleGoogleLogin}>
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+                    <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 174 55.9L387 110.1C344.9 73.1 298.8 56 248 56c-94.2 0-170.9 76.7-170.9 170.9s76.7 170.9 170.9 170.9c98.2 0 159.9-67.7 165-148.6H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+                </svg>
+                Sign in with Google
+            </Button>
+            <Button onClick={handleFacebookLogin} style={{ backgroundColor: '#1877F2', color: 'white' }}>
+                 <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="facebook" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="currentColor" d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"></path>
+                </svg>
+                Sign in with Facebook
+            </Button>
+          </div>
         </Card>
     )
   }
 
 
-  async function onSubmit(values: z.infer<typeof replyFormSchema>) {
+  async function onSubmit(values: z.infer<typeof replyFormSchema>>) {
     if (!user || !firestore) {
       toast({
         variant: 'destructive',
@@ -185,3 +198,5 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     </Card>
   );
 }
+
+    

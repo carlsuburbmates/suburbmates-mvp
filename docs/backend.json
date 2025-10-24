@@ -387,7 +387,8 @@
   "auth": {
     "providers": [
       "password",
-      "google.com"
+      "google.com",
+      "facebook.com"
     ]
   },
   "firestore": {
@@ -477,3 +478,5 @@
     }
   }
 }
+
+    
