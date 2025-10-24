@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { Analytics } from "@vercel/analytics/react"
+import { ChatWidget } from "@/components/chat-widget";
 
 export const metadata: Metadata = {
   title: "Suburbmates",
@@ -40,6 +41,7 @@ export default function RootLayout({
             <Footer />
           </div>
           <Toaster />
+          <ChatWidget />
         </FirebaseClientProvider>
         <Analytics />
       </body>
