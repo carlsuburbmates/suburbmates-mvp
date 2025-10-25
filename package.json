@@ -12,7 +12,7 @@
     "stripe": "stripe",
     "stripe:listen": "stripe listen --forward-to http://localhost:9003/api/stripe/webhook",
     "db:seed": "tsx docs/seed.ts",
-    "genkit:dev": "genkit start -- npm run dev"
+    "genkit:dev": "genkit start --port 4001 -- npm run dev"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.20.0",
