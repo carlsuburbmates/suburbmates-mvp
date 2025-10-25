@@ -5,9 +5,8 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { Analytics } from "@vercel/analytics/react"
-import { ChatWidget } from "@/components/chat-widget";
+import { GlobalProviders } from "@/components/global-providers";
 
 export const metadata: Metadata = {
   title: "Suburbmates",
@@ -34,15 +33,14 @@ export default function RootLayout({
         />
       </head>
       <body className={cn("min-h-screen font-body antialiased")}>
-        <FirebaseClientProvider>
+        <GlobalProviders>
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
           <Toaster />
-          <ChatWidget />
-        </FirebaseClientProvider>
+        </GlobalProviders>
         <Analytics />
       </body>
     </html>
