@@ -21,17 +21,19 @@ const knowledgeBase = defineIndexer(
     // In a production scenario, you might want a more sophisticated parser
     // to extract only the relevant text content.
     const docReader = DirectorySource({
-      path: './docs',
-      glob: '**/*.md', // Read all markdown files in the docs directory
-    });
-    const contentReader = DirectorySource({
-      path: './src/app',
-      glob: '**/@(policy|terms|privacy|accessibility)/page.tsx', // Read key policy pages
+      path: './',
+      glob: '**/*.{md,tsx}', // Read all markdown and tsx files
+      textExtractor: (filePath, content) => {
+        if (filePath.endsWith('.tsx')) {
+          return content.replace(/<[^>]*>/g, ' ');
+        }
+        return content;
+      },
     });
     
     // We pass custom chunking options to break the documents into smaller, more digestible pieces for the model.
     configure({
-      sources: [docReader, contentReader],
+      sources: [docReader],
       chunking: {
         // A chunk is a piece of a document that is embedded and stored in the index.
         // The size of a chunk is important for the quality of the search results.
