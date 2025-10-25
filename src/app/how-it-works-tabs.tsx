@@ -63,47 +63,49 @@ const businessSteps = [
 
 export function HowItWorksTabs() {
     return (
-        <Tabs defaultValue="residents" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
-              <TabsTrigger value="residents">For Residents</TabsTrigger>
-              <TabsTrigger value="businesses">For Businesses</TabsTrigger>
-            </TabsList>
-            <TabsContent value="residents" className="mt-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {residentSteps.map((step, index) => (
-                  <div
-                    key={step.title}
-                    className="flex flex-col items-center text-center gap-4"
-                  >
-                    <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary">
-                      <span className="text-2xl font-bold">{index + 1}</span>
+        <div key="how-it-works-tabs-wrapper">
+          <Tabs defaultValue="residents" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+                <TabsTrigger value="residents">For Residents</TabsTrigger>
+                <TabsTrigger value="businesses">For Businesses</TabsTrigger>
+              </TabsList>
+              <TabsContent value="residents" className="mt-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {residentSteps.map((step, index) => (
+                    <div
+                      key={step.title}
+                      className="flex flex-col items-center text-center gap-4"
+                    >
+                      <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary">
+                        <span className="text-2xl font-bold">{index + 1}</span>
+                      </div>
+                      <h3 className="text-xl font-bold font-headline mt-2">
+                        {step.title}
+                      </h3>
+                      <p className="text-muted-foreground">{step.description}</p>
                     </div>
-                    <h3 className="text-xl font-bold font-headline mt-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="businesses" className="mt-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {businessSteps.map((step, index) => (
-                  <div
-                    key={step.title}
-                    className="flex flex-col items-center text-center gap-4"
-                  >
-                    <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary">
-                      <span className="text-2xl font-bold">{index + 1}</span>
+                  ))}
+                </div>
+              </TabsContent>
+              <TabsContent value="businesses" className="mt-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {businessSteps.map((step, index) => (
+                    <div
+                      key={step.title}
+                      className="flex flex-col items-center text-center gap-4"
+                    >
+                      <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary">
+                        <span className="text-2xl font-bold">{index + 1}</span>
+                      </div>
+                      <h3 className="text-xl font-bold font-headline mt-2">
+                        {step.title}
+                      </h3>
+                      <p className="text-muted-foreground">{step.description}</p>
                     </div>
-                    <h3 className="text-xl font-bold font-headline mt-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+        </div>
     )
 }
