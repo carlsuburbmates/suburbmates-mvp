@@ -8,8 +8,8 @@ runConfig:
 
 # Environment variables, including secrets, can be configured here.
 # https://firebase.google.com/docs/app-hosting/configure#set-environment-variables
-env:
-  - variable: STRIPE_SECRET_KEY
-    secret: your-stripe-secret-name
-  - variable: RESEND_API_KEY
-    secret: your-resend-api-key-name
+# env:
+#   - variable: STRIPE_SECRET_KEY
+#     secret: your-stripe-secret-name
+#   - variable: RESEND_API_KEY
+#     secret: your-resend-api-key-name
