@@ -11,11 +11,20 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getStorage } from 'firebase-admin/storage';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import * as path from 'path';
 import * as mime from 'mime-types';
 
-// Ensures Firebase Admin is initialized
-import 'firebase-admin/app';
+// Ensure Firebase Admin is initialized for server-side operations
+if (getApps().length === 0) {
+  const serviceAccount = JSON.parse(
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}'
+  );
+  initializeApp({
+    credential: cert(serviceAccount),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  });
+}
 
 
 const UploadImageInputSchema = z.object({
@@ -42,7 +51,7 @@ const uploadImageFlow = ai.defineFlow(
     async (input) => {
         const { fileDataUri, filePath } = input;
         
-        const bucket = getStorage().bucket(process.env.FIREBASE_STORAGE_BUCKET);
+        const bucket = getStorage().bucket();
         
         // Extract content type and data from data URI
         const matches = fileDataUri.match(/^data:(.+);base64,(.+)$/);
