@@ -157,7 +157,7 @@ export default function SignupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="flex flex-col space-y-4">
               <Button
                 variant="outline"
                 className="w-full"

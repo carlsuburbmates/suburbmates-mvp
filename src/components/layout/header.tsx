@@ -158,7 +158,7 @@ export function Header() {
                     <Link href="/login">Sign in</Link>
                 </Button>
                 <Button asChild>
-                    <Link href="/dashboard/vendor/register">Become a Vendor</Link>
+                    <Link href="/signup">Sign up</Link>
                 </Button>
               </div>
             ))}
@@ -170,24 +170,23 @@ export function Header() {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
-              <div className="flex flex-col p-6 h-full">
-                <div className="mb-8 flex items-center">
-                  <Logo className="h-6 w-6 text-primary" />
-                  <Link
-                    href="/"
-                    className="ml-2 text-lg font-bold font-headline"
-                  >
-                    Suburbmates
-                  </Link>
+            <SheetContent side="left" className="p-0">
+              <div className="flex flex-col h-full">
+                <div className="p-6 mb-2 border-b">
+                    <Link href="/" className="flex items-center">
+                        <Logo className="h-6 w-6 text-primary" />
+                        <span className="ml-2 text-lg font-bold font-headline">
+                            Suburbmates
+                        </span>
+                    </Link>
                 </div>
-                <nav className="flex flex-col gap-6">
+                <nav className="flex flex-col gap-2 p-6">
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'text-lg',
+                        'text-lg py-2',
                         pathname === item.href
                           ? 'text-primary font-bold'
                           : 'text-muted-foreground'
@@ -200,7 +199,7 @@ export function Header() {
                     <Link
                       href="/admin"
                       className={cn(
-                        'text-lg flex items-center gap-2',
+                        'text-lg flex items-center gap-2 py-2',
                         pathname?.startsWith('/admin')
                           ? 'text-primary font-bold'
                           : 'text-muted-foreground'
@@ -211,7 +210,7 @@ export function Header() {
                     </Link>
                   )}
                 </nav>
-                 <div className="mt-auto flex flex-col gap-4 pt-8">
+                 <div className="mt-auto flex flex-col gap-4 p-6 border-t">
                   {user ? (
                      <Button onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
@@ -220,10 +219,10 @@ export function Header() {
                   ) : (
                     <>
                       <Button asChild>
-                        <Link href="/login">Sign in / Sign up</Link>
+                        <Link href="/login">Sign in</Link>
                       </Button>
                       <Button asChild variant="secondary">
-                        <Link href="/dashboard/vendor/register">Become a Vendor</Link>
+                        <Link href="/signup">Sign up</Link>
                       </Button>
                     </>
                   )}

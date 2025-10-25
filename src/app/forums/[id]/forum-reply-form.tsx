@@ -145,7 +145,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
         content: values.content,
       };
 
-      await addDocumentNonBlocking(postsCollectionRef, newPost);
+      addDocumentNonBlocking(postsCollectionRef, newPost);
 
       toast({
         title: 'Reply Posted!',
