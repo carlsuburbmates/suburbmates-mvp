@@ -29,7 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Vendor } from "@/lib/types";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { VendorMap } from "@/components/vendor-map";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { naturalLanguageSearch } from "@/ai/flows/natural-language-search";
@@ -49,7 +49,11 @@ export default function VendorsPage() {
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [aiKeywords, setAiKeywords] = useState<string[]>([]);
   const [aiCategory, setAiCategory] = useState<string | undefined>(undefined);
+  const [isClient, setIsClient] = useState(false);
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const vendorsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -104,8 +108,8 @@ export default function VendorsPage() {
     
     return allVendors.map((vendor, index) => ({
         ...vendor,
-        latitude: vendor.latitude || -37.775 + (Math.random() - 0.5) * 0.02,
-        longitude: vendor.longitude || 144.99 + (Math.random() - 0.5) * 0.02,
+        latitude: vendor.latitude || (isClient ? -37.775 + (Math.random() - 0.5) * 0.02 : -37.775),
+        longitude: vendor.longitude || (isClient ? 144.99 + (Math.random() - 0.5) * 0.02 : 144.99),
       }))
       .filter(v => v.latitude && v.longitude)
       .filter(v => showMarketplaceOnly ? v.paymentsEnabled : true)
@@ -118,7 +122,7 @@ export default function VendorsPage() {
         return aiKeywords.every(keyword => vendorText.includes(keyword.toLowerCase()));
       });
 
-  }, [allVendors, showMarketplaceOnly, selectedCategory, minimumRating, aiKeywords]);
+  }, [allVendors, showMarketplaceOnly, selectedCategory, minimumRating, aiKeywords, isClient]);
 
   const handleRatingChange = (rating: number, checked: boolean | 'indeterminate') => {
     if (checked) {

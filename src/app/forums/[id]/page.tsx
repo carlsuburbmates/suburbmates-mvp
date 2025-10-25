@@ -1,9 +1,11 @@
+
 'use client';
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MessageSquare, ArrowLeft, Building2 } from "lucide-react";
 import { collection, doc, orderBy, query } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 import {
   Card,
@@ -23,6 +25,11 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 export default function ForumThreadPage({ params }: { params: { id: string } }) {
   const firestore = useFirestore();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const threadRef = useMemoFirebase(
     () => (firestore ? doc(firestore, "forumThreads", params.id) : null),
@@ -106,8 +113,11 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
         ))}
         {posts?.map((post, index) => {
           const isFirstPost = index === 0;
-          const avatarUrl = isFirstPost ? thread.authorAvatarUrl : (index % 2 === 0 ? userAvatar2?.imageUrl : userAvatar1?.imageUrl);
-          const avatarHint = index % 2 === 0 ? userAvatar2?.imageHint : userAvatar1?.imageHint;
+          let avatarUrl, avatarHint;
+          if (isClient) {
+            avatarUrl = isFirstPost ? thread.authorAvatarUrl : (index % 2 === 0 ? userAvatar2?.imageUrl : userAvatar1?.imageUrl);
+            avatarHint = index % 2 === 0 ? userAvatar2?.imageHint : userAvatar1?.imageHint;
+          }
           return (
             <Card
               key={post.id}

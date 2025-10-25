@@ -30,7 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useAuth } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { moderateForumPost } from '@/ai/flows/moderate-forum-post';
 
 const replyFormSchema = z.object({
@@ -50,6 +50,9 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
   const auth = useAuth();
   const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const googleProvider = useMemo(() => new GoogleAuthProvider(), []);
+  const facebookProvider = useMemo(() => new FacebookAuthProvider(), []);
 
 
   const form = useForm<z.infer<typeof replyFormSchema>>({
@@ -78,8 +81,8 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
     }
   };
 
-  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
-  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
+  const handleGoogleLogin = () => handleSocialLogin(googleProvider);
+  const handleFacebookLogin = () => handleSocialLogin(facebookProvider);
 
   if (!user) {
     return (

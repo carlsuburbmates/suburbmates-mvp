@@ -27,7 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth, useUser } from '@/firebase';
 import {
   signInWithEmailAndPassword,
@@ -48,6 +48,9 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const googleProvider = useMemo(() => new GoogleAuthProvider(), []);
+  const facebookProvider = useMemo(() => new FacebookAuthProvider(), []);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -102,8 +105,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => handleSocialLogin(new GoogleAuthProvider());
-  const handleFacebookLogin = () => handleSocialLogin(new FacebookAuthProvider());
+  const handleGoogleLogin = () => handleSocialLogin(googleProvider);
+  const handleFacebookLogin = () => handleSocialLogin(facebookProvider);
 
   if (isUserLoading || user) {
     return (
