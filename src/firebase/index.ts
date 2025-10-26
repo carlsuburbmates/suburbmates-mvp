@@ -28,6 +28,11 @@ export function initializeFirebase() {
     
     // Initialize App Check
     if (typeof window !== 'undefined') {
+       // Use Firebase App Check debug token in non-production to avoid reCAPTCHA blockers
+       if (process.env.NODE_ENV !== 'production') {
+         // @ts-ignore
+         self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+       }
        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
        if (siteKey) {
             initializeAppCheck(firebaseApp, {

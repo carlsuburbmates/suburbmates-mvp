@@ -26,6 +26,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.local.backup
+my.env.do.not.delete
 .env
 
 # vercel
@@ -38,3 +40,4 @@ next-env.d.ts
 testsprite_tests/
 
 service-account.json
+node_modules
