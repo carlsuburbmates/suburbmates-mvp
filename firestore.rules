@@ -30,13 +30,17 @@ service cloud.firestore {
      * @deny (create, update, delete): if request.auth.uid != vendorId
      * @principle Public read, owner-only writes.
      */
+    // Allow public list access to vendors collection for development
+    match /vendors {
+      allow list: if true;
+    }
     match /vendors/{vendorId} {
       allow get: if true;
       allow list: if true;
 
-      allow create: if request.auth != null && request.auth.uid == vendorId;
-      allow update: if request.auth != null && isOwner(vendorId);
-      allow delete: if request.auth != null && isOwner(vendorId);
+      allow create: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+      allow delete: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
     }
 
     /**
@@ -49,12 +53,12 @@ service cloud.firestore {
      * @principle Owner-only access.
      */
     match /vendors/{vendorId}/listings/{listingId} {
-      allow get: if request.auth != null && resource.data.vendorId == vendorId;
-      allow list: if request.auth != null && get(/databases/$(database)/documents/vendors/$(vendorId)).data.vendorId == vendorId; // Allows listing of all listings for a vendor
+      allow get: if true;
+      allow list: if true;
 
-      allow create: if request.auth != null && request.auth.uid == vendorId && request.resource.data.vendorId == vendorId;
-      allow update: if request.auth != null && resource.data.vendorId == vendorId;
-      allow delete: if request.auth != null && resource.data.vendorId == vendorId;
+      allow create: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+      allow delete: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
     }
 
     /**
@@ -69,12 +73,13 @@ service cloud.firestore {
      * @principle Owner-only access.
      */
      match /vendors/{vendorId}/orders/{orderId} {
-        allow get: if request.auth != null && resource.data.vendorId == vendorId;
-        allow list: if request.auth != null && get(/databases/$(database)/documents/vendors/$(vendorId)).data.vendorId == vendorId; // Allow listing of all orders for a vendor
+        allow get: if isSignedIn() && (resource.data.vendorId == request.auth.uid || resource.data.buyerId == request.auth.uid || isAdmin());
+        // Listing all orders under a vendor is restricted to that vendor or admins.
+        allow list: if isSignedIn() && (vendorId == request.auth.uid || isAdmin());
 
-        allow create: if request.auth != null && isSignedIn();
-        allow update: if request.auth != null && resource.data.vendorId == vendorId;
-        allow delete: if request.auth != null && resource.data.vendorId == vendorId;
+        allow create: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+        allow update: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+        allow delete: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
      }
 
     /**
@@ -91,9 +96,9 @@ service cloud.firestore {
       allow get: if true;
       allow list: if true;
 
-      allow create: if request.auth != null && isSignedIn() && request.resource.data.residentId == request.auth.uid;
-      allow update: if request.auth != null && request.resource.data.residentId == request.auth.uid;
-      allow delete: if request.auth != null && request.resource.data.residentId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.residentId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.residentId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.residentId == request.auth.uid || isAdmin());
     }
 
     /**
@@ -104,12 +109,15 @@ service cloud.firestore {
      * @principle Owner-only access.
      */
     match /vendors/{vendorId}/refund_requests/{requestId} {
-      allow get: if request.auth != null && resource.data.vendorId == vendorId;
-      allow list: if request.auth != null && get(/databases/$(database)/documents/vendors/$(vendorId)).data.vendorId == vendorId; // Allows listing of all refund requests for a vendor
+      allow get: if isSignedIn() &&
+                  (request.auth.uid == vendorId ||
+                   resource.data.buyerId == request.auth.uid ||
+                   isAdmin());
+      allow list: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
 
-      allow create: if request.auth != null && isSignedIn() && request.resource.data.vendorId == vendorId;
-      allow update: if request.auth != null && resource.data.vendorId == vendorId;
-      allow delete: if request.auth != null && resource.data.vendorId == vendorId;
+      allow create: if isSignedIn() && request.resource.data.buyerId == request.auth.uid;
+      allow update: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
+      allow delete: if isSignedIn() && (request.auth.uid == vendorId || isAdmin());
     }
 
     /**
@@ -119,6 +127,14 @@ service cloud.firestore {
      * @allow create, update, delete: if false; // TODO: Add authorization
      * @principle Public read, restricted writes.
      */
+    // Top-level access control for forum threads collection
+    match /forumThreads {
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
     match /forumThreads/{threadId} {
       allow get: if true;
       allow list: if true;
@@ -140,9 +156,9 @@ service cloud.firestore {
       allow get: if true;
       allow list: if true;
 
-      allow create: if request.auth != null && isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if false; // TODO: Add authorization logic for updating forum posts.
-      allow delete: if false; // TODO: Add authorization logic for deleting forum posts.
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update: if request.auth != null && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow delete: if request.auth != null && (resource.data.authorId == request.auth.uid || isAdmin());
     }
 
     /**
@@ -206,7 +222,7 @@ service cloud.firestore {
         allow get: if true;
         allow list: if true;
 
-        allow create: if false; // TODO: Add authorization logic for creating agreements.
+        allow create: if request.auth != null && request.auth.token.admin == true;
         allow update: if false; // TODO: Add authorization logic for updating agreements.
         allow delete: if false; // TODO: Add authorization logic for deleting agreements.
     }
@@ -275,20 +291,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
     }
 
-    function isVendor(vendorId) {
-        return request.auth.uid == vendorId;
-    }
-
-    function isExistingVendor(vendorId) {
-        return exists(/databases/$(database)/documents/vendors/$(vendorId));
-    }
-
-    function isExistingReviewAuthor(reviewId, userId) {
-        return get(/databases/$(database)/documents/vendors/{vendorId}/reviews/$(reviewId)).data.residentId == userId;
-    }
   }
 }
