@@ -1,20 +1,12 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import serviceAccount from '@/../service-account.json';
+import { getAdminServices } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
 });
-
-if (!getApps().length) {
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
-}
-const auth = getAuth();
+const { auth } = getAdminServices();
 
 
 export async function POST(request: Request) {

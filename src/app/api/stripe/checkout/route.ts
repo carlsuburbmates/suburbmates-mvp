@@ -1,9 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import serviceAccount from '@/../service-account.json';
+import { getAdminServices } from '@/lib/firebase-admin';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-06-20',
@@ -12,13 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 // Set platform fee to 10% as per requirements
 const PLATFORM_FEE_PERCENT = 0.10;
 
-
-if (!getApps().length) {
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
-}
-const auth = getAuth();
+const { auth } = getAdminServices();
 
 
 export async function POST(request: Request) {
@@ -72,7 +64,7 @@ export async function POST(request: Request) {
             listingId: listingId,
             listingName: listing.listingName,
             customerId: userId,
-            customerName: userRecord.displayName || userRecord.email,
+            customerName: userRecord.displayName ?? userRecord.email ?? null,
         }
       },
        payment_method_options: {
@@ -80,7 +72,7 @@ export async function POST(request: Request) {
           request_three_d_secure: 'automatic',
         },
       },
-      customer_email: userRecord.email, // Pre-fill customer email
+      customer_email: userRecord.email!, // Pre-fill customer email
     });
 
     if (!session.url) {

@@ -1,13 +1,10 @@
 
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getFirestore, doc, updateDoc, collection, addDoc, query, where, getDocs, getDoc } from 'firebase-admin/firestore';
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { getAdminServices } from '@/lib/firebase-admin';
 import { headers } from 'next/headers';
 import { sendOrderConfirmationEmail, sendNewOrderNotification, sendStripeActionRequiredEmail, sendDisputeCreatedVendorNotification, sendDisputeCreatedBuyerNotification, sendDisputeClosedNotification } from '@/lib/email';
 import type { Order, Vendor, Dispute, DisputeSummary } from '@/lib/types';
-import serviceAccount from '@/../service-account.json';
 import { summarizeDispute } from '@/ai/flows/summarize-dispute';
 
 
@@ -17,47 +14,36 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-let app: App;
-if (!getApps().length) {
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
-} else {
-    app = getApps()[0];
-}
-
-const db = getFirestore(app);
-const auth = getAuth(app);
+const { db, auth } = getAdminServices();
 
 // Idempotency check
 const processedEvents = new Set();
 
 async function logWebhookEvent(event: Stripe.Event, status: 'received' | 'processed' | 'failed', error?: string) {
-    const logRef = collection(db, 'logs/webhooks/events');
-    const existingLogQuery = query(logRef, where('eventId', '==', event.id));
-    const snapshot = await getDocs(existingLogQuery);
-    
-    if (snapshot.empty) {
-        await addDoc(logRef, {
-            timestamp: new Date(event.created * 1000).toISOString(),
-            type: 'webhook',
-            source: 'stripe',
-            eventId: event.id,
-            status,
-            payload: event,
-            error: error || null,
-        });
-    } else {
-        await updateDoc(snapshot.docs[0].ref, {
-             status,
-             error: error || null,
-        });
-    }
+  const logRef = db.collection('logs/webhooks/events');
+  const existingLogQuery = logRef.where('eventId', '==', event.id);
+  const snapshot = await existingLogQuery.get();
+
+  if (snapshot.empty) {
+    await logRef.add({
+      timestamp: new Date(event.created * 1000).toISOString(),
+      type: 'webhook',
+      source: 'stripe',
+      eventId: event.id,
+      status,
+      payload: event,
+      error: error || null,
+    });
+  } else {
+    await snapshot.docs[0].ref.update({
+      status,
+      error: error || null,
+    });
+  }
 }
 
-
 export async function POST(request: Request) {
-  const sig = headers().get('stripe-signature');
+  const sig = (await headers()).get('stripe-signature');
   const body = await request.text();
 
   let event: Stripe.Event;
@@ -94,14 +80,14 @@ export async function POST(request: Request) {
 
           if (firebaseUid) {
             console.log(`Stripe account ${account.id} for Firebase user ${firebaseUid} was updated.`);
-            const vendorRef = doc(db, 'vendors', firebaseUid);
-            await updateDoc(vendorRef, {
+            const vendorRef = db.collection('vendors').doc(firebaseUid);
+            await vendorRef.update({
               stripeAccountId: account.id,
             });
             console.log(`Successfully updated vendor ${firebaseUid} with Stripe account ID.`);
             if (!account.charges_enabled) {
-                const vendorSnap = await getDoc(vendorRef);
-                if (vendorSnap.exists()) {
+                const vendorSnap = await vendorRef.get();
+                if (vendorSnap.exists) {
                   await sendStripeActionRequiredEmail(vendorSnap.data() as Vendor, 'Your Stripe account needs attention. Payouts may be disabled.');
                 }
             }
@@ -117,15 +103,15 @@ export async function POST(request: Request) {
                 console.log('Checkout session completed, creating order...');
                 
                 const customer = await auth.getUser(metadata.customerId);
-                const vendorRef = doc(db, 'vendors', metadata.vendorId);
-                const vendorSnap = await getDoc(vendorRef);
+                const vendorRef = db.collection('vendors').doc(metadata.vendorId);
+                const vendorSnap = await vendorRef.get();
 
-                if (!vendorSnap.exists()) {
+                if (!vendorSnap.exists) {
                   throw new Error(`Vendor ${metadata.vendorId} not found.`);
                 }
                 const vendor = vendorSnap.data() as Vendor;
-
-                const ordersCollectionRef = collection(db, `vendors/${metadata.vendorId}/orders`);
+ 
+                const ordersCollectionRef = db.collection(`vendors/${metadata.vendorId}/orders`);
                 
                 const orderData = {
                     listingName: metadata.listingName,
@@ -138,7 +124,7 @@ export async function POST(request: Request) {
                     paymentIntentId: paymentIntentId,
                 };
                 
-                await addDoc(ordersCollectionRef, orderData);
+                await ordersCollectionRef.add(orderData);
 
                 console.log(`Successfully created order for vendor ${metadata.vendorId}`);
 
@@ -165,13 +151,13 @@ export async function POST(request: Request) {
             const orderUpdated = await updateOrderStatusByPaymentIntent(chargePaymentIntentId, 'Refunded');
             
             if (orderUpdated) {
-                const refundReqQuery = query(collection(db, `vendors/${orderUpdated.vendorId}/refund_requests`), where('orderId', '==', orderUpdated.id));
-                const refundReqSnapshot = await getDocs(refundReqQuery);
+                const refundReqQuery = db.collection(`vendors/${orderUpdated.vendorId}/refund_requests`).where('orderId', '==', orderUpdated.id);
+                const refundReqSnapshot = await refundReqQuery.get();
                 if (!refundReqSnapshot.empty) {
                     const refundReqDoc = refundReqSnapshot.docs[0];
-                    await updateDoc(refundReqDoc.ref, {
+                    await refundReqDoc.ref.update({
                         state: 'RESOLVED',
-                        stripeRefundId: charge.refunds.data[0]?.id
+                        stripeRefundId: charge.refunds?.data?.[0]?.id,
                     });
                     console.log(`Updated refund request ${refundReqDoc.id} to RESOLVED.`);
                 }
@@ -201,6 +187,7 @@ export async function POST(request: Request) {
                     // Continue without AI summary if it fails
                 }
 
+                const dueBy = disputeCreated.evidence_details?.due_by;
                 const disputeData: Dispute = {
                     id: '', // Firestore will generate
                     stripeDisputeId: disputeCreated.id,
@@ -213,12 +200,12 @@ export async function POST(request: Request) {
                     reason: disputeCreated.reason,
                     status: disputeCreated.status,
                     createdAt: new Date(disputeCreated.created * 1000).toISOString(),
-                    evidenceDueBy: new Date(disputeCreated.evidence_details.due_by * 1000).toISOString(),
+                    evidenceDueBy: dueBy ? new Date(dueBy * 1000).toISOString() : '',
                     disputeSummary, // Add the AI summary here
                 };
                 
-                await addDoc(collection(db, 'disputes'), disputeData);
-                await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'DISPUTED' });
+                await db.collection('disputes').add(disputeData);
+                await db.collection(`vendors/${vendor.id}/orders`).doc(order.id).update({ status: 'DISPUTED' });
 
                 await sendDisputeCreatedVendorNotification(vendor, order, disputeData);
                 if (customer?.email) {
@@ -230,20 +217,20 @@ export async function POST(request: Request) {
         case 'charge.dispute.closed':
             const disputeClosed = event.data.object as Stripe.Dispute;
             console.log(`Dispute closed: ${disputeClosed.id}`);
-            const disputeQuery = query(collection(db, 'disputes'), where('stripeDisputeId', '==', disputeClosed.id));
-            const disputeSnapshot = await getDocs(disputeQuery);
+            const disputeQuery = db.collection('disputes').where('stripeDisputeId', '==', disputeClosed.id);
+            const disputeSnapshot = await disputeQuery.get();
 
             if (!disputeSnapshot.empty) {
                 const disputeDoc = disputeSnapshot.docs[0];
-                await updateDoc(disputeDoc.ref, { status: disputeClosed.status });
+                await disputeDoc.ref.update({ status: disputeClosed.status });
 
                 const dispute = disputeDoc.data() as Dispute;
                 const { order, vendor, customer } = await findOrderAndVendorByPaymentIntent(dispute.paymentIntentId);
                 
                 if (disputeClosed.status === 'lost') {
-                    await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'Refunded' });
+                    await db.collection(`vendors/${vendor.id}/orders`).doc(order.id).update({ status: 'Refunded' });
                 } else {
-                     await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status: 'Completed' });
+                     await db.collection(`vendors/${vendor.id}/orders`).doc(order.id).update({ status: 'Completed' });
                 }
                 if (customer?.email) {
                     await sendDisputeClosedNotification(vendor, customer.email, order, dispute);
@@ -275,36 +262,36 @@ export async function POST(request: Request) {
 }
 
 async function findOrderAndVendorByPaymentIntent(paymentIntentId: string): Promise<{ order: Order, vendor: Vendor, customer: any | null }> {
-    const q = query(collection(db, 'vendors'));
-    const vendorsSnapshot = await getDocs(q);
+  const vendorsSnapshot = await db.collection('vendors').get();
 
-    for (const vendorDoc of vendorsSnapshot.docs) {
-        const ordersRef = collection(db, `vendors/${vendorDoc.id}/orders`);
-        const orderQuery = query(ordersRef, where('paymentIntentId', '==', paymentIntentId));
-        const orderSnapshot = await getDocs(orderQuery);
+  for (const vendorDoc of vendorsSnapshot.docs) {
+    const orderSnapshot = await db
+      .collection(`vendors/${vendorDoc.id}/orders`)
+      .where('paymentIntentId', '==', paymentIntentId)
+      .get();
 
-        if (!orderSnapshot.empty) {
-            const orderDoc = orderSnapshot.docs[0];
-            const order = { id: orderDoc.id, ...orderDoc.data() } as Order;
-            const vendor = { id: vendorDoc.id, ...vendorDoc.data() } as Vendor;
-            
-            let customer = null;
-            try {
-                customer = await auth.getUser(order.buyerId);
-            } catch (e) {
-                console.error("Could not fetch customer for notification", e);
-            }
-            
-            return { order, vendor, customer };
-        }
+    if (!orderSnapshot.empty) {
+      const orderDoc = orderSnapshot.docs[0];
+      const order = { id: orderDoc.id, ...orderDoc.data() } as Order;
+      const vendor = { id: vendorDoc.id, ...vendorDoc.data() } as Vendor;
+
+      let customer = null;
+      try {
+        customer = await auth.getUser(order.buyerId);
+      } catch (e) {
+        console.error('Could not fetch customer for notification', e);
+      }
+
+      return { order, vendor, customer };
     }
-    throw new Error(`No order found for paymentIntentId: ${paymentIntentId}`);
+  }
+  throw new Error(`No order found for paymentIntentId: ${paymentIntentId}`);
 }
 
 async function updateOrderStatusByPaymentIntent(paymentIntentId: string, status: Order['status']): Promise<Order | null> {
     try {
         const { order, vendor } = await findOrderAndVendorByPaymentIntent(paymentIntentId);
-        await updateDoc(doc(db, `vendors/${vendor.id}/orders`, order.id), { status });
+        await db.collection(`vendors/${vendor.id}/orders`).doc(order.id).update({ status });
         console.log(`Found order ${order.id} for vendor ${vendor.id}. Marked as ${status}.`);
         return { ...order, status };
     } catch (error) {
