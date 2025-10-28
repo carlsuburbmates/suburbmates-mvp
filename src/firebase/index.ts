@@ -32,6 +32,22 @@ export function initializeFirebase() {
        if (process.env.NODE_ENV !== 'production') {
          // @ts-ignore
          self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+         const existingDebugToken = localStorage.getItem('firebase-app-check-debug-token');
+         if (!existingDebugToken) {
+           console.warn(
+             [
+               'Firebase App Check debug token not yet registered.',
+               'A fresh token will appear in this console after reload.',
+               'Copy it and add it under App Check → Debug tokens for project studio-4393409652-4c3c4.',
+             ].join(' ')
+           );
+         } else {
+           console.info(
+             'Firebase App Check debug token in use:',
+             existingDebugToken,
+             '(ensure it is registered in App Check → Debug tokens).'
+           );
+         }
        }
        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
        if (siteKey) {
