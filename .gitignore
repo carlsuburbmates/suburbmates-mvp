@@ -12,6 +12,12 @@
 /.next/
 /out/
 
+# local next.js cache variants
+.next-*/
+.next-3000/
+.next-3001/
+.next-3002/
+
 # production
 /build
 
@@ -19,10 +25,25 @@
 .DS_Store
 *.pem
 
+# IDE/tooling state
+.idx/
+.mcp-env
+.modified
+.vscode/
+
+# Genkit local artifacts
+.genkit/runtimes/
+.genkit/servers/
+.genkit/traces/
+.genkit/traces_idx/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+database-debug.log
+firestore-debug.log
+*.log
 
 # local env files
 .env*.local
@@ -41,3 +62,11 @@ testsprite_tests/
 
 service-account.json
 node_modules
+
+# Test output and reports
+playwright-report/
+test-results/
+
+# Local data exports
+emulator-data/
+firebase-exports/
