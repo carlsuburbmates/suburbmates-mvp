@@ -1,7 +1,7 @@
 
 import { Resend } from 'resend';
 import type { Order, Vendor, RefundRequest, Dispute } from './types';
-import { getFirestore, doc, addDoc, collection, serverTimestamp } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { v4 as uuidv4 } from 'uuid';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -10,8 +10,8 @@ const db = getFirestore();
 
 async function logEmail(subject: string, to: string, status: 'sent' | 'failed', error?: string) {
     const emailLogId = uuidv4();
-    const logRef = collection(db, 'logs/emails/sends');
-    await addDoc(logRef, {
+    const logRef = db.collection('logs/emails/sends');
+    await logRef.add({
         timestamp: new Date().toISOString(),
         type: 'email',
         source: 'resend',
