@@ -130,7 +130,9 @@ export default function RefundRequestPage() {
         const vendorSnap = await getDoc(vendorRef);
         if (vendorSnap.exists()) {
             const vendor = vendorSnap.data() as Vendor;
-            await sendNewRefundRequestNotification(vendor, order, {id: newRequestRef.id, ...refundRequestData});
+            if (newRequestRef) {
+              await sendNewRefundRequestNotification(vendor, order, {id: newRequestRef.id, ...refundRequestData});
+            }
         }
         
         toast({

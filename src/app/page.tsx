@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+// removed framer-motion to keep this server component SSR-friendly; using CSS transitions for subtle motion
 import { HowItWorksTabs } from "./how-it-works-tabs";
 
 const heroImage = PlaceHolderImages.find((p) => p.id === "hero-community");
@@ -29,7 +30,7 @@ const featureImage2 = PlaceHolderImages.find(
 
 const features = [
   {
-    icon: <Store className="h-8 w-8 text-primary" />,
+    icon: <Store className="h-5 w-5" />,
     title: "Verified Vendor Marketplace",
     description:
       "Discover trusted local businesses, from plumbers to bakers, all verified for your peace of mind.",
@@ -37,7 +38,7 @@ const features = [
     linkText: "Browse Vendors",
   },
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
+    icon: <Users className="h-5 w-5" />,
     title: "Civic Hub Forums",
     description:
       "Join community discussions, share ideas, and stay informed about local events and initiatives.",
@@ -45,7 +46,7 @@ const features = [
     linkText: "Join Discussions",
   },
   {
-    icon: <ShieldCheck className="h-8 w-8 text-primary" />,
+    icon: <ShieldCheck className="h-5 w-5" />,
     title: "Privacy & Accessibility",
     description:
       "Built on a foundation of trust, with robust privacy controls and adherence to WCAG 2.1 AA standards.",
@@ -53,7 +54,7 @@ const features = [
     linkText: "Learn More",
   },
   {
-    icon: <Sparkles className="h-8 w-8 text-primary" />,
+    icon: <Sparkles className="h-5 w-5" />,
     title: "AI-Powered Summaries",
     description:
       "Quickly get the gist of long discussions and event details with our helpful AI summarization tool.",
@@ -65,13 +66,13 @@ const features = [
 export default function Home() {
   return (
     <div className="flex flex-col">
-      <section className="relative py-20 md:py-32 bg-card">
-        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+      <section className="relative py-16 md:py-24 bg-background">
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           <div className="flex flex-col gap-6 text-center md:text-left items-center md:items-start">
-            <h1 className="text-4xl md:text-6xl font-bold font-headline tracking-tight">
+            <h1 className="text-[clamp(1.5rem,5vw,3rem)] font-bold font-headline tracking-tight leading-tight">
               Connecting Neighbors, Supporting Locals.
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-prose">
+            <p className="text-base md:text-lg text-muted-foreground max-w-prose">
               Suburbmates is your trusted platform for
               discovering local vendors and engaging in community life. Welcome
               to a stronger, more connected neighborhood.
@@ -82,12 +83,12 @@ export default function Home() {
                   Find Local Vendors <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="secondary">
+              <Button asChild size="lg" variant="outline">
                 <Link href="/forums">Explore Community Hub</Link>
               </Button>
             </div>
           </div>
-          <div className="relative h-64 md:h-96 rounded-xl overflow-hidden shadow-2xl">
+          <div className="relative h-64 md:h-96 rounded-xl overflow-hidden shadow-md">
             {heroImage && (
               <Image
                 src={heroImage.imageUrl}
@@ -104,14 +105,14 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24">
+      <section className="py-16 md:py-20 bg-muted">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">
+            <h2 className="text-[clamp(1.375rem,3vw,2.25rem)] font-bold font-headline leading-tight">
               How It Works
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-              Simple steps to get started, whether you're a resident or a local
+            <p className="mt-3 text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
+              Simple steps to get started, whether you&apos;re a resident or a local
               business.
             </p>
           </div>
@@ -119,48 +120,49 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24 bg-card">
+      <section className="py-16 md:py-20 bg-accent">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold font-headline">
+          <h2 className="text-[clamp(1.375rem,3vw,2.25rem)] font-bold font-headline leading-tight">
             Everything Your Suburb Needs
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
+          <p className="mt-3 text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
             We provide the tools to build a vibrant, safe, and supportive local
             community.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             {features.map((feature) => (
-              <Card
-                key={feature.title}
-                className="flex flex-col bg-background/60 backdrop-blur-sm transition-all hover:shadow-lg hover:-translate-y-1"
-              >
-                <CardHeader className="flex flex-col items-center text-center gap-4">
-                  {feature.icon}
-                  <CardTitle className="font-headline">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col text-center">
-                  <p className="text-muted-foreground flex-grow">
-                    {feature.description}
-                  </p>
-                  <Button asChild variant="link" className="mt-4">
-                    <Link href={feature.link}>
-                      {feature.linkText}{" "}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+              <div key={feature.title} className="transition-transform will-change-transform hover:-translate-y-0.5">
+                <Card className="flex flex-col bg-card/70 backdrop-blur-sm border hover:bg-card/80 transition-colors">
+                  <CardHeader className="flex flex-col items-center text-center gap-2 p-4">
+                    <div className="h-10 w-10 rounded-md bg-primary/10 text-primary ring-1 ring-primary/20 flex items-center justify-center">
+                      {feature.icon}
+                    </div>
+                    <CardTitle className="font-headline text-base tracking-tight">
+                      {feature.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex-grow flex flex-col text-center p-4">
+                    <p className="text-muted-foreground flex-grow text-sm">
+                      {feature.description}
+                    </p>
+                    <Button asChild variant="link" className="mt-3">
+                      <Link href={feature.link}>
+                        {feature.linkText}{" "}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 md:py-24">
-        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           {featureImage1 && (
-            <div className="relative h-80 md:h-[450px] rounded-xl overflow-hidden shadow-xl order-last md:order-first">
+            <div className="relative h-80 md:h-[420px] rounded-xl overflow-hidden shadow-md order-last md:order-first">
               <Image
                 src={featureImage1.imageUrl}
                 alt={featureImage1.description}
@@ -172,10 +174,10 @@ export default function Home() {
             </div>
           )}
           <div className="flex flex-col gap-4 text-center md:text-left">
-            <h3 className="text-3xl md:text-4xl font-bold font-headline">
+            <h3 className="text-[clamp(1.25rem,2.5vw,2rem)] font-bold font-headline leading-tight">
               A Marketplace You Can Trust
             </h3>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               Every vendor on Suburbmates undergoes ABN
               validation and secure onboarding. Find reliable local services
               with transparent reviews and easy discovery through our map-based
@@ -190,13 +192,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24 bg-card">
-        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+      <section className="py-16 md:py-20 bg-card">
+        <div className="container mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           <div className="flex flex-col gap-4 text-center md:text-left">
-            <h3 className="text-3xl md:text-4xl font-bold font-headline">
+            <h3 className="text-[clamp(1.25rem,2.5vw,2rem)] font-bold font-headline leading-tight">
               The Heart of Your Community
             </h3>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               From council announcements to neighborhood watch updates and local
               workshops, our Civic Hub keeps you in the loop. Participate in
               discussions that matter to you.
@@ -208,7 +210,7 @@ export default function Home() {
             </div>
           </div>
           {featureImage2 && (
-            <div className="relative h-80 md:h-[450px] rounded-xl overflow-hidden shadow-xl">
+            <div className="relative h-80 md:h-[420px] rounded-xl overflow-hidden shadow-md">
               <Image
                 src={featureImage2.imageUrl}
                 alt={featureImage2.description}

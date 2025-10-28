@@ -15,7 +15,7 @@ export function PageHeader({ title, description, className }: PageHeaderProps) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight font-headline md:text-4xl">
+        <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] font-bold tracking-tight font-headline leading-tight">
           {title}
         </h1>
         {description && (

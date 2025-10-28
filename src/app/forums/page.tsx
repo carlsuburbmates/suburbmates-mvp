@@ -33,9 +33,13 @@ import type { CommunityEvent, ForumThread } from "@/lib/types";
 import { collection } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ForumsPage() {
   const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const threadsQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, "forumThreads") : null),
@@ -53,6 +57,14 @@ export default function ForumsPage() {
   
   const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
 
+  // Sync tabs with ?tab=discussions|events
+  const initialTab = (searchParams.get('tab') === 'events') ? 'events' : 'discussions';
+  const [tab, setTab] = useState<string>(initialTab);
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    setTab(t === 'events' ? 'events' : 'discussions');
+  }, [searchParams]);
+
   return (
     <div>
       <PageHeader
@@ -60,7 +72,12 @@ export default function ForumsPage() {
         description="Engage in discussions, stay updated on local events, and connect with your neighbors."
       />
       <div className="container mx-auto px-4 pb-16">
-        <Tabs defaultValue="discussions">
+        <Tabs value={tab} onValueChange={(v) => {
+          setTab(v);
+          const sp = new URLSearchParams(Array.from(searchParams.entries()));
+          sp.set('tab', v);
+          router.replace(`/forums?${sp.toString()}`);
+        }}>
           <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
             <TabsTrigger value="discussions">
               <MessageSquare className="w-4 h-4 mr-2" /> Discussions
@@ -72,7 +89,7 @@ export default function ForumsPage() {
           <TabsContent value="discussions" className="mt-6">
             <div className="grid gap-6">
               {areThreadsLoading && Array.from({length: 2}).map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className="rounded-lg border bg-card/70 backdrop-blur-sm">
                   <CardHeader>
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-1/2 mt-2" />
@@ -83,12 +100,12 @@ export default function ForumsPage() {
                 </Card>
               ))}
               {forumThreads?.map((thread) => (
-                  <Card key={thread.id}>
+                  <Card key={thread.id} className="rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5">
                     <CardHeader>
                       <CardTitle className="font-headline text-xl">
                         <Link
                           href={`/forums/${thread.id}`}
-                          className="hover:text-primary transition-colors"
+                          className="hover:text-primary transition-colors hover:underline underline-offset-4"
                         >
                           {thread.title}
                         </Link>
@@ -124,7 +141,7 @@ export default function ForumsPage() {
                 )
               )}
               {!areThreadsLoading && forumThreads?.length === 0 && (
-                <Card className="text-center p-8">
+                <Card className="text-center p-8 rounded-lg border bg-card/70 backdrop-blur-sm">
                   <CardTitle>No Discussions Yet</CardTitle>
                   <CardDescription>
                     Be the first to start a conversation in the community.
@@ -136,7 +153,7 @@ export default function ForumsPage() {
           <TabsContent value="events" className="mt-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {areEventsLoading && Array.from({length: 3}).map((_, i) =>(
-                <Card key={i}>
+                <Card key={i} className="rounded-lg border bg-card/70 backdrop-blur-sm">
                   <Skeleton className="h-56 w-full rounded-t-lg" />
                   <CardHeader>
                     <Skeleton className="h-6 w-3/4" />
@@ -150,7 +167,7 @@ export default function ForumsPage() {
               {communityEvents?.map((event) => {
                 const eventImage = PlaceHolderImages.find(p => p.id === event.imageId);
                 return (
-                  <Card key={event.id} className="flex flex-col">
+                  <Card key={event.id} className="flex flex-col rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5">
                     {eventImage && (
                       <div className="relative h-56 w-full">
                          <Image
@@ -184,7 +201,7 @@ export default function ForumsPage() {
                 )
               })}
                {!areEventsLoading && communityEvents?.length === 0 && (
-                <Card className="md:col-span-2 lg:col-span-3 text-center p-8">
+                <Card className="md:col-span-2 lg:col-span-3 text-center p-8 rounded-lg border bg-card/70 backdrop-blur-sm">
                   <CardTitle>No Upcoming Events</CardTitle>
                   <CardDescription>
                     Check back soon for local events and workshops.

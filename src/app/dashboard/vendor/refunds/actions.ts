@@ -3,7 +3,7 @@
 
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, doc, updateDoc, getDoc } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -28,23 +28,12 @@ if (!getApps().length) {
 const auth = getAuth();
 const db = getFirestore();
 
-async function verifyVendor(vendorId: string): Promise<void> {
-  const authorization = headers().get('Authorization');
-  if (!authorization?.startsWith('Bearer ')) {
-    throw new Error('Unauthorized');
-  }
-  const idToken = authorization.split('Bearer ')[1];
-  const decodedToken = await auth.verifyIdToken(idToken);
-
-  if (decodedToken.uid !== vendorId) {
-    throw new Error('Caller is not the authorized vendor for this action.');
-  }
-}
+// Removed unused verifyVendor that referenced headers()
 
 async function getOrder(vendorId: string, orderId: string): Promise<Order> {
-    const orderRef = doc(db, `vendors/${vendorId}/orders`, orderId);
-    const orderSnap = await getDoc(orderRef);
-    if (!orderSnap.exists()) {
+    const orderRef = db.collection(`vendors/${vendorId}/orders`).doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) {
         throw new Error("Order not found.");
     }
     return { id: orderSnap.id, ...orderSnap.data() } as Order;
@@ -54,16 +43,16 @@ async function getOrder(vendorId: string, orderId: string): Promise<Order> {
 export async function approveRefund(requestId: string, vendorId: string, idToken: string) {
     // This is a workaround as headers() is not available in non-route files.
     // Ideally, we'd have a better way to pass auth to server actions.
-     const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await auth.verifyIdToken(idToken);
     if (decodedToken.uid !== vendorId) {
         return { success: false, error: 'Unauthorized vendor' };
     }
 
-    const requestRef = doc(db, `vendors/${vendorId}/refund_requests`, requestId);
+    const requestRef = db.collection(`vendors/${vendorId}/refund_requests`).doc(requestId);
 
     try {
-        const requestSnap = await getDoc(requestRef);
-        if (!requestSnap.exists()) throw new Error('Refund request not found.');
+        const requestSnap = await requestRef.get();
+        if (!requestSnap.exists) throw new Error('Refund request not found.');
 
         const request = requestSnap.data() as RefundRequest;
         const order = await getOrder(vendorId, request.orderId);
@@ -85,16 +74,16 @@ export async function approveRefund(requestId: string, vendorId: string, idToken
             decisionBy: vendorId,
             decisionAt: new Date().toISOString(),
         }
-        await updateDoc(requestRef, updatedRequestData);
+        await requestRef.update(updatedRequestData);
 
         // This will be picked up by the webhook to update order status,
         // but we can also update it here for immediate UI feedback if needed.
-        const orderRef = doc(db, `vendors/${vendorId}/orders`, request.orderId);
-        await updateDoc(orderRef, { status: 'Refunded' });
+        const orderRef = db.collection(`vendors/${vendorId}/orders`).doc(request.orderId);
+        await orderRef.update({ status: 'Refunded' });
         
         // 3. Notify customer
         const buyer = await auth.getUser(request.buyerId);
-        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
+        const vendorSnap = await db.collection('vendors').doc(vendorId).get();
         const vendor = vendorSnap.data() as Vendor;
         if (buyer.email) {
             await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, ...updatedRequestData }, vendor);
@@ -111,15 +100,15 @@ export async function approveRefund(requestId: string, vendorId: string, idToken
 
 
 export async function rejectRefund(requestId: string, vendorId: string, reason: string, idToken: string) {
-     const decodedToken = await auth.verifyIdToken(idToken);
+    const decodedToken = await auth.verifyIdToken(idToken);
     if (decodedToken.uid !== vendorId) {
         return { success: false, error: 'Unauthorized vendor' };
     }
-    const requestRef = doc(db, `vendors/${vendorId}/refund_requests`, requestId);
+    const requestRef = db.collection(`vendors/${vendorId}/refund_requests`).doc(requestId);
 
-     try {
-        const requestSnap = await getDoc(requestRef);
-        if (!requestSnap.exists()) throw new Error('Refund request not found.');
+    try {
+        const requestSnap = await requestRef.get();
+        if (!requestSnap.exists) throw new Error('Refund request not found.');
 
         const request = requestSnap.data() as RefundRequest;
         if (request.state !== 'OPEN') {
@@ -133,21 +122,20 @@ export async function rejectRefund(requestId: string, vendorId: string, reason: 
             decisionBy: vendorId,
             decisionAt: new Date().toISOString(),
         }
-        await updateDoc(requestRef, updatedRequestData);
+        await requestRef.update(updatedRequestData);
         
         // 2. Notify customer
         const order = await getOrder(vendorId, request.orderId);
         const buyer = await auth.getUser(request.buyerId);
-        const vendorSnap = await getDoc(doc(db, 'vendors', vendorId));
+        const vendorSnap = await db.collection('vendors').doc(vendorId).get();
         const vendor = vendorSnap.data() as Vendor;
         if (buyer.email) {
-             await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, ...updatedRequestData }, vendor);
+            await sendRefundStatusUpdateEmail(buyer.email, order, { ...request, ...updatedRequestData }, vendor);
         }
-
 
         revalidatePath(`/dashboard/vendor/refunds`);
         return { success: true };
-     } catch (error: any) {
+    } catch (error: any) {
         console.error('Error rejecting refund:', error);
         return { success: false, error: error.message };
     }

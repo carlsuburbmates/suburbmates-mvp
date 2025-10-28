@@ -97,7 +97,7 @@ export function DashboardSidebar({ isBusiness, isMarketplaceVendor }: { isBusine
                   variant: pathname === item.href ? 'default' : 'ghost',
                   size: 'default',
                 }),
-                'justify-start',
+                'justify-start w-full',
                 pathname === item.href && item.title === 'Disputes' ? 'bg-destructive/80 hover:bg-destructive text-destructive-foreground' : '',
                 pathname === item.href && item.title === 'Upgrade' ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary font-bold' : ''
               )}
@@ -119,9 +119,9 @@ export function DashboardSidebar({ isBusiness, isMarketplaceVendor }: { isBusine
                     className={cn(
                         buttonVariants({
                         variant: pathname.startsWith(item.href) ? 'secondary' : 'ghost',
-                        size: 'sm',
+                        size: 'default',
                         }),
-                        'justify-start'
+                        'justify-start w-full'
                     )}
                     >
                     {item.icon}

@@ -144,12 +144,13 @@ export default function VendorProfilePage({
       if (error) throw new Error(error);
       if (url) router.push(url);
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Purchase Error:', e);
+      const message = e instanceof Error ? e.message : 'Could not initiate checkout. Please try again.';
       toast({
         variant: 'destructive',
         title: 'Checkout Failed',
-        description: e.message || 'Could not initiate checkout. Please try again.',
+        description: message,
       });
       setIsRedirecting(null);
     }
@@ -226,12 +227,13 @@ export default function VendorProfilePage({
             title: "Logged In",
             description: "Welcome! You can now leave a review.",
         });
-    } catch (error: any) {
-        console.error("Social login error", error);
+    } catch (err: unknown) {
+        console.error("Social login error", err);
+        const code = typeof err === 'object' && err !== null && 'code' in err ? (err as { code?: string }).code : undefined;
         toast({
             variant: "destructive",
             title: "Login Failed",
-            description: error.code === 'auth/account-exists-with-different-credential' 
+            description: code === 'auth/account-exists-with-different-credential' 
                 ? 'An account already exists with this email address. Please sign in with the original method.'
                 : 'Could not log you in. Please try again.',
         });
@@ -349,12 +351,12 @@ export default function VendorProfilePage({
 
         {vendor.paymentsEnabled && (
             <>
-                <h2 className="text-2xl font-bold font-headline mb-6">Our Offerings</h2>
+                  <h2 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight mb-6">Our Offerings</h2>
                 <Alert className="mb-6">
                     <Info className="h-4 w-4" />
                     <AlertTitle>Heads up!</AlertTitle>
                     <AlertDescription>
-                        All purchases are subject to the platform's <Link href="/policy" className="underline font-semibold">Refund & Dispute Policy</Link>.
+                        All purchases are subject to the platform&apos;s <Link href="/policy" className="underline font-semibold">Refund &amp; Dispute Policy</Link>.
                     </AlertDescription>
                 </Alert>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -409,7 +411,7 @@ export default function VendorProfilePage({
 
         <div className="grid md:grid-cols-3 gap-8">
             <div className="md:col-span-1">
-                 <h2 className="text-2xl font-bold font-headline mb-2">Customer Reviews</h2>
+                  <h2 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight mb-2">Customer Reviews</h2>
                  <p className="text-muted-foreground">See what others are saying about {vendor.businessName}.</p>
             </div>
             <div className="md:col-span-2 space-y-8">

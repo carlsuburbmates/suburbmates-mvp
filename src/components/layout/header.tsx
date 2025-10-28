@@ -28,7 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 const navItems: NavItem[] = [
   { title: 'Home', href: '/' },
   { title: 'Civic Hub', href: '/forums' },
-  { title: 'Business Directory', href: '/vendors' },
+  { title: 'Marketplace', href: '/vendors' },
 ];
 
 export function Header() {
@@ -71,22 +71,22 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
+    <header className="sticky top-0 z-50 w-full bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+      <div className="container mx-auto px-4 flex h-14 items-center justify-between">
         <div className="mr-8 flex items-center">
           <Logo className="h-6 w-6 text-primary" />
-          <Link href="/" className="ml-2 text-lg font-bold font-headline">
+          <Link href="/" className="ml-2 text-xl font-bold font-headline tracking-tight">
             Suburbmates
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm">
+        <nav className="hidden md:flex items-center gap-6 text-sm tracking-tight">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'transition-colors hover:text-foreground/80',
+                'pb-1 transition-colors hover:text-foreground hover:underline underline-offset-4',
                 pathname === item.href
                   ? 'text-foreground font-semibold'
                   : 'text-foreground/60'
@@ -99,7 +99,7 @@ export function Header() {
              <Link
               href="/admin"
               className={cn(
-                'transition-colors hover:text-foreground/80 flex items-center gap-1',
+                'pb-1 transition-colors hover:text-foreground hover:underline underline-offset-4 flex items-center gap-1',
                 pathname?.startsWith('/admin')
                   ? 'text-foreground font-semibold'
                   : 'text-foreground/60'
@@ -154,10 +154,10 @@ export function Header() {
 
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                 <Button asChild variant="ghost">
+                 <Button asChild variant="ghost" className="text-base">
                     <Link href="/login">Sign in</Link>
                 </Button>
-                <Button asChild>
+                <Button asChild className="text-base">
                     <Link href="/signup">Sign up</Link>
                 </Button>
               </div>
@@ -170,23 +170,23 @@ export function Header() {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0">
+            <SheetContent side="left" className="p-0 z-[60]">
               <div className="flex flex-col h-full">
                 <div className="p-6 mb-2 border-b">
                     <Link href="/" className="flex items-center">
                         <Logo className="h-6 w-6 text-primary" />
-                        <span className="ml-2 text-lg font-bold font-headline">
+                        <span className="ml-2 text-2xl font-bold font-headline tracking-tight">
                             Suburbmates
                         </span>
                     </Link>
                 </div>
-                <nav className="flex flex-col gap-2 p-6">
+                <nav className="flex flex-col gap-3 p-6">
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'text-lg py-2',
+                        'text-sm tracking-tight h-12 px-2 flex items-center',
                         pathname === item.href
                           ? 'text-primary font-bold'
                           : 'text-muted-foreground'
@@ -199,7 +199,7 @@ export function Header() {
                     <Link
                       href="/admin"
                       className={cn(
-                        'text-lg flex items-center gap-2 py-2',
+                        'text-sm uppercase tracking-tight flex items-center gap-2 h-12 px-2',
                         pathname?.startsWith('/admin')
                           ? 'text-primary font-bold'
                           : 'text-muted-foreground'
@@ -218,10 +218,10 @@ export function Header() {
                       </Button>
                   ) : (
                     <>
-                      <Button asChild>
+                      <Button asChild className="text-base">
                         <Link href="/login">Sign in</Link>
                       </Button>
-                      <Button asChild variant="secondary">
+                      <Button asChild variant="outline" className="text-base">
                         <Link href="/signup">Sign up</Link>
                       </Button>
                     </>

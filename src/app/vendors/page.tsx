@@ -34,6 +34,9 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { naturalLanguageSearch } from "@/ai/flows/natural-language-search";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { fadeInUp, listStagger, scaleIn } from "@/lib/animations";
+import { VendorCard } from "@/components/vendor-card";
 
 
 export default function VendorsPage() {
@@ -148,25 +151,27 @@ export default function VendorsPage() {
         </div>
 
        {activeTab === 'map' && (
-          <Card className="h-[600px] w-full relative">
-            <VendorMap vendors={vendors || []}/>
-            <div className="absolute top-4 left-4 bg-background p-3 rounded-lg shadow-lg border">
-                <div className="flex items-center space-x-2">
-                    <Switch
-                        id="marketplace-filter-map"
-                        checked={showMarketplaceOnly}
-                        onCheckedChange={setShowMarketplaceOnly}
-                    />
-                    <Label htmlFor="marketplace-filter-map">Show Marketplace Vendors Only</Label>
-                </div>
-            </div>
-          </Card>
+          <motion.div initial="hidden" animate="show" variants={scaleIn}>
+            <Card className="h-[600px] w-full relative">
+              <VendorMap vendors={vendors || []}/>
+              <div className="absolute top-4 left-4 bg-background p-3 rounded-lg shadow-lg border">
+                  <div className="flex items-center space-x-2">
+                      <Switch
+                          id="marketplace-filter-map"
+                          checked={showMarketplaceOnly}
+                          onCheckedChange={setShowMarketplaceOnly}
+                      />
+                      <Label htmlFor="marketplace-filter-map">Show Marketplace Vendors Only</Label>
+                  </div>
+              </div>
+            </Card>
+          </motion.div>
        )}
 
        {activeTab === 'list' && (
           <div className="grid lg:grid-cols-4 gap-8">
             <aside className="lg:col-span-1">
-              <Card className="sticky top-24">
+              <Card className="sticky top-24 rounded-lg border bg-card/70 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>Filter Businesses</CardTitle>
                 </CardHeader>
@@ -234,7 +239,7 @@ export default function VendorsPage() {
               </Card>
             </aside>
 
-            <main className="lg:col-span-3 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <main className="lg:col-span-3 grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {isLoading &&
                 Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
@@ -249,49 +254,21 @@ export default function VendorsPage() {
                   </Card>
                 ))}
 
+              <motion.div initial="show" animate="show" variants={listStagger(0.08)} className="contents">
               {vendors?.map((vendor) => {
                 const vendorImage = PlaceHolderImages.find(p => p.id === 'vendor-cafe');
                 return (
-                <Card key={vendor.id} className="flex flex-col">
-                  <CardHeader className="p-0">
-                    <div className="relative h-48 w-full">
-                      {vendorImage && (
-                        <Image
-                          src={vendorImage.imageUrl}
-                          alt={vendor.businessName}
-                          fill
-                          className="object-cover rounded-t-lg"
-                          data-ai-hint={vendorImage.imageHint}
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        />
-                      )}
-                       {vendor.abnVerified && (
-                        <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                          <ShieldCheck className="h-3 w-3" />
-                          ABN Verified
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 flex-grow flex flex-col">
-                      <h3 className="font-bold font-headline text-lg">{vendor.businessName}</h3>
-                      <p className="text-sm text-muted-foreground flex-grow line-clamp-2">{vendor.description || ''}</p>
-                      <div className="flex items-center justify-between mt-4 text-sm">
-                          <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                              <span className="font-bold">{vendor.averageRating ? vendor.averageRating.toFixed(1) : 'N/A'}</span>
-                              <span className="text-muted-foreground">({vendor.reviewCount || 0})</span>
-                          </div>
-                          <Button variant="secondary" size="sm" asChild>
-                              <Link href={`/vendors/${vendor.id}`}>View Profile</Link>
-                          </Button>
-                      </div>
-                  </CardContent>
-                </Card>
+                <VendorCard
+                  key={vendor.id}
+                  vendor={vendor}
+                  imageUrl={vendorImage?.imageUrl || "/placeholder.svg"}
+                  imageAlt={vendor.businessName}
+                />
               )})}
+              </motion.div>
               
               {!isLoading && vendors?.length === 0 && (
-                  <Card className="md:col-span-2 xl:col-span-3 text-center p-8">
+                  <Card className="col-span-2 md:col-span-2 xl:col-span-3 text-center p-8">
                     <CardTitle>No Businesses Found</CardTitle>
                     <CardDescription>
                       Try adjusting your filters or check back soon.

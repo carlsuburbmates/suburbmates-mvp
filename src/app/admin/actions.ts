@@ -3,7 +3,7 @@
 
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, doc, updateDoc } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -21,7 +21,8 @@ const auth = getAuth();
 const db = getFirestore();
 
 async function verifyAdmin(): Promise<void> {
-  const authorization = headers().get('Authorization');
+  const hdrs = await headers();
+  const authorization = hdrs.get('Authorization');
   if (!authorization?.startsWith('Bearer ')) {
     throw new Error('Unauthorized');
   }
@@ -37,11 +38,11 @@ export async function toggleVendorPayments(vendorId: string, currentState: boole
   try {
     await verifyAdmin();
 
-    const vendorRef = doc(db, 'vendors', vendorId);
+    const vendorRef = db.collection('vendors').doc(vendorId);
     const newState = !currentState;
 
     // 1. Update the Firestore document
-    await updateDoc(vendorRef, {
+    await vendorRef.update({
       paymentsEnabled: newState,
     });
 

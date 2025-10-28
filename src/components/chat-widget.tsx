@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -8,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { supportChat } from '@/ai/flows/support-chat';
+
+// Removed direct import of server flow to avoid client/server compilation issues
+// import { supportChat } from '@/ai/flows/support-chat';
 
 type Message = {
     id: string;
@@ -29,7 +30,6 @@ export function ChatWidget() {
             scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
         }
     }, [messages]);
-    
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputValue.trim()) return;
@@ -44,10 +44,15 @@ export function ChatWidget() {
         setIsLoading(true);
 
         try {
-            const result = await supportChat({ query: userMessage.text });
+            const res = await fetch('/api/support-chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: userMessage.text })
+            });
+            const data = await res.json();
             const botMessage: Message = {
                 id: `bot-${Date.now()}`,
-                text: result.response,
+                text: data.response ?? 'No response',
                 sender: 'bot',
             };
             setMessages(prev => [...prev, botMessage]);
@@ -77,7 +82,6 @@ export function ChatWidget() {
                     {isOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
                 </Button>
             </div>
-
             {isOpen && (
                 <div className="fixed bottom-24 right-6 z-50 w-full max-w-sm">
                     <Card className="flex flex-col h-[60vh] shadow-2xl">

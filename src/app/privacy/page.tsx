@@ -78,9 +78,29 @@ export default function PrivacyPage() {
              <div className="space-y-2">
               <h3 className="font-semibold text-foreground">
                 5. Data Deletion
+                5. Your Data Protection Rights
               </h3>
               <p>
                 You have the right to request the deletion of your personal data. If you are a registered vendor, you can delete your entire profile and associated account from the "Edit Profile" page in your vendor dashboard. For all other users, you can request data deletion by sending an email to contact@suburbmates.example.com with the subject line "Data Deletion Request". We will process your request within 30 days.
+                Depending on your location, you may have the following rights
+                regarding your personal information: the right to access, the
+                right to rectification, the right to erasure, the right to
+                restrict processing, the right to object to processing, and the
+                right to data portability. To exercise these rights, please
+                contact us.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">
+                6. Data Retention and Deletion
+              </h3>
+              <p>
+                We retain your personal information for as long as necessary to
+                provide our services and fulfill the transactions you have
+                requested, or for other essential purposes such as complying
+                with our legal obligations, resolving disputes, and enforcing
+                our agreements. You may request the deletion of your account and
+                associated data by contacting us.
               </p>
             </div>
           </CardContent>

@@ -92,7 +92,7 @@ export default function ForumThreadPage({ params }: { params: { id: string } }) 
             </Badge>
           ))}
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold font-headline">
+        <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] font-bold font-headline leading-tight tracking-tight">
           {thread.title}
         </h1>
         <div className="flex items-center gap-2 text-muted-foreground">

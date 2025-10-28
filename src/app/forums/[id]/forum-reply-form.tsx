@@ -108,7 +108,7 @@ export function ForumReplyForm({ threadId }: ForumReplyFormProps) {
   }
 
 
-  async function onSubmit(values: z.infer<typeof replyFormSchema>>) {
+  async function onSubmit(values: z.infer<typeof replyFormSchema>) {
     if (!user || !firestore) {
       toast({
         variant: 'destructive',
