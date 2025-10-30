@@ -1,37 +1,37 @@
-'use client';
-import { getAuth, type User } from 'firebase/auth';
+'use client'
+import { getAuth, type User } from 'firebase/auth'
 
 type SecurityRuleContext = {
-  path: string;
-  operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
-  requestResourceData?: any;
-};
+  path: string
+  operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write'
+  requestResourceData?: Record<string, unknown>
+}
 
 interface FirebaseAuthToken {
-  name: string | null;
-  email: string | null;
-  email_verified: boolean;
-  phone_number: string | null;
-  sub: string;
+  name: string | null
+  email: string | null
+  email_verified: boolean
+  phone_number: string | null
+  sub: string
   firebase: {
-    identities: Record<string, string[]>;
-    sign_in_provider: string;
-    tenant: string | null;
-  };
+    identities: Record<string, string[]>
+    sign_in_provider: string
+    tenant: string | null
+  }
 }
 
 interface FirebaseAuthObject {
-  uid: string;
-  token: FirebaseAuthToken;
+  uid: string
+  token: FirebaseAuthToken
 }
 
 interface SecurityRuleRequest {
-  auth: FirebaseAuthObject | null;
-  method: string;
-  path: string;
+  auth: FirebaseAuthObject | null
+  method: string
+  path: string
   resource?: {
-    data: any;
-  };
+    data: Record<string, unknown>
+  }
 }
 
 /**
@@ -41,7 +41,7 @@ interface SecurityRuleRequest {
  */
 function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
   if (!currentUser) {
-    return null;
+    return null
   }
 
   const token: FirebaseAuthToken = {
@@ -51,21 +51,24 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
     phone_number: currentUser.phoneNumber,
     sub: currentUser.uid,
     firebase: {
-      identities: currentUser.providerData.reduce((acc, p) => {
-        if (p.providerId) {
-          acc[p.providerId] = [p.uid];
-        }
-        return acc;
-      }, {} as Record<string, string[]>),
+      identities: currentUser.providerData.reduce(
+        (acc, p) => {
+          if (p.providerId) {
+            acc[p.providerId] = [p.uid]
+          }
+          return acc
+        },
+        {} as Record<string, string[]>
+      ),
       sign_in_provider: currentUser.providerData[0]?.providerId || 'custom',
       tenant: currentUser.tenantId,
     },
-  };
+  }
 
   return {
     uid: currentUser.uid,
     token: token,
-  };
+  }
 }
 
 /**
@@ -75,13 +78,13 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  * @returns A structured request object.
  */
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
-  let authObject: FirebaseAuthObject | null = null;
+  let authObject: FirebaseAuthObject | null = null
   try {
     // Safely attempt to get the current user.
-    const firebaseAuth = getAuth();
-    const currentUser = firebaseAuth.currentUser;
+    const firebaseAuth = getAuth()
+    const currentUser = firebaseAuth.currentUser
     if (currentUser) {
-      authObject = buildAuthObject(currentUser);
+      authObject = buildAuthObject(currentUser)
     }
   } catch {
     // This will catch errors if the Firebase app is not yet initialized.
@@ -92,8 +95,10 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     auth: authObject,
     method: context.operation,
     path: `/databases/(default)/documents/${context.path}`,
-    resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
-  };
+    resource: context.requestResourceData
+      ? { data: context.requestResourceData }
+      : undefined,
+  }
 }
 
 /**
@@ -103,7 +108,7 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
  */
 function buildErrorMessage(requestObject: SecurityRuleRequest): string {
   return `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:
-${JSON.stringify(requestObject, null, 2)}`;
+${JSON.stringify(requestObject, null, 2)}`
 }
 
 /**
@@ -112,12 +117,12 @@ ${JSON.stringify(requestObject, null, 2)}`;
  * available in Firestore Security Rules.
  */
 export class FirestorePermissionError extends Error {
-  public readonly request: SecurityRuleRequest;
+  public readonly request: SecurityRuleRequest
 
   constructor(context: SecurityRuleContext) {
-    const requestObject = buildRequestObject(context);
-    super(buildErrorMessage(requestObject));
-    this.name = 'FirebaseError';
-    this.request = requestObject;
+    const requestObject = buildRequestObject(context)
+    super(buildErrorMessage(requestObject))
+    this.name = 'FirebaseError'
+    this.request = requestObject
   }
 }

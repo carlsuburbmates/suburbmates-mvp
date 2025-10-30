@@ -1,5 +1,5 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
 @tailwind utilities;
 
 @layer base {
@@ -10,7 +10,7 @@
 
     /* Section backgrounds (Awwwards-style light gray page) */
     --background: 0 0% 98%; /* soft gray page */
-    --foreground: 0 0% 7%;   /* near-black for readable text */
+    --foreground: 0 0% 7%; /* near-black for readable text */
 
     /* Surfaces */
     --card: 0 0% 100%;
@@ -21,9 +21,9 @@
     /* Neutrals & tints */
     --secondary: 0 0% 98%;
     --secondary-foreground: 0 0% 7%;
-    --muted: 240 6% 96%;      /* #f6f6f7 soft neutral gray */
+    --muted: 240 6% 96%; /* #f6f6f7 soft neutral gray */
     --muted-foreground: 0 0% 35%;
-    --accent: 34 69% 94%;     /* #f8f1e6 warm pale peach */
+    --accent: 34 69% 94%; /* #f8f1e6 warm pale peach */
     --accent-foreground: 0 0% 7%;
 
     /* Controls & focus */
@@ -75,7 +75,12 @@
   body {
     @apply bg-background text-foreground font-body antialiased leading-relaxed;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-headline tracking-tight leading-tight;
   }
 }
@@ -84,12 +89,18 @@
   .glass-effect {
     @apply bg-background/80 backdrop-blur-xl border border-border/50;
   }
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -97,7 +108,7 @@
 }
 
 /* Accessibility: stronger focus-visible rings across interactive elements */
-:where(button, [role="button"], a, input, select, textarea):focus-visible {
+:where(button, [role='button'], a, input, select, textarea):focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--ring));
 }

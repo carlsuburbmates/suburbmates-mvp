@@ -1,67 +1,51 @@
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowRight, Store, Users, ShieldCheck, Sparkles } from 'lucide-react'
 
-import Link from "next/link";
-import Image from "next/image";
-import {
-  ArrowRight,
-  Store,
-  Users,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PlaceHolderImages } from '@/lib/placeholder-images'
 // removed framer-motion to keep this server component SSR-friendly; using CSS transitions for subtle motion
-import { HowItWorksTabs } from "./how-it-works-tabs";
+import { HowItWorksTabs } from './how-it-works-tabs'
 
-const heroImage = PlaceHolderImages.find((p) => p.id === "hero-community");
-const featureImage1 = PlaceHolderImages.find(
-  (p) => p.id === "feature-vendors"
-);
-const featureImage2 = PlaceHolderImages.find(
-  (p) => p.id === "feature-forums"
-);
+const heroImage = PlaceHolderImages.find((p) => p.id === 'hero-community')
+const featureImage1 = PlaceHolderImages.find((p) => p.id === 'feature-vendors')
+const featureImage2 = PlaceHolderImages.find((p) => p.id === 'feature-forums')
 
 const features = [
   {
     icon: <Store className="h-5 w-5" />,
-    title: "Verified Vendor Marketplace",
+    title: 'Verified Vendor Marketplace',
     description:
-      "Discover trusted local businesses, from plumbers to bakers, all verified for your peace of mind.",
-    link: "/vendors",
-    linkText: "Browse Vendors",
+      'Discover trusted local businesses, from plumbers to bakers, all verified for your peace of mind.',
+    link: '/vendors',
+    linkText: 'Browse Vendors',
   },
   {
     icon: <Users className="h-5 w-5" />,
-    title: "Civic Hub Forums",
+    title: 'Civic Hub Forums',
     description:
-      "Join community discussions, share ideas, and stay informed about local events and initiatives.",
-    link: "/forums",
-    linkText: "Join Discussions",
+      'Join community discussions, share ideas, and stay informed about local events and initiatives.',
+    link: '/forums',
+    linkText: 'Join Discussions',
   },
   {
     icon: <ShieldCheck className="h-5 w-5" />,
-    title: "Privacy & Accessibility",
+    title: 'Privacy & Accessibility',
     description:
-      "Built on a foundation of trust, with robust privacy controls and adherence to WCAG 2.1 AA standards.",
-    link: "/privacy",
-    linkText: "Learn More",
+      'Built on a foundation of trust, with robust privacy controls and adherence to WCAG 2.1 AA standards.',
+    link: '/privacy',
+    linkText: 'Learn More',
   },
   {
     icon: <Sparkles className="h-5 w-5" />,
-    title: "AI-Powered Summaries",
+    title: 'AI-Powered Summaries',
     description:
-      "Quickly get the gist of long discussions and event details with our helpful AI summarization tool.",
-    link: "/forums",
-    linkText: "See it in Action",
+      'Quickly get the gist of long discussions and event details with our helpful AI summarization tool.',
+    link: '/forums',
+    linkText: 'See it in Action',
   },
-];
+]
 
 export default function Home() {
   return (
@@ -73,9 +57,9 @@ export default function Home() {
               Connecting Neighbors, Supporting Locals.
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-prose">
-              Suburbmates is your trusted platform for
-              discovering local vendors and engaging in community life. Welcome
-              to a stronger, more connected neighborhood.
+              Suburbmates is your trusted platform for discovering local vendors
+              and engaging in community life. Welcome to a stronger, more
+              connected neighborhood.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button asChild size="lg">
@@ -112,11 +96,11 @@ export default function Home() {
               How It Works
             </h2>
             <p className="mt-3 text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
-              Simple steps to get started, whether you&apos;re a resident or a local
-              business.
+              Simple steps to get started, whether you&apos;re a resident or a
+              local business.
             </p>
           </div>
-            <HowItWorksTabs />
+          <HowItWorksTabs />
         </div>
       </section>
 
@@ -131,7 +115,10 @@ export default function Home() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
             {features.map((feature) => (
-              <div key={feature.title} className="transition-transform will-change-transform hover:-translate-y-0.5">
+              <div
+                key={feature.title}
+                className="transition-transform will-change-transform hover:-translate-y-0.5"
+              >
                 <Card className="flex flex-col bg-card/70 backdrop-blur-sm border hover:bg-card/80 transition-colors">
                   <CardHeader className="flex flex-col items-center text-center gap-2 p-4">
                     <div className="h-10 w-10 rounded-md bg-primary/10 text-primary ring-1 ring-primary/20 flex items-center justify-center">
@@ -147,7 +134,7 @@ export default function Home() {
                     </p>
                     <Button asChild variant="link" className="mt-3">
                       <Link href={feature.link}>
-                        {feature.linkText}{" "}
+                        {feature.linkText}{' '}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
@@ -178,10 +165,9 @@ export default function Home() {
               A Marketplace You Can Trust
             </h3>
             <p className="text-base md:text-lg text-muted-foreground">
-              Every vendor on Suburbmates undergoes ABN
-              validation and secure onboarding. Find reliable local services
-              with transparent reviews and easy discovery through our map-based
-              search.
+              Every vendor on Suburbmates undergoes ABN validation and secure
+              onboarding. Find reliable local services with transparent reviews
+              and easy discovery through our map-based search.
             </p>
             <div className="mt-4">
               <Button asChild>
@@ -224,5 +210,5 @@ export default function Home() {
         </div>
       </section>
     </div>
-  );
+  )
 }

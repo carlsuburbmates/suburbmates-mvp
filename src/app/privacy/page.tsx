@@ -1,11 +1,5 @@
-
-import { PageHeader } from "@/components/page-header";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageHeader } from '@/components/page-header'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function PrivacyPage() {
   return (
@@ -63,25 +57,31 @@ export default function PrivacyPage() {
                 We only share information with your consent, to comply with
                 laws, to provide you with services, to protect your rights, or
                 to fulfill business obligations. For vendor onboarding, we
-                facilitate a secure handoff to Stripe for payment processing, but
-                we do not store your sensitive financial data on our servers.
+                facilitate a secure handoff to Stripe for payment processing,
+                but we do not store your sensitive financial data on our
+                servers.
               </p>
             </div>
-             <div className="space-y-2">
+            <div className="space-y-2">
               <h3 className="font-semibold text-foreground">
                 4. Data Security
               </h3>
               <p>
-                We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. This includes segregation of sensitive data and maintaining audit logs to track access and changes to your information. However, despite our safeguards and efforts to secure your information, no electronic transmission over the Internet or information storage technology can be guaranteed to be 100% secure.
+                We have implemented appropriate technical and organizational
+                security measures designed to protect the security of any
+                personal information we process. This includes segregation of
+                sensitive data and maintaining audit logs to track access and
+                changes to your information. However, despite our safeguards and
+                efforts to secure your information, no electronic transmission
+                over the Internet or information storage technology can be
+                guaranteed to be 100% secure.
               </p>
             </div>
-             <div className="space-y-2">
+            <div className="space-y-2">
               <h3 className="font-semibold text-foreground">
-                5. Data Deletion
                 5. Your Data Protection Rights
               </h3>
               <p>
-                You have the right to request the deletion of your personal data. If you are a registered vendor, you can delete your entire profile and associated account from the "Edit Profile" page in your vendor dashboard. For all other users, you can request data deletion by sending an email to contact@suburbmates.example.com with the subject line "Data Deletion Request". We will process your request within 30 days.
                 Depending on your location, you may have the following rights
                 regarding your personal information: the right to access, the
                 right to rectification, the right to erasure, the right to
@@ -107,5 +107,5 @@ export default function PrivacyPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

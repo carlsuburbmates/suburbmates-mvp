@@ -1,27 +1,27 @@
-import * as React from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { ShieldCheck, Star } from "lucide-react";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { fadeInUp } from "@/lib/animations";
+import * as React from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { motion } from 'framer-motion'
+import { ShieldCheck, Star } from 'lucide-react'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { fadeInUp } from '@/lib/animations'
 
 export type Vendor = {
-  id: string;
-  businessName: string;
-  description?: string;
-  averageRating?: number;
-  reviewCount?: number;
-  abnVerified?: boolean;
-};
+  id: string
+  businessName: string
+  description?: string
+  averageRating?: number
+  reviewCount?: number
+  abnVerified?: boolean
+}
 
 interface VendorCardProps {
-  vendor: Vendor;
-  imageUrl: string;
-  imageAlt?: string;
-  onSwipeLeft?: (vendor: Vendor) => void;
-  onSwipeRight?: (vendor: Vendor) => void;
+  vendor: Vendor
+  imageUrl: string
+  imageAlt?: string
+  onSwipeLeft?: (vendor: Vendor) => void
+  onSwipeRight?: (vendor: Vendor) => void
 }
 
 export function VendorCard({
@@ -31,15 +31,12 @@ export function VendorCard({
   onSwipeLeft,
   onSwipeRight,
 }: VendorCardProps) {
-  const handleDragEnd = (
-    _: unknown,
-    info: { offset: { x: number } }
-  ) => {
-    const dx = info.offset.x;
-    const threshold = 120;
-    if (dx > threshold && onSwipeRight) onSwipeRight(vendor);
-    else if (dx < -threshold && onSwipeLeft) onSwipeLeft(vendor);
-  };
+  const handleDragEnd = (_: unknown, info: { offset: { x: number } }) => {
+    const dx = info.offset.x
+    const threshold = 120
+    if (dx > threshold && onSwipeRight) onSwipeRight(vendor)
+    else if (dx < -threshold && onSwipeLeft) onSwipeLeft(vendor)
+  }
 
   return (
     <motion.div
@@ -70,17 +67,21 @@ export function VendorCard({
           </div>
         </CardHeader>
         <CardContent className="p-3 flex-grow flex flex-col">
-          <h3 className="font-bold font-headline text-base md:text-lg">{vendor.businessName}</h3>
+          <h3 className="font-bold font-headline text-base md:text-lg">
+            {vendor.businessName}
+          </h3>
           <p className="text-sm text-muted-foreground flex-grow line-clamp-2">
-            {vendor.description || ""}
+            {vendor.description || ''}
           </p>
           <div className="flex items-center justify-between mt-4 text-sm">
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
               <span className="font-bold">
-                {vendor.averageRating ? vendor.averageRating.toFixed(1) : "N/A"}
+                {vendor.averageRating ? vendor.averageRating.toFixed(1) : 'N/A'}
               </span>
-              <span className="text-muted-foreground">({vendor.reviewCount || 0})</span>
+              <span className="text-muted-foreground">
+                ({vendor.reviewCount || 0})
+              </span>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link href={`/vendors/${vendor.id}`}>View Profile</Link>
@@ -89,5 +90,5 @@ export function VendorCard({
         </CardContent>
       </Card>
     </motion.div>
-  );
+  )
 }

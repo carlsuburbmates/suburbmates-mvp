@@ -1,10 +1,9 @@
-
 # Workflow: Vendor Lifecycle — Accounts, Profiles, Payments, and Responsibilities
 
 > Canonical source: /docs/SSOT.md
 > Classification: Operational + Technical Specification
-> Status: *Phase 2 → 3 bridge draft (Design in progress, ready for build)*
-> *Last validated 2025-10-21*
+> Status: _Phase 2 → 3 bridge draft (Design in progress, ready for build)_
+> _Last validated 2025-10-21_
 
 ---
 
@@ -30,38 +29,32 @@ Define how verified local businesses (vendors) interact with the Suburbmates pla
 ### A. Account Creation & Verification
 
 1. **Access Point**
-
-   * From `/join-vendor` or “Become a Vendor” CTA.
+   - From `/join-vendor` or “Become a Vendor” CTA.
 
 2. **Authentication**
-
-   * Email-based magic link (Auth.js) → user created in `users` table with `role='vendor_pending'`.
+   - Email-based magic link (Auth.js) → user created in `users` table with `role='vendor_pending'`.
 
 3. **ABN Verification**
-
-   * Vendor enters ABN, business name, and address.
-   * Server verifies via ABR Lookup API or cached dataset.
-   * Verified data stored in `businesses` with `verified=false` initially.
+   - Vendor enters ABN, business name, and address.
+   - Server verifies via ABR Lookup API or cached dataset.
+   - Verified data stored in `businesses` with `verified=false` initially.
 
 4. **Consent & Legal Agreements**
+   - Vendors must explicitly agree to:
+     - Privacy Policy
+     - Terms of Service
+     - Stripe Connect Agreement (KYC + payout)
 
-   * Vendors must explicitly agree to:
-
-     * Privacy Policy
-     * Terms of Service
-     * Stripe Connect Agreement (KYC + payout)
-   * Each consent logged in `consent_logs` table.
+   - Each consent logged in `consent_logs` table.
 
 5. **Stripe Connect Registration**
-
-   * Redirect vendor to `stripe.com/connect/oauth/authorize?...`
-   * On return, save `stripe_account_id` to `businesses` table.
-   * Stripe now manages all KYC, payouts, and financial compliance.
+   - Redirect vendor to `stripe.com/connect/oauth/authorize?...`
+   - On return, save `stripe_account_id` to `businesses` table.
+   - Stripe now manages all KYC, payouts, and financial compliance.
 
 6. **Admin or Auto-Approval**
-
-   * Admin reviews ABN match and consent records.
-   * Once approved, vendor role changes to `vendor_active`.
+   - Admin reviews ABN match and consent records.
+   - Once approved, vendor role changes to `vendor_active`.
 
 ---
 
@@ -81,36 +74,32 @@ Path: `/dashboard/vendor`
 
 **Vendor capabilities**
 
-* Edit profile anytime.
-* Pause or archive business.
-* Manage team (future multi-user support).
+- Edit profile anytime.
+- Pause or archive business.
+- Manage team (future multi-user support).
 
 ---
 
 ### C. Listing Management
 
 1. **Create Listing**
-
-   * `/dashboard/vendor/listings/new`
-   * Fields: title, description, price, category, tags, image(s), availability, location.
-   * Validation via Zod; saved as `status='draft'`.
+   - `/dashboard/vendor/listings/new`
+   - Fields: title, description, price, category, tags, image(s), availability, location.
+   - Validation via Zod; saved as `status='draft'`.
 
 2. **Publish**
-
-   * Vendor clicks “Publish.”
-   * Listing status → `active`.
-   * Appears in `/marketplace` and Mapbox view.
+   - Vendor clicks “Publish.”
+   - Listing status → `active`.
+   - Appears in `/marketplace` and Mapbox view.
 
 3. **Edit / Archive**
-
-   * Updates allowed anytime.
-   * Archived listings hidden from marketplace but retained for audit.
+   - Updates allowed anytime.
+   - Archived listings hidden from marketplace but retained for audit.
 
 4. **Moderation**
-
-   * Listings auto-scanned for prohibited content.
-   * Flagged → enters moderation queue (SLA < 24 h).
-   * Vendor notified of any moderation action.
+   - Listings auto-scanned for prohibited content.
+   - Flagged → enters moderation queue (SLA < 24 h).
+   - Vendor notified of any moderation action.
 
 ---
 
@@ -119,36 +108,35 @@ Path: `/dashboard/vendor`
 **Flow**
 
 1. **Customer checkout**
-
-   * Customer clicks “Buy / Book.”
-   * Backend creates Stripe Checkout Session with:
+   - Customer clicks “Buy / Book.”
+   - Backend creates Stripe Checkout Session with:
 
      ```js
      transfer_data: { destination: vendor.stripe_account_id },
      application_fee_amount: platformFee,
      metadata: { vendor_id, listing_id, user_id }
      ```
+
 2. **Payment completion**
+   - Customer pays on Stripe-hosted page.
+   - Webhook `checkout.session.completed` triggers order creation in `orders` table.
 
-   * Customer pays on Stripe-hosted page.
-   * Webhook `checkout.session.completed` triggers order creation in `orders` table.
 3. **Order record**
+   - Fields: `order_id, listing_id, user_id, amount_cents, stripe_session_id, status='paid'`.
 
-   * Fields: `order_id, listing_id, user_id, amount_cents, stripe_session_id, status='paid'`.
 4. **Payouts**
+   - Stripe automatically splits payout:
+     - Vendor receives sale amount minus Stripe fee and your platform fee.
+     - You receive `application_fee_amount` as platform revenue.
 
-   * Stripe automatically splits payout:
+   - Both visible in Stripe dashboard.
 
-     * Vendor receives sale amount minus Stripe fee and your platform fee.
-     * You receive `application_fee_amount` as platform revenue.
-   * Both visible in Stripe dashboard.
 5. **Refunds / Disputes**
+   - Processed through Stripe → webhook updates `status='refunded'` or `disputed'`.
 
-   * Processed through Stripe → webhook updates `status='refunded'` or `disputed'`.
 6. **Notifications**
-
-   * Resend sends receipts to customer and vendor.
-   * GA4 event logged (`purchase_complete`).
+   - Resend sends receipts to customer and vendor.
+   - GA4 event logged (`purchase_complete`).
 
 ---
 
@@ -168,12 +156,12 @@ Path: `/dashboard/vendor`
 
 ### F. Platform Responsibilities (You)
 
-* Maintain uptime, data integrity, and Stripe webhook reliability.
-* Hold valid platform terms and privacy policy.
-* Keep moderation, audit, and consent logs.
-* Provide support channel for vendors (ticket system or email).
-* Use Stripe reporting for platform fee accounting.
-* Conduct periodic accessibility and security audits.
+- Maintain uptime, data integrity, and Stripe webhook reliability.
+- Hold valid platform terms and privacy policy.
+- Keep moderation, audit, and consent logs.
+- Provide support channel for vendors (ticket system or email).
+- Use Stripe reporting for platform fee accounting.
+- Conduct periodic accessibility and security audits.
 
 ---
 
@@ -192,10 +180,10 @@ Path: `/dashboard/vendor`
 
 ### H. Compliance & Record-Keeping
 
-* Every ABN verification, consent, and Stripe Connect ID stored in Neon (`businesses`, `consent_logs`).
-* All webhook payloads logged (`webhook_events` table).
-* Data retention: anonymize vendors inactive > 12 months.
-* Monthly privacy & accessibility review logged to `/docs/evidence/`.
+- Every ABN verification, consent, and Stripe Connect ID stored in Neon (`businesses`, `consent_logs`).
+- All webhook payloads logged (`webhook_events` table).
+- Data retention: anonymize vendors inactive > 12 months.
+- Monthly privacy & accessibility review logged to `/docs/evidence/`.
 
 ---
 
@@ -225,19 +213,19 @@ Path: `/dashboard/vendor`
 
 ### K. Education & Support
 
-* Vendors receive onboarding tutorial (FAQ + demo video).
-* Link to `/docs/vendor-guidelines.md` (to be written later).
-* Tooltips in dashboard explain verification, fees, and payouts.
-* Stripe’s own onboarding screens handle all payment-related compliance text.
+- Vendors receive onboarding tutorial (FAQ + demo video).
+- Link to `/docs/vendor-guidelines.md` (to be written later).
+- Tooltips in dashboard explain verification, fees, and payouts.
+- Stripe’s own onboarding screens handle all payment-related compliance text.
 
 ---
 
 ## 4. Governance
 
-*   **Rule Changes:** All platform-wide rule changes will be communicated to vendors with a minimum of 30 days' notice.
-*   **Dispute Resolution:** Administrator decisions on disputes are final, following the documented moderation and appeal process.
-*   **Appeals:** Vendors can appeal a moderation decision once via the official support channel. The appeal will be reviewed by a different moderator or administrator.
-*   **Policy Versioning:** The Terms of Service and Privacy Policy will be versioned, and major changes will require explicit re-consent from all active users.
+- **Rule Changes:** All platform-wide rule changes will be communicated to vendors with a minimum of 30 days' notice.
+- **Dispute Resolution:** Administrator decisions on disputes are final, following the documented moderation and appeal process.
+- **Appeals:** Vendors can appeal a moderation decision once via the official support channel. The appeal will be reviewed by a different moderator or administrator.
+- **Policy Versioning:** The Terms of Service and Privacy Policy will be versioned, and major changes will require explicit re-consent from all active users.
 
 ---
 
@@ -245,15 +233,15 @@ Path: `/dashboard/vendor`
 
 Suburbmates vendors:
 
-* **Control** their listings and profiles.
-* **Never** handle payments directly.
-* **Are paid** automatically via Stripe Connect.
-* **Operate under clear privacy, moderation, and accessibility policies.**
+- **Control** their listings and profiles.
+- **Never** handle payments directly.
+- **Are paid** automatically via Stripe Connect.
+- **Operate under clear privacy, moderation, and accessibility policies.**
 
 You:
 
-* Keep compliance, moderation, and system integrity.
-* Earn platform fees automatically.
-* Maintain full audit visibility.
+- Keep compliance, moderation, and system integrity.
+- Earn platform fees automatically.
+- Maintain full audit visibility.
 
 ---

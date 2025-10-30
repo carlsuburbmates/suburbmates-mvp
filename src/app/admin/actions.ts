@@ -1,66 +1,58 @@
+'use server'
 
-'use server';
+import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+import { getAdminServices } from '@/lib/firebase-admin'
 
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { headers } from 'next/headers';
-import { revalidatePath } from 'next/cache';
-
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  const serviceAccount = JSON.parse(
-    process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '{}'
-  );
-  initializeApp({
-    credential: cert(serviceAccount),
-  });
-}
-
-const auth = getAuth();
-const db = getFirestore();
-
-async function verifyAdmin(): Promise<void> {
-  const hdrs = await headers();
-  const authorization = hdrs.get('Authorization');
-  if (!authorization?.startsWith('Bearer ')) {
-    throw new Error('Unauthorized');
+async function verifyAdmin(): Promise<{ authUid: string }> {
+  const { auth } = await getAdminServices()
+  const cookieStore = await cookies()
+  const session = cookieStore.get('__session')?.value
+  if (!session) {
+    throw new Error('Unauthorized')
   }
-  const idToken = authorization.split('Bearer ')[1];
-  const decodedToken = await auth.verifyIdToken(idToken);
-
+  const decodedToken = await auth.verifySessionCookie(session, true)
   if (!decodedToken.admin) {
-    throw new Error('Caller is not an admin');
+    throw new Error('Caller is not an admin')
   }
+  return { authUid: decodedToken.uid }
 }
 
-export async function toggleVendorPayments(vendorId: string, currentState: boolean) {
+export async function toggleVendorPayments(
+  vendorId: string,
+  currentState: boolean
+) {
   try {
-    await verifyAdmin();
+    await verifyAdmin()
 
-    const vendorRef = db.collection('vendors').doc(vendorId);
-    const newState = !currentState;
+    const { db, auth } = getAdminServices()
+    const vendorRef = db.collection('vendors').doc(vendorId)
+    const newState = !currentState
 
     // 1. Update the Firestore document
     await vendorRef.update({
       paymentsEnabled: newState,
-    });
+    })
 
     // 2. Set custom claims on the user's auth token
-    const user = await auth.getUser(vendorId);
-    const currentClaims = user.customClaims || {};
-    await auth.setCustomUserClaims(vendorId, { ...currentClaims, vendor: newState });
+    const user = await auth.getUser(vendorId)
+    const currentClaims = user.customClaims || {}
+    await auth.setCustomUserClaims(vendorId, {
+      ...currentClaims,
+      vendor: newState,
+    })
 
-    console.log(
+    console.warn(
       `Toggled paymentsEnabled for vendor ${vendorId} to ${newState} and set custom claim 'vendor: ${newState}'`
-    );
-    
+    )
+
     // Revalidate the path to ensure the UI updates
-    revalidatePath('/admin');
-    
-    return { success: true, newState: newState };
-  } catch (error: any) {
-    console.error('Error toggling vendor payments:', error);
-    return { success: false, error: error.message };
+    revalidatePath('/admin')
+
+    return { success: true, newState: newState }
+  } catch (error: unknown) {
+    const err = error as Error
+    console.error('Error toggling vendor payments:', err)
+    return { success: false, error: err.message }
   }
 }

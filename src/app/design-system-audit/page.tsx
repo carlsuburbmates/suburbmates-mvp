@@ -1,44 +1,110 @@
-"use client";
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "@/components/ui/calendar";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
-import { BottomNav } from "@/components/layout/bottom-nav";
+'use client'
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
+import { Separator } from '@/components/ui/separator'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Slider } from '@/components/ui/slider'
+import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Toaster } from '@/components/ui/toaster'
+import { useToast } from '@/hooks/use-toast'
+import { BottomNav } from '@/components/layout/bottom-nav'
 
 export default function DesignSystemAuditPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const { toast } = useToast();
+  const [date, setDate] = useState<Date | undefined>(new Date())
+  const { toast } = useToast()
   return (
     <main className="container mx-auto max-w-3xl p-6 space-y-8 pb-24">
       <Toaster />
-      <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] font-bold font-headline tracking-tight leading-tight">Design System Audit</h1>
+      <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] font-bold font-headline tracking-tight leading-tight">
+        Design System Audit
+      </h1>
 
       <section aria-label="Buttons" className="space-y-4">
         <h2 className="text-xl font-semibold">Buttons</h2>
@@ -123,7 +189,9 @@ export default function DesignSystemAuditPage() {
                 <CardTitle>Account Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Manage your account preferences.</p>
+                <p className="text-sm text-muted-foreground">
+                  Manage your account preferences.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -133,7 +201,9 @@ export default function DesignSystemAuditPage() {
                 <CardTitle>Security Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Update your security configurations.</p>
+                <p className="text-sm text-muted-foreground">
+                  Update your security configurations.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -154,7 +224,10 @@ export default function DesignSystemAuditPage() {
         <h2 className="text-xl font-semibold">Avatar & Badge</h2>
         <div className="flex items-center gap-4">
           <Avatar>
-            <AvatarImage src="https://avatars.githubusercontent.com/u/9919?s=80" alt="Avatar" />
+            <AvatarImage
+              src="https://avatars.githubusercontent.com/u/9919?s=80"
+              alt="Avatar"
+            />
             <AvatarFallback>AA</AvatarFallback>
           </Avatar>
           <Badge variant="secondary">Badge</Badge>
@@ -168,7 +241,9 @@ export default function DesignSystemAuditPage() {
         <Accordion type="single" collapsible>
           <AccordionItem value="item-1">
             <AccordionTrigger>Is it accessible?</AccordionTrigger>
-            <AccordionContent>Yes. It adheres to WAI-ARIA design patterns.</AccordionContent>
+            <AccordionContent>
+              Yes. It adheres to WAI-ARIA design patterns.
+            </AccordionContent>
           </AccordionItem>
         </Accordion>
       </section>
@@ -179,7 +254,9 @@ export default function DesignSystemAuditPage() {
         <h2 className="text-xl font-semibold">Alerts</h2>
         <Alert>
           <AlertTitle>Heads up!</AlertTitle>
-          <AlertDescription>You can add components to your app using the CLI.</AlertDescription>
+          <AlertDescription>
+            You can add components to your app using the CLI.
+          </AlertDescription>
         </Alert>
       </section>
 
@@ -195,7 +272,9 @@ export default function DesignSystemAuditPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Dialog Title</DialogTitle>
-                <DialogDescription>Simple dialog content for audit.</DialogDescription>
+                <DialogDescription>
+                  Simple dialog content for audit.
+                </DialogDescription>
               </DialogHeader>
             </DialogContent>
           </Dialog>
@@ -206,7 +285,9 @@ export default function DesignSystemAuditPage() {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                <AlertDialogDescription>
+                  This action cannot be undone.
+                </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -239,7 +320,9 @@ export default function DesignSystemAuditPage() {
             <PopoverTrigger asChild>
               <Button variant="outline">Open Popover</Button>
             </PopoverTrigger>
-            <PopoverContent className="w-56">Popover content for audit.</PopoverContent>
+            <PopoverContent className="w-56">
+              Popover content for audit.
+            </PopoverContent>
           </Popover>
         </div>
       </section>
@@ -266,7 +349,9 @@ export default function DesignSystemAuditPage() {
               <SheetHeader>
                 <SheetTitle>Sheet Title</SheetTitle>
               </SheetHeader>
-              <p className="mt-4 text-sm text-muted-foreground">Side panel content.</p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Side panel content.
+              </p>
             </SheetContent>
           </Sheet>
         </div>
@@ -277,11 +362,19 @@ export default function DesignSystemAuditPage() {
       <section aria-label="Calendar and Carousel" className="space-y-4">
         <h2 className="text-xl font-semibold">Calendar & Carousel</h2>
         <div className="grid gap-4">
-          <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md border" />
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="rounded-md border"
+          />
           <Carousel className="w-full max-w-xs">
             <CarouselContent>
               {Array.from({ length: 3 }).map((_, idx) => (
-                <CarouselItem key={idx} className="flex h-24 items-center justify-center rounded border">
+                <CarouselItem
+                  key={idx}
+                  className="flex h-24 items-center justify-center rounded border"
+                >
                   Slide {idx + 1}
                 </CarouselItem>
               ))}
@@ -301,7 +394,9 @@ export default function DesignSystemAuditPage() {
         <ScrollArea className="h-24 w-full rounded border p-2">
           <div className="space-y-2">
             {Array.from({ length: 20 }).map((_, idx) => (
-              <p key={idx} className="text-sm">Scrollable line {idx + 1}</p>
+              <p key={idx} className="text-sm">
+                Scrollable line {idx + 1}
+              </p>
             ))}
           </div>
         </ScrollArea>
@@ -337,7 +432,12 @@ export default function DesignSystemAuditPage() {
           <Skeleton className="h-8 w-24" />
           <Button
             variant="secondary"
-            onClick={() => toast({ title: "Notification", description: "Audit toast example." })}
+            onClick={() =>
+              toast({
+                title: 'Notification',
+                description: 'Audit toast example.',
+              })
+            }
           >
             Show Toast
           </Button>
@@ -346,11 +446,13 @@ export default function DesignSystemAuditPage() {
 
       <section aria-label="Bottom Navigation" className="space-y-2">
         <h2 className="text-xl font-semibold">Bottom Navigation</h2>
-        <p className="text-sm text-muted-foreground">Rendered below for mobile viewport checks.</p>
+        <p className="text-sm text-muted-foreground">
+          Rendered below for mobile viewport checks.
+        </p>
         <div className="border rounded-md p-2">
           <BottomNav />
         </div>
       </section>
     </main>
-  );
+  )
 }

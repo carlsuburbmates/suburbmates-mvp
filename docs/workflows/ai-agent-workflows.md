@@ -1,9 +1,8 @@
-
 # Workflow: AI Agent Automations
 
 > Classification: Technical Specification & Operational Guide
-> Status: *In Progress*
-> *Last validated 2025-10-22*
+> Status: _In Progress_
+> _Last validated 2025-10-22_
 
 ---
 
@@ -15,11 +14,11 @@ This document provides a technical and operational overview of the AI agents int
 
 ## 2. Agent Roster
 
-| Agent Name                              | Trigger                                  | Core Function                                       | Status      |
-| --------------------------------------- | ---------------------------------------- | --------------------------------------------------- | ----------- |
-| **Vendor Onboarding & Quality (VOQ)**   | New Business Registration                | Verification, Quality Scoring, & Content Moderation | `ACTIVE`    |
-| **Dispute Summarizer**                  | Stripe Webhook (`charge.dispute.created`) | Summarizes Dispute Reasons for Fast Auditing        | `ACTIVE`    |
-| **Forum Content Moderator**             | New Forum Post                           | Blocks Inappropriate Content Before Publication     | `ACTIVE`    |
+| Agent Name                            | Trigger                                   | Core Function                                       | Status   |
+| ------------------------------------- | ----------------------------------------- | --------------------------------------------------- | -------- |
+| **Vendor Onboarding & Quality (VOQ)** | New Business Registration                 | Verification, Quality Scoring, & Content Moderation | `ACTIVE` |
+| **Dispute Summarizer**                | Stripe Webhook (`charge.dispute.created`) | Summarizes Dispute Reasons for Fast Auditing        | `ACTIVE` |
+| **Forum Content Moderator**           | New Forum Post                            | Blocks Inappropriate Content Before Publication     | `ACTIVE` |
 
 ---
 
@@ -29,7 +28,7 @@ This document provides a technical and operational overview of the AI agents int
 
 The VOQ Agent is a multi-skilled AI system designed to automate the initial screening process for new business registrations.
 
--   **Trigger:** This agent is automatically invoked within the `handleVendorRegistration` function in `src/app/dashboard/vendor/register/page.tsx` immediately after a vendor's ABN has been successfully validated.
+- **Trigger:** This agent is automatically invoked within the `handleVendorRegistration` function in `src/app/dashboard/vendor/register/page.tsx` immediately after a vendor's ABN has been successfully validated.
 
 ### 3.2. Analysis Performed
 
@@ -82,9 +81,9 @@ Upon completion, the agent generates a comprehensive `verificationSummary` objec
 
 The `verificationSummary` is directly utilized by the **Admin Dashboard** (`src/app/admin/page.tsx`) to empower the administrator:
 
--   **At-a-Glance Auditing:** The vendor management table displays the `overallRecommendation`, allowing the admin to quickly identify which vendors are pre-approved and which require manual review.
--   **Prioritized Workflow:** The "Show Pending Approval Only" filter sorts vendors to place those marked as `NEEDS_REVIEW` or `AUTO_REJECT` at the top of the list.
--   **Deep Dive Analysis:** The "View Details" modal in the admin table presents the full `verificationSummary` object, giving the admin complete context on the AI's decision-making process.
+- **At-a-Glance Auditing:** The vendor management table displays the `overallRecommendation`, allowing the admin to quickly identify which vendors are pre-approved and which require manual review.
+- **Prioritized Workflow:** The "Show Pending Approval Only" filter sorts vendors to place those marked as `NEEDS_REVIEW` or `AUTO_REJECT` at the top of the list.
+- **Deep Dive Analysis:** The "View Details" modal in the admin table presents the full `verificationSummary` object, giving the admin complete context on the AI's decision-making process.
 
 This system effectively transforms the vendor approval process from a manual queue into an efficient, AI-assisted audit.
 
@@ -110,6 +109,7 @@ The agent analyzes the `reason` code from the Stripe dispute object, along with 
 The agent generates a `disputeSummary` object, which is then saved to the specific `Dispute` document in Firestore.
 
 **Schema (`DisputeSummary` type in `src/lib/types.ts`):**
+
 ```typescript
 {
   "summary": "A concise, one-sentence summary of the dispute.",
@@ -148,6 +148,7 @@ The agent leverages the built-in safety features of the underlying AI model (Ver
 The agent's output is simple and immediate, designed for real-time user interaction.
 
 **Output Schema:**
+
 ```typescript
 {
   "isSafe": boolean,
@@ -159,6 +160,6 @@ The agent's output is simple and immediate, designed for real-time user interact
 
 The agent is tightly integrated into the user experience:
 
--   **Pre-emptive Blocking:** Unlike a traditional moderation queue, this agent stops harmful content *before* it is ever saved to Firestore or displayed to other users.
--   **Immediate Feedback:** If a post is blocked, the user is immediately shown a toast notification explaining why (e.g., "This post was blocked for containing content related to: Harassment."). This provides instant feedback and helps educate users on community standards.
--   **Safe-Path-Only Persistence:** Only posts that are deemed `isSafe: true` are persisted to the database.
+- **Pre-emptive Blocking:** Unlike a traditional moderation queue, this agent stops harmful content _before_ it is ever saved to Firestore or displayed to other users.
+- **Immediate Feedback:** If a post is blocked, the user is immediately shown a toast notification explaining why (e.g., "This post was blocked for containing content related to: Harassment."). This provides instant feedback and helps educate users on community standards.
+- **Safe-Path-Only Persistence:** Only posts that are deemed `isSafe: true` are persisted to the database.

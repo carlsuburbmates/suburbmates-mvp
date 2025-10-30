@@ -1,4 +1,3 @@
-
 {
   "indexes": [
     {
@@ -24,8 +23,8 @@
           "order": "ASCENDING"
         },
         {
-            "fieldPath": "date",
-            "order": "DESCENDING"
+          "fieldPath": "date",
+          "order": "DESCENDING"
         }
       ]
     },

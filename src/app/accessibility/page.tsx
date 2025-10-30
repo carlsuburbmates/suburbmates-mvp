@@ -1,10 +1,5 @@
-import { PageHeader } from "@/components/page-header";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { PageHeader } from '@/components/page-header'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function AccessibilityPage() {
   return (
@@ -22,8 +17,8 @@ export default function AccessibilityPage() {
             <p>
               Suburbmates is committed to making its website accessible, in
               accordance with WCAG 2.1 Level AA. We believe in providing a
-              positive customer experience to all our customers, and we aim
-              to promote accessibility and inclusion.
+              positive customer experience to all our customers, and we aim to
+              promote accessibility and inclusion.
             </p>
 
             <div className="space-y-2">
@@ -36,40 +31,64 @@ export default function AccessibilityPage() {
                 accessibility for people with disabilities. It defines three
                 levels of conformance: Level A, Level AA, and Level AAA.
                 Suburbmates is partially conformant with WCAG 2.1 level AA.
-                Partially conformant means that some parts of the content do
-                not fully conform to the accessibility standard.
+                Partially conformant means that some parts of the content do not
+                fully conform to the accessibility standard.
               </p>
-               <p>
-                Our theme uses high-contrast colors and all interactive elements have a minimum 44x44px hit target. We also use semantic HTML to ensure proper structure.
+              <p>
+                Our theme uses high-contrast colors and all interactive elements
+                have a minimum 44x44px hit target. We also use semantic HTML to
+                ensure proper structure.
               </p>
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-semibold text-foreground">
-                2. Feedback
-              </h3>
+              <h3 className="font-semibold text-foreground">2. Feedback</h3>
               <p>
                 We welcome your feedback on the accessibility of Suburbmates.
                 Please let us know if you encounter accessibility barriers:
               </p>
-               <ul className="list-disc pl-6">
+              <ul className="list-disc pl-6">
                 <li>E-mail: contact@suburbmates.example.com</li>
                 <li>Postal address: 123 Main Street, Northcote VIC 3070</li>
               </ul>
               <p>We try to respond to feedback within 5 business days.</p>
             </div>
-            
-             <div className="space-y-2">
+
+            <div className="space-y-2">
               <h3 className="font-semibold text-foreground">
-                3. Technical specifications
+                3. Technical Specifications
               </h3>
               <p>
-                Accessibility of Suburbmates relies on the following technologies to work with the particular combination of web browser and any assistive technologies or plugins installed on your computer: HTML, WAI-ARIA, CSS, and JavaScript. These technologies are relied upon for conformance with the accessibility standards used.
+                Accessibility of Suburbmates relies on HTML, WAI‑ARIA, CSS, and
+                JavaScript. We aim for WCAG 2.1 Level AA. Our UI includes
+                keyboard‑focus styles, skip links, semantic headings, alt text
+                for images, and minimum target sizes for interactive elements.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold text-foreground">
+                4. Ongoing Improvements
+              </h3>
+              <p>
+                We regularly audit new features for accessibility and welcome
+                feedback for improvements. If you encounter a barrier, contact
+                us at{' '}
+                <a
+                  href="mailto:accessibility@suburbmates.example.com"
+                  className="underline text-foreground"
+                >
+                  accessibility@suburbmates.example.com
+                </a>
+                .
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Last updated: October 28, 2025
               </p>
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
+  )
 }

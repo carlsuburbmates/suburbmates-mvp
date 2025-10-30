@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: 'tests',
@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 0,
   // Use a non-interactive reporter to prevent hanging processes.
   reporter: [['list']],
-  // Reuse the existing Next.js dev server on port 3001.
+  // Reuse the existing Next.js dev server on port 3000.
   use: {
     baseURL: 'http://localhost:3001',
     viewport: { width: 390, height: 844 },
@@ -20,4 +20,4 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
-});
+})

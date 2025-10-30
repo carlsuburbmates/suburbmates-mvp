@@ -36,6 +36,7 @@ set -a && source .env.local && set +a
 ```
 
 Created secrets:
+
 - `stripe-secret-key`
 - `stripe-webhook-secret`
 - `resend-api-key`
@@ -71,6 +72,7 @@ Copilot-owned Playwright audits run separately; merge AI-specific cases there if
 ## 6. Emulator Accounts
 
 Seeded test users (when using the included fixtures):
+
 - **Admin**: `dev+admin@example.com` / `test1234`
 - **Vendor**: `devVendor001@example.com` / `test1234`
 - **Buyer**: `devBuyer001@example.com` / `test1234`

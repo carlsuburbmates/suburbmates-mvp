@@ -5,7 +5,7 @@
  *
  * To run this test, execute `genkit:dev` or `genkit:watch`
  */
-import { validateAbn } from '@/ai/flows/validate-abn';
+import { validateAbn } from '@/ai/flows/validate-abn'
 
 // --- Test Cases ---
 const testCases = [
@@ -33,30 +33,30 @@ const testCases = [
     },
     shouldBeValid: false,
   },
-];
+]
 
 async function runAbnValidationTests() {
-  console.log('--- Running ABN Validation MCP Test Suite ---');
-  console.log('--- Using Live ABR Data ---');
+  console.log('--- Running ABN Validation MCP Test Suite ---')
+  console.log('--- Using Live ABR Data ---')
 
   for (const test of testCases) {
-    console.log(`\n▶️  Testing: ${test.description}`);
+    console.log(`\n▶️  Testing: ${test.description}`)
     try {
-      const result = await validateAbn(test.input);
-      const isPass = result.isValid === test.shouldBeValid;
+      const result = await validateAbn(test.input)
+      const isPass = result.isValid === test.shouldBeValid
       console.log(
         `   ${isPass ? 'PASS' : 'FAIL'}: Expected isValid to be ${
           test.shouldBeValid
         }, Got: ${result.isValid}`
-      );
-      console.log(`   Message: "${result.message}"`);
+      )
+      console.log(`   Message: "${result.message}"`)
     } catch (error) {
-      console.error(`   ERROR: Test case failed unexpectedly.`, error);
+      console.error(`   ERROR: Test case failed unexpectedly.`, error)
     }
   }
 
-  console.log('\n--- ABN Validation Test Suite Complete ---');
+  console.log('\n--- ABN Validation Test Suite Complete ---')
 }
 
 // Automatically run the tests when Genkit starts in dev mode.
-runAbnValidationTests();
+runAbnValidationTests()

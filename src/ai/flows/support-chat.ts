@@ -1,66 +1,85 @@
-
-'use server';
+'use server'
 /**
  * @fileOverview A RAG-powered AI chatbot to answer user questions based on platform documentation.
  *
  * - supportChat - The main flow that takes a user query and returns a grounded answer.
  */
-import { ai } from '@/ai/genkit';
-import { DirectorySource, defineIndexer, find, index } from '@genkit-ai/ai/retriever';
-import { z } from 'zod';
-import { geminiPro, googleAI } from '@genkit-ai/google-genai';
 
-// Define the knowledge base by pointing to the documentation files
-const knowledgeBase = defineIndexer(
-  {
-    name: 'suburbmates-docs',
-    indexPath: '.genkit/indexes/suburbmates-docs',
-  },
-  async (configure) => {
-    // We are using a simplified text-based reader for .tsx files.
-    // In a production scenario, you might want a more sophisticated parser
-    // to extract only the relevant text content.
-    const docReader = DirectorySource({
-      path: './',
-      glob: '**/*.{md,tsx}', // Read all markdown and tsx files
-      textExtractor: (filePath, content) => {
-        if (filePath.endsWith('.tsx')) {
-          return content.replace(/<[^>]*>/g, ' ');
-        }
-        return content;
-      },
-    });
-    
-    // We pass custom chunking options to break the documents into smaller, more digestible pieces for the model.
-    configure({
-      sources: [docReader],
-      chunking: {
-        // A chunk is a piece of a document that is embedded and stored in the index.
-        // The size of a chunk is important for the quality of the search results.
-        // We set the size to 512 characters with an overlap of 128 characters.
-        size: 512,
-        overlap: 128,
-      },
-    });
+import { ai } from '@/ai/genkit'
+import { z } from 'zod'
+import * as fs from 'fs'
+import * as path from 'path'
+
+const SupportChatInputSchema = z.object({ query: z.string() })
+const SupportChatOutputSchema = z.object({ response: z.string() })
+
+export type SupportChatInput = z.infer<typeof SupportChatInputSchema>
+export type SupportChatOutput = z.infer<typeof SupportChatOutputSchema>
+
+// In-memory cache for documentation context to avoid repeated file system reads
+let docsCache: { content: string; timestamp: number } | null = null
+const CACHE_DURATION_MS = 5 * 60 * 1000 // 5 minutes cache
+
+// Enhanced helper to read documentation files with caching
+function readDocsContext(): string {
+  const now = Date.now()
+
+  if (docsCache && now - docsCache.timestamp < CACHE_DURATION_MS) {
+    return docsCache.content
   }
-);
 
+  const candidates = [
+    path.join(
+      process.cwd(),
+      'docs/firebase-guidelines/firebase-development-guidelines.md'
+    ),
+    path.join(
+      process.cwd(),
+      'docs/firebase-guidelines/validation-checklists/firestore.md'
+    ),
+    path.join(
+      process.cwd(),
+      'docs/firebase-guidelines/validation-checklists/auth.md'
+    ),
+    path.join(process.cwd(), 'docs/PRD.md'),
+    path.join(process.cwd(), 'docs/SSOT.md'),
+    path.join(process.cwd(), 'docs/blueprint.md'),
+  ]
 
-// Index the documents. This is a one-time operation that should be run when the documents change.
-// Genkit's dev UI provides a way to manually trigger this indexing.
-index({ indexer: knowledgeBase });
+  const chunks: string[] = []
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) {
+        const content = fs.readFileSync(candidate, 'utf8')
+        chunks.push(`=== ${path.basename(candidate)} ===\n${content.slice(0, 3000)}\n`)
+      }
+    } catch {
+      // Ignore read errors to keep flow resilient
+    }
+
+    if (chunks.join('\n').length > 10000) break // Increased limit for broader context
+  }
+
+  const context = chunks.join('\n\n')
+
+  docsCache = {
+    content: context,
+    timestamp: now,
+  }
+
+  return context
+}
 
 // Define the prompt that will be used to generate the answer.
-const supportPrompt = ai.definePrompt(
-  {
-    name: 'support-chat-prompt',
-    input: {
-      schema: z.object({
-        query: z.string(),
-        context: z.string(),
-      }),
-    },
-    system: `You are the "Suburbmates Support Assistant," a friendly and helpful AI chatbot for a local community platform. Your goal is to answer user questions accurately based on the provided context.
+const supportPrompt = ai.definePrompt({
+  name: 'support-chat-prompt',
+  input: {
+    schema: z.object({
+      query: z.string(),
+      context: z.string(),
+    }),
+  },
+  system: `You are the "Suburbmates Support Assistant," a friendly and helpful AI chatbot for a local community platform. Your goal is to answer user questions accurately based on the provided context.
 
       **Instructions:**
       1.  Analyze the user's "Query" and the "Context" provided.
@@ -69,7 +88,7 @@ const supportPrompt = ai.definePrompt(
       4.  If the context does not contain the information needed to answer the query, you MUST respond with: "I'm sorry, I don't have information on that topic. You can try rephrasing your question or browse our documentation."
       5.  Keep your answers brief and to the point.
       6.  Always be polite and helpful in your tone.`,
-    prompt: `
+  prompt: `
         **Query:**
         {{{query}}}
         
@@ -78,33 +97,28 @@ const supportPrompt = ai.definePrompt(
         **Context:**
         {{{context}}}
       `,
-  }
-);
+})
 
-
-export const supportChat = ai.defineFlow(
+const supportChatFlow = ai.defineFlow(
   {
     name: 'supportChatFlow',
-    inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.object({ response: z.string() }),
+    inputSchema: SupportChatInputSchema,
+    outputSchema: SupportChatOutputSchema,
   },
   async (input) => {
+    const context = readDocsContext()
 
-    // 1. Retrieve relevant documents from our knowledge base.
-    const searchResults = await find(knowledgeBase, input.query, {
-      k: 3, // Retrieve the top 3 most relevant chunks
-    });
-
-    const context = searchResults
-        .map((r) => r.content[0]?.text || '')
-        .join('\n\n');
-
-    // 2. Generate the answer using the retrieved context.
     const llmResponse = await supportPrompt({
       query: input.query,
       context,
-    });
-    
-    return { response: llmResponse.text };
+    })
+
+    return { response: llmResponse.text }
   }
-);
+)
+
+export async function supportChat(
+  input: SupportChatInput
+): Promise<SupportChatOutput> {
+  return supportChatFlow(input)
+}

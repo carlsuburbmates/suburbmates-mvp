@@ -1,12 +1,11 @@
+'use client'
 
-'use client';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { Mail, Lock, User as UserIcon, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -14,9 +13,9 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
-} from 'firebase/auth';
+} from 'firebase/auth'
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -24,20 +23,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { PageHeader } from '@/components/page-header';
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/page-header'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useMemo } from 'react';
-import { useAuth, useUser } from '@/firebase';
-import { Separator } from '@/components/ui/separator';
+} from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import { useState, useEffect, useMemo } from 'react'
+import { useAuth, useUser } from '@/firebase'
+import { Separator } from '@/components/ui/separator'
 
 const signupFormSchema = z
   .object({
@@ -45,31 +44,29 @@ const signupFormSchema = z
       .string()
       .min(2, 'Display name must be at least 2 characters.'),
     email: z.string().email('Please enter a valid email address.'),
-    password: z
-      .string()
-      .min(6, 'Password must be at least 6 characters long.'),
+    password: z.string().min(6, 'Password must be at least 6 characters long.'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
     path: ['confirmPassword'],
-  });
+  })
 
 export default function SignupPage() {
-  const { toast } = useToast();
-  const router = useRouter();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast()
+  const router = useRouter()
+  const auth = useAuth()
+  const { user, isUserLoading } = useUser()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const googleProvider = useMemo(() => new GoogleAuthProvider(), []);
-  const facebookProvider = useMemo(() => new FacebookAuthProvider(), []);
+  const googleProvider = useMemo(() => new GoogleAuthProvider(), [])
+  const facebookProvider = useMemo(() => new FacebookAuthProvider(), [])
 
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.replace('/dashboard/vendor');
+      router.replace('/dashboard/vendor')
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router])
 
   const form = useForm<z.infer<typeof signupFormSchema>>({
     resolver: zodResolver(signupFormSchema),
@@ -79,54 +76,57 @@ export default function SignupPage() {
       password: '',
       confirmPassword: '',
     },
-  });
+  })
 
   async function handleEmailSignup(values: z.infer<typeof signupFormSchema>) {
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         values.email,
         values.password
-      );
-      
+      )
+
       await updateProfile(userCredential.user, {
         displayName: values.displayName,
-      });
+      })
 
-      await sendEmailVerification(userCredential.user);
+      await sendEmailVerification(userCredential.user)
 
       toast({
         title: 'Account Created!',
         description:
           'A verification email has been sent. Please check your inbox.',
-      });
+      })
 
-      router.push('/login');
+      router.push('/login')
     } catch (error: any) {
-      console.error('Signup Error:', error);
-      let description = 'Could not create your account. Please try again.';
+      console.error('Signup Error:', error)
+      let description = 'Could not create your account. Please try again.'
       if (error.code === 'auth/email-already-in-use') {
-        description = 'This email address is already in use. Please sign in instead.';
+        description =
+          'This email address is already in use. Please sign in instead.'
       }
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
         description,
-      });
+      })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
-  const handleSocialLogin = async (provider: GoogleAuthProvider | FacebookAuthProvider) => {
-    setIsSubmitting(true);
+  const handleSocialLogin = async (
+    provider: GoogleAuthProvider | FacebookAuthProvider
+  ) => {
+    setIsSubmitting(true)
     try {
-      await signInWithPopup(auth, provider);
-      toast({ title: 'Sign-up Successful', description: 'Welcome!' });
-      router.push('/dashboard/vendor');
+      await signInWithPopup(auth, provider)
+      toast({ title: 'Sign-up Successful', description: 'Welcome!' })
+      router.push('/dashboard/vendor')
     } catch (error: any) {
-      console.error('Social login error:', error);
+      console.error('Social login error:', error)
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
@@ -134,14 +134,14 @@ export default function SignupPage() {
           error.code === 'auth/account-exists-with-different-credential'
             ? 'An account already exists with this email address. Please sign in with the original method.'
             : 'Could not sign you up. Please try again.',
-      });
+      })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
-  const handleGoogleLogin = () => handleSocialLogin(googleProvider);
-  const handleFacebookLogin = () => handleSocialLogin(facebookProvider);
+  const handleGoogleLogin = () => handleSocialLogin(googleProvider)
+  const handleFacebookLogin = () => handleSocialLogin(facebookProvider)
 
   return (
     <>
@@ -167,7 +167,7 @@ export default function SignupPage() {
                 onClick={handleGoogleLogin}
                 disabled={isSubmitting}
               >
-                 <svg
+                <svg
                   className="mr-2 h-4 w-4"
                   aria-hidden="true"
                   focusable="false"
@@ -184,12 +184,16 @@ export default function SignupPage() {
                 </svg>
                 Sign up with Google
               </Button>
-               <Button
+              <Button
                 variant="outline"
                 className="w-full"
                 onClick={handleFacebookLogin}
                 disabled={isSubmitting}
-                style={{ backgroundColor: '#1877F2', color: 'white', borderColor: '#1877F2' }}
+                style={{
+                  backgroundColor: '#1877F2',
+                  color: 'white',
+                  borderColor: '#1877F2',
+                }}
               >
                 <svg
                   className="mr-2 h-4 w-4"
@@ -324,5 +328,5 @@ export default function SignupPage() {
         </Card>
       </div>
     </>
-  );
+  )
 }

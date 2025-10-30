@@ -1,22 +1,17 @@
-'use client';
+'use client'
 
-import Link from "next/link";
-import Image from "next/image";
+import Link from 'next/link'
+import Image from 'next/image'
 import {
   MessageSquare,
   Users,
   CalendarDays,
   MapPin,
   Building2,
-} from "lucide-react";
+} from 'lucide-react'
 
-import { PageHeader } from "@/components/page-header";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { PageHeader } from '@/components/page-header'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Card,
   CardContent,
@@ -24,46 +19,47 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { EventSummary } from "./event-summary";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import type { CommunityEvent, ForumThread } from "@/lib/types";
-import { collection } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+} from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { EventSummary } from './event-summary'
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase'
+import type { CommunityEvent, ForumThread } from '@/lib/types'
+import { collection } from 'firebase/firestore'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PlaceHolderImages } from '@/lib/placeholder-images'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function ForumsPage() {
-  const firestore = useFirestore();
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const firestore = useFirestore()
+  const searchParams = useSearchParams()
+  const router = useRouter()
 
   const threadsQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, "forumThreads") : null),
+    () => (firestore ? collection(firestore, 'forumThreads') : null),
     [firestore]
-  );
+  )
   const { data: forumThreads, isLoading: areThreadsLoading } =
-    useCollection<ForumThread>(threadsQuery);
+    useCollection<ForumThread>(threadsQuery)
 
   const eventsQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, "communityEvents") : null),
+    () => (firestore ? collection(firestore, 'communityEvents') : null),
     [firestore]
-  );
+  )
   const { data: communityEvents, isLoading: areEventsLoading } =
-    useCollection<CommunityEvent>(eventsQuery);
-  
-  const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1');
+    useCollection<CommunityEvent>(eventsQuery)
+
+  const userAvatar1 = PlaceHolderImages.find((p) => p.id === 'user-avatar-1')
 
   // Sync tabs with ?tab=discussions|events
-  const initialTab = (searchParams.get('tab') === 'events') ? 'events' : 'discussions';
-  const [tab, setTab] = useState<string>(initialTab);
+  const initialTab =
+    searchParams.get('tab') === 'events' ? 'events' : 'discussions'
+  const [tab, setTab] = useState<string>(initialTab)
   useEffect(() => {
-    const t = searchParams.get('tab');
-    setTab(t === 'events' ? 'events' : 'discussions');
-  }, [searchParams]);
+    const t = searchParams.get('tab')
+    setTab(t === 'events' ? 'events' : 'discussions')
+  }, [searchParams])
 
   return (
     <div>
@@ -72,12 +68,15 @@ export default function ForumsPage() {
         description="Engage in discussions, stay updated on local events, and connect with your neighbors."
       />
       <div className="container mx-auto px-4 pb-16">
-        <Tabs value={tab} onValueChange={(v) => {
-          setTab(v);
-          const sp = new URLSearchParams(Array.from(searchParams.entries()));
-          sp.set('tab', v);
-          router.replace(`/forums?${sp.toString()}`);
-        }}>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            setTab(v)
+            const sp = new URLSearchParams(Array.from(searchParams.entries()))
+            sp.set('tab', v)
+            router.replace(`/forums?${sp.toString()}`)
+          }}
+        >
           <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
             <TabsTrigger value="discussions">
               <MessageSquare className="w-4 h-4 mr-2" /> Discussions
@@ -88,58 +87,69 @@ export default function ForumsPage() {
           </TabsList>
           <TabsContent value="discussions" className="mt-6">
             <div className="grid gap-6">
-              {areThreadsLoading && Array.from({length: 2}).map((_, i) => (
-                <Card key={i} className="rounded-lg border bg-card/70 backdrop-blur-sm">
+              {areThreadsLoading &&
+                Array.from({ length: 2 }).map((_, i) => (
+                  <Card
+                    key={i}
+                    className="rounded-lg border bg-card/70 backdrop-blur-sm"
+                  >
+                    <CardHeader>
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2 mt-2" />
+                    </CardHeader>
+                    <CardFooter>
+                      <Skeleton className="h-6 w-1/4" />
+                    </CardFooter>
+                  </Card>
+                ))}
+              {forumThreads?.map((thread) => (
+                <Card
+                  key={thread.id}
+                  className="rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                >
                   <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2 mt-2" />
+                    <CardTitle className="font-headline text-xl">
+                      <Link
+                        href={`/forums/${thread.id}`}
+                        className="hover:text-primary transition-colors hover:underline underline-offset-4"
+                      >
+                        {thread.title}
+                      </Link>
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2 text-sm pt-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage
+                          src={thread.authorAvatarUrl}
+                          alt={thread.authorName}
+                        />
+                        <AvatarFallback>
+                          {thread.authorName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>
+                        {thread.authorName} started this discussion on{' '}
+                        {new Date(thread.timestamp).toLocaleDateString()}.
+                      </span>
+                    </CardDescription>
                   </CardHeader>
-                  <CardFooter>
-                     <Skeleton className="h-6 w-1/4" />
+                  <CardFooter className="flex justify-between items-center">
+                    <div className="flex gap-2 flex-wrap">
+                      {thread.tags.map((tag) => (
+                        <Badge key={tag.name} variant={tag.variant}>
+                          {tag.isCouncil && (
+                            <Building2 className="w-3 h-3 mr-1.5" />
+                          )}
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Users className="w-4 h-4" />
+                      <span>{thread.postCount || 0} replies</span>
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
-              {forumThreads?.map((thread) => (
-                  <Card key={thread.id} className="rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5">
-                    <CardHeader>
-                      <CardTitle className="font-headline text-xl">
-                        <Link
-                          href={`/forums/${thread.id}`}
-                          className="hover:text-primary transition-colors hover:underline underline-offset-4"
-                        >
-                          {thread.title}
-                        </Link>
-                      </CardTitle>
-                      <CardDescription className="flex items-center gap-2 text-sm pt-2">
-                        <Avatar className="h-6 w-6">
-                           <AvatarImage src={thread.authorAvatarUrl} alt={thread.authorName} />
-                          <AvatarFallback>{thread.authorName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span>
-                          {thread.authorName} started this discussion on{" "}
-                          {new Date(thread.timestamp).toLocaleDateString()}.
-                        </span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex justify-between items-center">
-                      <div className="flex gap-2 flex-wrap">
-                        {thread.tags.map((tag) => (
-                          <Badge key={tag.name} variant={tag.variant}>
-                            {tag.isCouncil && (
-                              <Building2 className="w-3 h-3 mr-1.5" />
-                            )}
-                            {tag.name}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <Users className="w-4 h-4" />
-                        <span>{thread.postCount || 0} replies</span>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                )
-              )}
               {!areThreadsLoading && forumThreads?.length === 0 && (
                 <Card className="text-center p-8 rounded-lg border bg-card/70 backdrop-blur-sm">
                   <CardTitle>No Discussions Yet</CardTitle>
@@ -152,25 +162,34 @@ export default function ForumsPage() {
           </TabsContent>
           <TabsContent value="events" className="mt-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {areEventsLoading && Array.from({length: 3}).map((_, i) =>(
-                <Card key={i} className="rounded-lg border bg-card/70 backdrop-blur-sm">
-                  <Skeleton className="h-56 w-full rounded-t-lg" />
-                  <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-full mt-2" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
+              {areEventsLoading &&
+                Array.from({ length: 3 }).map((_, i) => (
+                  <Card
+                    key={i}
+                    className="rounded-lg border bg-card/70 backdrop-blur-sm"
+                  >
+                    <Skeleton className="h-56 w-full rounded-t-lg" />
+                    <CardHeader>
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-full mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-8 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
               {communityEvents?.map((event) => {
-                const eventImage = PlaceHolderImages.find(p => p.id === event.imageId);
+                const eventImage = PlaceHolderImages.find(
+                  (p) => p.id === event.imageId
+                )
                 return (
-                  <Card key={event.id} className="flex flex-col rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+                  <Card
+                    key={event.id}
+                    className="flex flex-col rounded-lg border bg-card/70 backdrop-blur-sm hover:shadow-md transition-all hover:-translate-y-0.5"
+                  >
                     {eventImage && (
                       <div className="relative h-56 w-full">
-                         <Image
+                        <Image
                           src={eventImage.imageUrl}
                           alt={event.title}
                           fill
@@ -181,17 +200,19 @@ export default function ForumsPage() {
                       </div>
                     )}
                     <CardHeader>
-                      <CardTitle className="font-headline">{event.title}</CardTitle>
+                      <CardTitle className="font-headline">
+                        {event.title}
+                      </CardTitle>
                       <CardDescription>{event.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
-                          <CalendarDays className="w-4 h-4"/>
-                          <span>{event.date}</span>
+                        <CalendarDays className="w-4 h-4" />
+                        <span>{event.date}</span>
                       </div>
-                       <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="w-4 h-4"/>
-                          <span>{event.location}</span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span>{event.location}</span>
                       </div>
                     </CardContent>
                     <CardFooter>
@@ -200,7 +221,7 @@ export default function ForumsPage() {
                   </Card>
                 )
               })}
-               {!areEventsLoading && communityEvents?.length === 0 && (
+              {!areEventsLoading && communityEvents?.length === 0 && (
                 <Card className="md:col-span-2 lg:col-span-3 text-center p-8 rounded-lg border bg-card/70 backdrop-blur-sm">
                   <CardTitle>No Upcoming Events</CardTitle>
                   <CardDescription>
@@ -213,5 +234,5 @@ export default function ForumsPage() {
         </Tabs>
       </div>
     </div>
-  );
+  )
 }

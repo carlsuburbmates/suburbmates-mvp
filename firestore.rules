@@ -236,12 +236,13 @@ service cloud.firestore {
      * @principle Owner-only access.
      */
     match /consents/{consentId} {
-        allow get: if request.auth != null && resource.data.userId == request.auth.uid;
-        allow list: if request.auth != null && resource.data.userId == request.auth.uid;
+        allow get: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+        // Allow admins to list all consents for audit; users can only list their own via queries.
+        allow list: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
 
-        allow create: if request.auth != null && isSignedIn() && request.resource.data.userId == request.auth.uid;
-        allow update: if false; // TODO: Add authorization logic for updating consents.
-        allow delete: if false; // TODO: Add authorization logic for deleting consents.
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+        allow update: if false;
+        allow delete: if false;
     }
 
     /**

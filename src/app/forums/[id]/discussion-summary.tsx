@@ -1,53 +1,58 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
-import { summarizeDiscussion } from "@/ai/flows/summarize-discussions";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { Sparkles, Loader2 } from 'lucide-react'
+import { summarizeDiscussion } from '@/ai/flows/summarize-discussions'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+} from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 type DiscussionSummaryProps = {
-  discussionText: string;
-};
+  discussionText: string
+}
 
 export function DiscussionSummary({ discussionText }: DiscussionSummaryProps) {
-  const [summary, setSummary] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
+  const [summary, setSummary] = useState<ReactNode>('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   const handleSummarize = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-      const result = await summarizeDiscussion({ discussionText });
+      const result = await summarizeDiscussion({ discussionText })
       // Format summary into a list
       const formattedSummary = result.summary
         .split(/(\n-|\*)/)
-        .map(s => s.trim())
-        .filter(s => s && s !== '-' && s !== '*')
-        .map((item, index) => <li key={index} className="mb-2">{item}</li>);
-      
-      setSummary(<ul>{formattedSummary}</ul> as any);
-      setIsDialogOpen(true);
+        .map((s) => s.trim())
+        .filter((s) => s && s !== '-' && s !== '*')
+        .map((item, index) => (
+          <li key={index} className="mb-2">
+            {item}
+          </li>
+        ))
+
+      setSummary(<ul>{formattedSummary}</ul>)
+      setIsDialogOpen(true)
     } catch (error) {
-      console.error("Error summarizing discussion:", error);
+      console.error('Error summarizing discussion:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not generate summary. Please try again.",
-      });
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not generate summary. Please try again.',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <>
@@ -61,7 +66,11 @@ export function DiscussionSummary({ discussionText }: DiscussionSummaryProps) {
             Use our AI tool to get the key points from this discussion.
           </AlertDescription>
         </div>
-        <Button onClick={handleSummarize} disabled={isLoading || !discussionText} className="w-full md:w-auto mt-2 md:mt-0 shrink-0">
+        <Button
+          onClick={handleSummarize}
+          disabled={isLoading || !discussionText}
+          className="w-full md:w-auto mt-2 md:mt-0 shrink-0"
+        >
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -79,13 +88,13 @@ export function DiscussionSummary({ discussionText }: DiscussionSummaryProps) {
               Discussion Summary
             </DialogTitle>
             <DialogDescription asChild>
-                <div className="prose prose-sm pt-4 text-left text-base text-foreground prose-li:text-foreground">
-                    {summary}
-                </div>
+              <div className="prose prose-sm pt-4 text-left text-base text-foreground prose-li:text-foreground">
+                {summary}
+              </div>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

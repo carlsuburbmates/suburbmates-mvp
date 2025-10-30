@@ -1,202 +1,207 @@
-
 export type NavItem = {
-  title: string;
-  href: string;
-  disabled?: boolean;
-};
+  title: string
+  href: string
+  disabled?: boolean
+}
 
 export type Consent = {
-  id?: string;
-  userId: string;
-  agreementId: 'vendor_tos' | 'refund_policy' | 'buyer_tos';
-  version: string;
-  timestamp: string;
-  ip: string;
-  ua: string;
-};
+  id?: string
+  userId: string
+  agreementId: 'vendor_tos' | 'refund_policy' | 'buyer_tos'
+  version: string
+  timestamp: string
+  ip: string
+  ua: string
+}
 
 export type VerificationSummary = {
-  overallRecommendation: 'AUTO_APPROVE' | 'NEEDS_REVIEW' | 'AUTO_REJECT';
-  recommendationReason: string;
+  overallRecommendation: 'AUTO_APPROVE' | 'NEEDS_REVIEW' | 'AUTO_REJECT'
+  recommendationReason: string
   safetyAnalysis: {
-    rating: 'SAFE' | 'NEEDS_REVIEW';
-    reason: string;
-    piiDetected: boolean;
-  };
+    rating: 'SAFE' | 'NEEDS_REVIEW'
+    reason: string
+    piiDetected: boolean
+  }
   descriptionQuality: {
-    score: number;
-    confidence: number;
-    reason: string;
-  };
+    score: number
+    confidence: number
+    reason: string
+  }
   categoryVerification: {
-    isMatch: boolean;
-    confidence: number;
-    suggestion: string;
-    reason: string;
-  };
-  promptVersion: string;
-};
+    isMatch: boolean
+    confidence: number
+    suggestion: string
+    reason: string
+  }
+  promptVersion: string
+}
 
 export type Vendor = {
-  id: string;
-  businessName: string;
-  description: string;
-  category: string;
-  abn: string;
-  abnVerified?: boolean;
-  email: string;
-  phone?: string;
-  website?: string;
-  address?: string;
-  stripeAccountId?: string;
-  paymentsEnabled?: boolean;
-  reviewCount?: number;
-  averageRating?: number;
-  latitude?: number;
-  longitude?: number;
-  refundPolicyUrl?: string;
-  supportEmail?: string;
-  fulfilmentTerms?: string;
-  consents?: Omit<Consent, 'id' | 'userId'>[];
-  isPremium?: boolean;
-  verificationSummary?: VerificationSummary;
-};
+  id: string
+  businessName: string
+  description: string
+  category: string
+  abn: string
+  abnVerified?: boolean
+  email: string
+  phone?: string
+  website?: string
+  address?: string
+  stripeAccountId?: string
+  paymentsEnabled?: boolean
+  reviewCount?: number
+  averageRating?: number
+  latitude?: number
+  longitude?: number
+  refundPolicyUrl?: string
+  supportEmail?: string
+  fulfilmentTerms?: string
+  consents?: Omit<Consent, 'id' | 'userId'>[]
+  isPremium?: boolean
+  verificationSummary?: VerificationSummary
+}
 
 export type Listing = {
-    id: string;
-    vendorId: string;
-    listingName: string;
-    description: string;
-    price: number;
-    category: string;
-    imageUrl?: string;
-    deliveryMethod: 'Pickup Only' | 'Local Delivery Available';
+  id: string
+  vendorId: string
+  listingName: string
+  description: string
+  price: number
+  category: string
+  imageUrl?: string
+  deliveryMethod: 'Pickup Only' | 'Local Delivery Available'
 }
 
 export type ForumPost = {
-  id: string;
-  authorId: string;
-  authorName: string;
-  authorAvatarUrl: string | null;
-  timestamp: string;
-  content: string;
-};
+  id: string
+  authorId: string
+  authorName: string
+  authorAvatarUrl: string | null
+  timestamp: string
+  content: string
+}
 
 export type ForumThread = {
-  id: string;
-  title: string;
-  authorName: string;
-  authorAvatarUrl: string;
-  timestamp: string;
+  id: string
+  title: string
+  authorName: string
+  authorAvatarUrl: string
+  timestamp: string
   tags: {
-    name: string;
-    variant: "default" | "secondary" | "destructive" | "outline";
-    isCouncil?: boolean;
-  }[];
-  postCount?: number;
-};
+    name: string
+    variant: 'default' | 'secondary' | 'destructive' | 'outline'
+    isCouncil?: boolean
+  }[]
+  postCount?: number
+}
 
 export type CommunityEvent = {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  description: string;
-  details: string;
-  imageId: string;
-};
+  id: string
+  title: string
+  date: string
+  location: string
+  description: string
+  details: string
+  imageId: string
+}
 
 export type Order = {
-  id: string;
-  listingName: string;
-  buyerId: string;
-  vendorId: string;
-  date: string;
-  amount: number;
-  status: 'Pending' | 'Completed' | 'Refunded' | 'FAILED_PAYMENT' | 'DISPUTED';
-  paymentIntentId: string;
-  fulfilmentEta?: string;
-  commChannelId?: string;
-  customerName?: string; 
-};
+  id: string
+  listingName: string
+  buyerId: string
+  vendorId: string
+  date: string
+  amount: number
+  status: 'Pending' | 'Completed' | 'Refunded' | 'FAILED_PAYMENT' | 'DISPUTED'
+  paymentIntentId: string
+  fulfilmentEta?: string
+  commChannelId?: string
+  customerName?: string
+}
 
 export type Review = {
-  id: string;
-  residentId: string;
-  residentName: string;
-  rating: number;
-  comment: string;
-  timestamp: string;
-};
+  id: string
+  residentId: string
+  residentName: string
+  rating: number
+  comment: string
+  timestamp: string
+}
 
 export type CommunicationChannel = {
-  id: string;
-  orderId: string;
-  buyerId: string;
-  vendorId: string;
-  status: 'OPEN' | 'CLOSED';
-};
+  id: string
+  orderId: string
+  buyerId: string
+  vendorId: string
+  status: 'OPEN' | 'CLOSED'
+}
 
 export type Message = {
-  id: string;
-  commChannelId: string;
-  senderId: string;
-  role: 'buyer' | 'vendor' | 'system';
-  body: string;
-  createdAt: string;
-};
+  id: string
+  commChannelId: string
+  senderId: string
+  role: 'buyer' | 'vendor' | 'system'
+  body: string
+  createdAt: string
+}
 
 export type Agreement = {
-  id: string;
-  type: 'buyer_tos' | 'vendor_tos' | 'refund_policy';
-  version: string;
-  url: string;
-  _lastValidated: string;
-};
+  id: string
+  type: 'buyer_tos' | 'vendor_tos' | 'refund_policy'
+  version: string
+  url: string
+  _lastValidated: string
+}
 
 export type RefundRequest = {
-  id: string;
-  orderId: string;
-  buyerId: string;
-  vendorId: string;
-  reason: string;
-  attachments?: string[];
-  state: 'OPEN' | 'VENDOR_REVIEW' | 'STRIPE_PROCESSING' | 'RESOLVED' | 'REJECTED' | 'ESCALATED';
-  stripeRefundId?: string;
-  decision?: string;
-  decisionBy?: string;
-  decisionAt?: string;
-};
+  id: string
+  orderId: string
+  buyerId: string
+  vendorId: string
+  reason: string
+  attachments?: string[]
+  state:
+    | 'OPEN'
+    | 'VENDOR_REVIEW'
+    | 'STRIPE_PROCESSING'
+    | 'RESOLVED'
+    | 'REJECTED'
+    | 'ESCALATED'
+  stripeRefundId?: string
+  decision?: string
+  decisionBy?: string
+  decisionAt?: string
+}
 
 export type DisputeSummary = {
-  summary: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  recommendedAction: string;
-};
+  summary: string
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH'
+  recommendedAction: string
+}
 
 export type Dispute = {
-    id: string; // Firestore document ID
-    stripeDisputeId: string;
-    paymentIntentId: string;
-    orderId: string;
-    vendorId: string;
-    buyerId: string;
-    amount: number;
-    currency: string;
-    reason: string;
-    status: string;
-    createdAt: string;
-    evidenceDueBy: string;
-    disputeSummary?: DisputeSummary;
+  id: string // Firestore document ID
+  stripeDisputeId: string
+  paymentIntentId: string
+  orderId: string
+  vendorId: string
+  buyerId: string
+  amount: number
+  currency: string
+  reason: string
+  status: string
+  createdAt: string
+  evidenceDueBy: string
+  disputeSummary?: DisputeSummary
 }
 
 export type LogEntry = {
-    id?: string;
-    timestamp: string;
-    type: 'webhook' | 'email';
-    source: string;
-    eventId: string;
-    status: 'received' | 'processed' | 'sent' | 'failed';
-    payload: object;
-    error?: string;
+  id?: string
+  timestamp: string
+  type: 'webhook' | 'email'
+  source: string
+  eventId: string
+  status: 'received' | 'processed' | 'sent' | 'failed'
+  payload: object
+  error?: string
 }

@@ -1,0 +1,12 @@
+{
+  "name": "mcp-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node build/index.js"
+  }
+}

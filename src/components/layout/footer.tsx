@@ -1,11 +1,10 @@
-
-import Link from "next/link";
-import { Logo } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import { Newspaper } from "lucide-react";
+import Link from 'next/link'
+import { Logo } from '@/components/icons'
+import { Button } from '@/components/ui/button'
+import { Newspaper } from 'lucide-react'
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear()
 
   return (
     <footer className="border-t bg-card">
@@ -22,16 +21,34 @@ export function Footer() {
           </Link>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="rounded-lg border border-background/10 p-8 shadow-sm">
-              <h3 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight">Submit your website for visibility and recognition</h3>
-              <p className="mt-2 text-background/80">Share your work with the community and gain exposure across our platform.</p>
-              <Button asChild variant="outline" className="mt-4 border-background/40 text-background hover:bg-background/10">
+              <h3 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight">
+                Submit your website for visibility and recognition
+              </h3>
+              <p className="mt-2 text-background/80">
+                Share your work with the community and gain exposure across our
+                platform.
+              </p>
+              <Button
+                asChild
+                variant="outline"
+                className="mt-4 border-background/40 text-background hover:bg-background/10"
+              >
                 <Link href="/submit">Submit your site</Link>
               </Button>
             </div>
             <div className="rounded-lg border border-background/10 p-8 shadow-sm">
-              <h3 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight">Get access to special pro features</h3>
-              <p className="mt-2 text-background/80">Unlock advanced tools and priority placement designed for professionals.</p>
-              <Button asChild variant="outline" className="mt-4 border-background/40 text-background hover:bg-background/10">
+              <h3 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-bold font-headline leading-tight">
+                Get access to special pro features
+              </h3>
+              <p className="mt-2 text-background/80">
+                Unlock advanced tools and priority placement designed for
+                professionals.
+              </p>
+              <Button
+                asChild
+                variant="outline"
+                className="mt-4 border-background/40 text-background hover:bg-background/10"
+              >
                 <Link href="/pro">Explore Pro</Link>
               </Button>
             </div>
@@ -48,21 +65,45 @@ export function Footer() {
             </p>
           </div>
           <nav className="flex gap-4 text-sm text-muted-foreground flex-wrap justify-center">
-            <Link href="/privacy" className="hover:text-primary transition-colors">
+            <Link
+              href="/privacy"
+              className="hover:text-primary transition-colors"
+            >
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-primary transition-colors">
+            <Link
+              href="/terms"
+              className="hover:text-primary transition-colors"
+            >
               Terms of Service
             </Link>
-            <Link href="/policy" className="hover:text-primary transition-colors">
+            <Link
+              href="/policy"
+              className="hover:text-primary transition-colors"
+            >
               Refund Policy
             </Link>
-            <Link href="/accessibility" className="hover:text-primary transition-colors">
+            <Link
+              href="/cookies"
+              className="hover:text-primary transition-colors"
+            >
+              Cookies
+            </Link>
+            <Link
+              href="/accessibility"
+              className="hover:text-primary transition-colors"
+            >
               Accessibility
+            </Link>
+            <Link
+              href="/legal"
+              className="hover:text-primary transition-colors"
+            >
+              Legal
             </Link>
           </nav>
         </div>
       </div>
     </footer>
-  );
+  )
 }

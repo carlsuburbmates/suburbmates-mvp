@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Business": {
@@ -16,16 +15,16 @@
           "description": "The primary category of the business (e.g., Cafe, Retail)."
         },
         "description": {
-            "type": "string",
-            "description": "A short, public-facing description of the business."
+          "type": "string",
+          "description": "A short, public-facing description of the business."
         },
         "abn": {
           "type": "string",
           "description": "Australian Business Number of the business."
         },
         "abnVerified": {
-            "type": "boolean",
-            "description": "Flag indicating if the ABN has been successfully validated. If true, a 'Verified' badge is shown."
+          "type": "boolean",
+          "description": "Flag indicating if the ABN has been successfully validated. If true, a 'Verified' badge is shown."
         },
         "email": {
           "type": "string",
@@ -50,41 +49,41 @@
           "description": "Stripe account ID associated with the business, populated after successful hand-off."
         },
         "paymentsEnabled": {
-            "type": "boolean",
-            "description": "Flag indicating if the Business has been approved by an Admin to become a Vendor. If true, they can create listings and receive payments."
+          "type": "boolean",
+          "description": "Flag indicating if the Business has been approved by an Admin to become a Vendor. If true, they can create listings and receive payments."
         },
         "reviewCount": {
-            "type": "number",
-            "description": "The total number of reviews for this business."
+          "type": "number",
+          "description": "The total number of reviews for this business."
         },
         "averageRating": {
-            "type": "number",
-            "description": "The average rating for this business, from 1 to 5."
+          "type": "number",
+          "description": "The average rating for this business, from 1 to 5."
         },
         "latitude": {
-            "type": "number",
-            "description": "The latitude of the business location."
+          "type": "number",
+          "description": "The latitude of the business location."
         },
         "longitude": {
-            "type": "number",
-            "description": "The longitude of the business location."
+          "type": "number",
+          "description": "The longitude of the business location."
         },
         "refundPolicyUrl": {
-            "type": "string",
-            "description": "URL to the vendor's refund policy."
+          "type": "string",
+          "description": "URL to the vendor's refund policy."
         },
         "supportEmail": {
-            "type": "string",
-            "format": "email",
-            "description": "The vendor's customer support email address."
+          "type": "string",
+          "format": "email",
+          "description": "The vendor's customer support email address."
         },
         "fulfilmentTerms": {
-            "type": "string",
-            "description": "A description of the vendor's fulfillment terms for local delivery."
+          "type": "string",
+          "description": "A description of the vendor's fulfillment terms for local delivery."
         },
         "consents": {
-            "type": "array",
-            "items": { "$ref": "#/entities/Consent" }
+          "type": "array",
+          "items": { "$ref": "#/entities/Consent" }
         }
       },
       "required": [
@@ -125,13 +124,13 @@
           "description": "The category that this listing belongs to."
         },
         "imageUrl": {
-            "type": "string",
-            "description": "URL of an image for the listing."
+          "type": "string",
+          "description": "URL of an image for the listing."
         },
         "deliveryMethod": {
-            "type": "string",
-            "description": "The method of delivery for the listing.",
-            "enum": ["Pickup Only", "Local Delivery Available"]
+          "type": "string",
+          "description": "The method of delivery for the listing.",
+          "enum": ["Pickup Only", "Local Delivery Available"]
         }
       },
       "required": [
@@ -160,7 +159,10 @@
             "type": "object",
             "properties": {
               "name": { "type": "string" },
-              "variant": { "type": "string", "enum": ["default", "secondary", "destructive", "outline"] },
+              "variant": {
+                "type": "string",
+                "enum": ["default", "secondary", "destructive", "outline"]
+              },
               "isCouncil": { "type": "boolean" }
             },
             "required": ["name", "variant"]
@@ -196,7 +198,14 @@
         "details": { "type": "string" },
         "imageId": { "type": "string" }
       },
-      "required": ["title", "date", "location", "description", "details", "imageId"]
+      "required": [
+        "title",
+        "date",
+        "location",
+        "description",
+        "details",
+        "imageId"
+      ]
     },
     "Order": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -211,7 +220,13 @@
         "amount": { "type": "number" },
         "status": {
           "type": "string",
-          "enum": ["Pending", "Completed", "Refunded", "FAILED_PAYMENT", "DISPUTED"]
+          "enum": [
+            "Pending",
+            "Completed",
+            "Refunded",
+            "FAILED_PAYMENT",
+            "DISPUTED"
+          ]
         },
         "paymentIntentId": {
           "type": "string",
@@ -220,42 +235,56 @@
         "fulfilmentEta": { "type": "string" },
         "commChannelId": { "type": "string" }
       },
-      "required": ["listingName", "buyerId", "vendorId", "date", "amount", "status", "paymentIntentId"]
+      "required": [
+        "listingName",
+        "buyerId",
+        "vendorId",
+        "date",
+        "amount",
+        "status",
+        "paymentIntentId"
+      ]
     },
     "Review": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Review",
-        "type": "object",
-        "description": "Represents a Resident's review for a Business or Vendor.",
-        "properties": {
-          "residentId": { "type": "string" },
-          "residentName": { "type": "string" },
-          "rating": { "type": "number", "minimum": 1, "maximum": 5 },
-          "comment": { "type": "string" },
-          "timestamp": { "type": "string", "format": "date-time" }
-        },
-        "required": ["residentId", "residentName", "rating", "comment", "timestamp"]
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Review",
+      "type": "object",
+      "description": "Represents a Resident's review for a Business or Vendor.",
+      "properties": {
+        "residentId": { "type": "string" },
+        "residentName": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "residentId",
+        "residentName",
+        "rating",
+        "comment",
+        "timestamp"
+      ]
     },
     "CheckoutSession": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Checkout Session",
-        "type": "object",
-        "description": "Data sent to the Stripe checkout session API.",
-        "properties": {
-            "listing": {
-                "type": "object",
-                "properties": {
-                    "listingName": { "type": "string" },
-                    "description": { "type": "string" },
-                    "price": { "type": "number" }
-                },
-                "required": ["listingName", "description", "price"]
-            },
-            "vendorStripeAccountId": { "type": "string" },
-            "vendorId": { "type": "string" },
-            "listingId": { "type": "string" }
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Checkout Session",
+      "type": "object",
+      "description": "Data sent to the Stripe checkout session API.",
+      "properties": {
+        "listing": {
+          "type": "object",
+          "properties": {
+            "listingName": { "type": "string" },
+            "description": { "type": "string" },
+            "price": { "type": "number" }
+          },
+          "required": ["listingName", "description", "price"]
         },
-        "required": ["listing", "vendorStripeAccountId", "vendorId", "listingId"]
+        "vendorStripeAccountId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "listingId": { "type": "string" }
+      },
+      "required": ["listing", "vendorStripeAccountId", "vendorId", "listingId"]
     },
     "User": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -267,8 +296,8 @@
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "consents": {
-            "type": "array",
-            "items": { "$ref": "#/entities/Consent" }
+          "type": "array",
+          "items": { "$ref": "#/entities/Consent" }
         }
       },
       "required": ["uid", "email"]
@@ -306,7 +335,10 @@
       "type": "object",
       "description": "A legal agreement document.",
       "properties": {
-        "type": { "type": "string", "enum": ["buyer_tos", "vendor_tos", "refund_policy"] },
+        "type": {
+          "type": "string",
+          "enum": ["buyer_tos", "vendor_tos", "refund_policy"]
+        },
         "version": { "type": "string" },
         "url": { "type": "string", "format": "uri" },
         "_lastValidated": { "type": "string", "format": "date-time" }
@@ -328,7 +360,7 @@
       },
       "required": ["userId", "agreementId", "version", "timestamp"]
     },
-     "RefundRequest": {
+    "RefundRequest": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "RefundRequest",
       "type": "object",
@@ -339,7 +371,17 @@
         "vendorId": { "type": "string" },
         "reason": { "type": "string" },
         "attachments": { "type": "array", "items": { "type": "string" } },
-        "state": { "type": "string", "enum": ["OPEN", "VENDOR_REVIEW", "STRIPE_PROCESSING", "RESOLVED", "REJECTED", "ESCALATED"] },
+        "state": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "VENDOR_REVIEW",
+            "STRIPE_PROCESSING",
+            "RESOLVED",
+            "REJECTED",
+            "ESCALATED"
+          ]
+        },
         "stripeRefundId": { "type": "string" },
         "decision": { "type": "string" },
         "decisionBy": { "type": "string" },
@@ -348,48 +390,57 @@
       "required": ["orderId", "buyerId", "vendorId", "reason", "state"]
     },
     "Dispute": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Dispute",
-        "type": "object",
-        "description": "Represents a Stripe dispute mirrored in Firestore.",
-        "properties": {
-            "stripeDisputeId": { "type": "string" },
-            "paymentIntentId": { "type": "string" },
-            "orderId": { "type": "string" },
-            "vendorId": { "type": "string" },
-            "buyerId": { "type": "string" },
-            "amount": { "type": "number" },
-            "currency": { "type": "string" },
-            "reason": { "type": "string" },
-            "status": { "type": "string" },
-            "createdAt": { "type": "string", "format": "date-time" },
-            "evidenceDueBy": { "type": "string", "format": "date-time" }
-        },
-        "required": ["stripeDisputeId", "paymentIntentId", "vendorId", "amount", "status", "createdAt"]
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Dispute",
+      "type": "object",
+      "description": "Represents a Stripe dispute mirrored in Firestore.",
+      "properties": {
+        "stripeDisputeId": { "type": "string" },
+        "paymentIntentId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "evidenceDueBy": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "stripeDisputeId",
+        "paymentIntentId",
+        "vendorId",
+        "amount",
+        "status",
+        "createdAt"
+      ]
     },
     "LogEntry": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Log Entry",
-        "type": "object",
-        "description": "A generic log entry for auditing.",
-        "properties": {
-            "timestamp": { "type": "string", "format": "date-time" },
-            "type": { "type": "string", "enum": ["webhook", "email"] },
-            "source": { "type": "string", "description": "e.g., 'stripe', 'resend'" },
-            "eventId": { "type": "string" },
-            "status": { "type": "string", "enum": ["received", "processed", "sent", "failed"] },
-            "payload": { "type": "object" },
-            "error": { "type": "string" }
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Log Entry",
+      "type": "object",
+      "description": "A generic log entry for auditing.",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["webhook", "email"] },
+        "source": {
+          "type": "string",
+          "description": "e.g., 'stripe', 'resend'"
         },
-        "required": ["timestamp", "type", "source", "eventId", "status"]
+        "eventId": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["received", "processed", "sent", "failed"]
+        },
+        "payload": { "type": "object" },
+        "error": { "type": "string" }
+      },
+      "required": ["timestamp", "type", "source", "eventId", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google.com",
-      "facebook.com"
-    ]
+    "providers": ["password", "google.com", "facebook.com"]
   },
   "firestore": {
     "/vendors/{vendorId}": {
@@ -405,22 +456,22 @@
       "description": "Stores all listings for a specific Vendor as a sub-collection."
     },
     "/vendors/{vendorId}/orders/{orderId}": {
-        "schema": {
-            "$ref": "#/entities/Order"
-        },
-        "description": "Stores all orders for a specific Vendor."
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Stores all orders for a specific Vendor."
     },
-     "/vendors/{vendorId}/reviews/{reviewId}": {
-        "schema": {
-            "$ref": "#/entities/Review"
-        },
-        "description": "Stores all reviews for a specific Business."
+    "/vendors/{vendorId}/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/entities/Review"
+      },
+      "description": "Stores all reviews for a specific Business."
     },
-     "/vendors/{vendorId}/refund_requests/{requestId}": {
-        "schema": {
-            "$ref": "#/entities/RefundRequest"
-        },
-        "description": "Stores all refund requests for a specific Vendor."
+    "/vendors/{vendorId}/refund_requests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/RefundRequest"
+      },
+      "description": "Stores all refund requests for a specific Vendor."
     },
     "/forumThreads/{threadId}": {
       "schema": {
@@ -435,10 +486,10 @@
       "description": "Stores all posts for a specific forum thread."
     },
     "/communityEvents/{eventId}": {
-        "schema": {
-            "$ref": "#/entities/CommunityEvent"
-        },
-        "description": "Stores all events for the Civic Hub."
+      "schema": {
+        "$ref": "#/entities/CommunityEvent"
+      },
+      "description": "Stores all events for the Civic Hub."
     },
     "/comm_channels/{channelId}": {
       "schema": {
@@ -452,7 +503,7 @@
       },
       "description": "Stores messages within a communication channel."
     },
-     "/agreements/{agreementId}": {
+    "/agreements/{agreementId}": {
       "schema": {
         "$ref": "#/entities/Agreement"
       },
@@ -465,16 +516,16 @@
       "description": "Stores records of user consents to agreements."
     },
     "/disputes/{disputeId}": {
-        "schema": { "$ref": "#/entities/Dispute" },
-        "description": "Stores mirrored data for all Stripe disputes."
+      "schema": { "$ref": "#/entities/Dispute" },
+      "description": "Stores mirrored data for all Stripe disputes."
     },
     "/logs/webhooks/events/{eventId}": {
-        "schema": { "$ref": "#/entities/LogEntry" },
-        "description": "Logs all incoming webhook events for auditing."
+      "schema": { "$ref": "#/entities/LogEntry" },
+      "description": "Logs all incoming webhook events for auditing."
     },
     "/logs/emails/sends/{sendId}": {
-        "schema": { "$ref": "#/entities/LogEntry" },
-        "description": "Logs all outgoing transactional emails for auditing."
+      "schema": { "$ref": "#/entities/LogEntry" },
+      "description": "Logs all outgoing transactional emails for auditing."
     }
   }
 }
