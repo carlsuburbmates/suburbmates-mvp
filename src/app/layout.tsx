@@ -27,8 +27,6 @@ export const metadata: Metadata = {
   title: 'Suburbmates',
   description: 'Your local community hub for vendors and discussions.',
   manifest: '/manifest.json',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
-  themeColor: '#8FBC8F', // Suburbmates green
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -40,6 +38,13 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#8FBC8F', // Suburbmates green
 }
 
 export default function RootLayout({
