@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getAdminServices } from '@/lib/firebase-admin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-06-20',
-})
-
 // Set platform fee to 10% as per requirements
 const PLATFORM_FEE_PERCENT = 0.1
 
 export async function POST(request: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2024-06-20',
+  })
   const { auth } = await getAdminServices()
   try {
     const authorization = request.headers.get('Authorization')
