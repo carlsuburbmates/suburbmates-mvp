@@ -2,13 +2,24 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
 
-# Secrets that are only available during the build process
-# and are automatically passed to the runtime environment.
-# https://firebase.google.com/docs/app-hosting/configure#build-secrets
+# Environment variables for the runtime environment
+env:
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+  - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+    secret: FIREBASE_SERVICE_ACCOUNT_KEY
+  - variable: RESEND_API_KEY
+    secret: RESEND_API_KEY
+  - variable: ABR_GUID
+    secret: ABR_GUID
+  - variable: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    secret: NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    secret: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+
+# Secrets for the build process
 build:
   env:
     - variable: STRIPE_SECRET_KEY
