@@ -5,7 +5,6 @@ import type { Order, Vendor, RefundRequest, Dispute } from './types'
 import { getAdminServices } from './firebase-admin-server'
 import { v4 as uuidv4 } from 'uuid'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM_EMAIL = 'onboarding@resend.dev'
 
 async function logEmail(
@@ -29,6 +28,7 @@ async function logEmail(
 }
 
 async function sendEmail(to: string, subject: string, text: string) {
+  const resend = new Resend(process.env.RESEND_API_KEY)
   try {
     await resend.emails.send({ from: FROM_EMAIL, to, subject, text })
     await logEmail(subject, to, 'sent')
